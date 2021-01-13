@@ -13,11 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="소스 파일\Main">
+      <UniqueIdentifier>{d0acab63-a1e0-43d7-8548-ed9929c4149b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Custom">
+      <UniqueIdentifier>{a0c3b3ce-e2f1-4ebe-a567-de8815bd490b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -27,13 +30,16 @@
     <ClInclude Include="MainGame.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>소스 파일\Custom</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="MainGame.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\Main</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일\Custom</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

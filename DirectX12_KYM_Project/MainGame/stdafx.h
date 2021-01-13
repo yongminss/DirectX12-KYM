@@ -17,5 +17,6 @@
 #include <memory.h>
 #include <tchar.h>
 
+#include <d3d12.h>
+#include <dxgi1_4.h>
 
-// 여기서 프로그램에 필요한 추가 헤더를 참조합니다.
