@@ -19,6 +19,9 @@
     <Filter Include="소스 파일\Custom">
       <UniqueIdentifier>{a0c3b3ce-e2f1-4ebe-a567-de8815bd490b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\GameFramework">
+      <UniqueIdentifier>{ffa92d33-c1a7-48a0-827c-2b163f8240a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -27,11 +30,14 @@
     <ClInclude Include="Resource.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MainGame.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>소스 파일\Custom</Filter>
+    </ClInclude>
+    <ClInclude Include="MainGame.h">
+      <Filter>소스 파일\Main</Filter>
+    </ClInclude>
+    <ClInclude Include="GameFramework.h">
+      <Filter>소스 파일\GameFramework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -40,6 +46,9 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일\Custom</Filter>
+    </ClCompile>
+    <ClCompile Include="GameFramework.cpp">
+      <Filter>소스 파일\GameFramework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

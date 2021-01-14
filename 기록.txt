@@ -1,3 +1,11 @@
 - 21.01.13
 1. DirectX로 프로젝트를 만들기 위해서는 Device를 생성 및 초기화 해야 함
 -> Direct3D를 사용하려면 DXGI를 걸쳐야 함 - DXGI는 Direct3D를 사용하기 위한 라이브러리
+2. __uuid 연산자 : 연결된 UUID 값을 가져올 때 사용하는 확장 연산자
+-> 대표적으로 COM 객체를 정의하는 구문에서 볼 수 있음 (ex. __uuidof (IDXGIFactory4))
+
+- 21.01.14
+1. #pragma comment(lib, "dxgi.lib") - CreateDXGIFactory 함수를 사용하기 위해 필요
+-> #include <dxgi1_4.h> 뿐만 아니라 #pragma comment(lib, "dxgi.lib") 도 필요함
+2. Factory를 생성했으니 이를 이용하여 그래픽 어댑터를 열거 - 12.0 레벨 지원하는 디바이스
+-> 만약 열거하는 과정에서 실패하면 11.0 레벨을 지원하는 디바이스로 생성
