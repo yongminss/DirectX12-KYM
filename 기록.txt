@@ -18,3 +18,8 @@
 -> CommandList - 내부에 있는 함수는 Set과 Draw -> 만들기 위해선 CommandAllocator
 -> Command는 Excute를 통해 큐에 명령을 담음 (바로 실행 x, 큐에 명령을 집어 넣는 것)
 -> 추가한 명령을 실행하려면 CommandList를 Close()하고 Excute를 호출해야 함
+
+- 21.01.18
+1. DirectX의 Double Buffering : 플리핑으로 구현 - 전면 버퍼와 후면 버퍼를 교체 (하드웨어)
+-> 전면 버퍼는 모니터와 직접 연결되고 그래픽 카드만 접근 가능한 영역
+-> 후면 버퍼는 응용 프로그램이 그래픽 작업을 하는 영역 (=우리가 렌더링하는 영역)
