@@ -20,14 +20,14 @@ GameFramework::~GameFramework()
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
-void GameFramework::CreateGameFramework()
+void GameFramework::CreateGameFramework(HWND &hwnd)
 {
 	// 1. DirectX 12를 사용하기 위해 Device를 생성
 	CreateDirectDevice();
 	// 2. DirectX 12 그래픽 렌더링을 위해 CommandQueue와 CommandList를 생성
 	CreateCommandQueueAndList();
 	// 3. Double Buffering을 위해 SwapChain을 생성
-	CreateSwapChain();
+	CreateSwapChain(hwnd);
 }
 
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
@@ -80,12 +80,25 @@ void GameFramework::CreateCommandQueueAndList()
 }
 
 // Double Buffering을 하기 위해 SwapChain을 생성해야 함
-void GameFramework::CreateSwapChain()
+void GameFramework::CreateSwapChain(HWND &hwnd)
 {
 	// SwapChain을 만들기 전에 다중 샘플링을 하기 위해 품질 지원을 검사
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS MultiSampleQualityLevel;
+	MultiSampleQualityLevel.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	MultiSampleQualityLevel.SampleCount = 4; // MSAA (Multi-Sample Anti-Aliasing) 4x 다중 샘플링 - 4개의 서브 픽셀을 각각 샘플링하여 최종 색상 결정
+	MultiSampleQualityLevel.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+	MultiSampleQualityLevel.NumQualityLevels = 0;
 
+	// Device가 지원하는 다중 샘플의 품질 확인
+	m_Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &MultiSampleQualityLevel, sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
 
+	// 품질 수준이 1보다 크면 다중 샘플링을 활성화
+	unsigned int nMultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
+	m_ActiveMSAA = (nMultiSampleQualityLevel > 1) ? true : false;
+
+	// SwapChain 생성
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
+	// BufferDesc - 스왑 체인 버퍼의 성질을 설정하는 구조체 (ex. width, height, RefreshRate ... etc.)
 	SwapChainDesc.BufferDesc.Width = 800;
 	SwapChainDesc.BufferDesc.Height = 600;
 	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
@@ -93,17 +106,15 @@ void GameFramework::CreateSwapChain()
 	SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 후면 버퍼(픽셀)의 형식, 하나의 픽셀은 32bit로 설정
 	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // 스캔 라인 그리기 모드 지정, 스캔 라인 순서를 지정하지 않음
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // 모니터 해상도에 맞게 확대하는 방법, 스케일링 지정 x
-
-	// 여기부터 다시 SwapChain을 설정해야 함
-	SwapChainDesc.SampleDesc.Count = 0;
-	SwapChainDesc.SampleDesc.Quality = 0;
-
-	SwapChainDesc.BufferUsage = 0;
-	SwapChainDesc.BufferCount = 0;
-	SwapChainDesc.OutputWindow = 0;
-	SwapChainDesc.Windowed = 0;
-	SwapChainDesc.SwapEffect = 0;
-	SwapChainDesc.Flags = 0;
+	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
+	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
+	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? nMultiSampleQualityLevel - 1 : 0;
+	SwapChainDesc.OutputWindow = hwnd; // 출력 될 windows 설정
+	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
+	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
+	SwapChainDesc.Windowed = true; // 창모드 설정 - true이면 창 모드, false이면 전체 모드
+	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스와핑을 처리하는 선택사항 지정, 버퍼를 유지하면 비용이 많이 발생하므로 버퍼 내용을 폐기하도록 설정
+	SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // 스왑 체인 동작에 대한 선택사항 지정, 응용 프로그램이 디스플레이 모드를 변경할 수 있도록 설정
 
 	m_Factory->CreateSwapChain(m_CommandQueue, &SwapChainDesc, (IDXGISwapChain**)m_SwapChain);
 }
@@ -116,6 +127,7 @@ void GameFramework::GameFrameworkLoop()
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
 	/* Rendering, Timer Reset 등의 작업 수행 */
+	m_SwapChain->Present(0, 0);
 
 	// 큐에 명령을 담기 위해 CommandList를 Close
 	m_CommandList->Close();

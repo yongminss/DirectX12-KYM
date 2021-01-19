@@ -12,14 +12,16 @@ private:
 
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
+	bool m_ActiveMSAA = false;
+
 public:
 	GameFramework();
 	~GameFramework();
 
-	void CreateGameFramework();
+	void CreateGameFramework(HWND &hwnd);
 	void CreateDirectDevice();
 	void CreateCommandQueueAndList();
-	void CreateSwapChain();
+	void CreateSwapChain(HWND &hwnd);
 
 	void GameFrameworkLoop();
 };
