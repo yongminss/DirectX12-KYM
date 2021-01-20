@@ -12,6 +12,8 @@ private:
 
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
+	ID3D12Fence *m_Fence = nullptr;
+
 	bool m_ActiveMSAA = false;
 
 public:
@@ -19,9 +21,11 @@ public:
 	~GameFramework();
 
 	void CreateGameFramework(HWND &hwnd);
+
 	void CreateDirectDevice();
 	void CreateCommandQueueAndList();
 	void CreateSwapChain(HWND &hwnd);
+	void CreateFence();
 
 	void GameFrameworkLoop();
 };

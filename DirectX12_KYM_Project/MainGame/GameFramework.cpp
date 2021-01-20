@@ -17,6 +17,8 @@ GameFramework::~GameFramework()
 	if (m_CommandList != nullptr) m_CommandList->Release();
 
 	if (m_SwapChain != nullptr) m_SwapChain->Release();
+
+	if (m_Fence != nullptr) m_Fence->Release();
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
@@ -28,6 +30,8 @@ void GameFramework::CreateGameFramework(HWND &hwnd)
 	CreateCommandQueueAndList();
 	// 3. Double Buffering을 위해 SwapChain을 생성
 	CreateSwapChain(hwnd);
+	// 4. CPU - GPU 동기화를 위해 Fence를 생성
+	CreateFence();
 }
 
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
@@ -116,7 +120,14 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스와핑을 처리하는 선택사항 지정, 버퍼를 유지하면 비용이 많이 발생하므로 버퍼 내용을 폐기하도록 설정
 	SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // 스왑 체인 동작에 대한 선택사항 지정, 응용 프로그램이 디스플레이 모드를 변경할 수 있도록 설정
 
-	m_Factory->CreateSwapChain(m_CommandQueue, &SwapChainDesc, (IDXGISwapChain**)m_SwapChain);
+	m_Factory->CreateSwapChain(m_CommandQueue, &SwapChainDesc, (IDXGISwapChain**)&m_SwapChain);
+}
+
+// CPU가 명령한 프레임 렌더링 데이터 작업이 GPU에서 끝나지 않았으면 CPU에서 새로운 명령을 넣지 못하게 막기 위해 Fence를 생성
+void GameFramework::CreateFence()
+{
+	m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&m_Fence); // FenceValue의 초기 값, 0으로 설정하여 0번 프레임부터 시작
+
 }
 
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
@@ -127,7 +138,6 @@ void GameFramework::GameFrameworkLoop()
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
 	/* Rendering, Timer Reset 등의 작업 수행 */
-	m_SwapChain->Present(0, 0);
 
 	// 큐에 명령을 담기 위해 CommandList를 Close
 	m_CommandList->Close();
