@@ -13,6 +13,7 @@ private:
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
 	ID3D12Fence *m_Fence = nullptr;
+	HANDLE m_FenceEvent = NULL;
 
 	bool m_ActiveMSAA = false;
 

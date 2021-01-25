@@ -126,8 +126,9 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 // CPU가 명령한 프레임 렌더링 데이터 작업이 GPU에서 끝나지 않았으면 CPU에서 새로운 명령을 넣지 못하게 막기 위해 Fence를 생성
 void GameFramework::CreateFence()
 {
-	m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&m_Fence); // FenceValue의 초기 값, 0으로 설정하여 0번 프레임부터 시작
+	m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&m_Fence); // 0번 - FenceValue의 초기 값, 0으로 설정하여 0번 프레임부터 시작
 
+	m_FenceEvent = CreateEvent(NULL, false, false, NULL);
 }
 
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
@@ -136,6 +137,8 @@ void GameFramework::GameFrameworkLoop()
 	// CommandList에서 렌더링을 하기 전에 Reset을 호출하여 CommandList를 Open 상태로 만들어야 Commands를 담을 수 있음
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
+
+	
 
 	/* Rendering, Timer Reset 등의 작업 수행 */
 
