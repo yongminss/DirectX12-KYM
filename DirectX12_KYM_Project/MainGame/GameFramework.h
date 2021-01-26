@@ -27,6 +27,7 @@ public:
 	void CreateCommandQueueAndList();
 	void CreateSwapChain(HWND &hwnd);
 	void CreateFence();
+	void CreateDescriptorHeap();
 
 	void GameFrameworkLoop();
 };

@@ -19,6 +19,7 @@ GameFramework::~GameFramework()
 	if (m_SwapChain != nullptr) m_SwapChain->Release();
 
 	if (m_Fence != nullptr) m_Fence->Release();
+	CloseHandle(m_FenceEvent);
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
@@ -32,6 +33,8 @@ void GameFramework::CreateGameFramework(HWND &hwnd)
 	CreateSwapChain(hwnd);
 	// 4. CPU - GPU 동기화를 위해 Fence를 생성
 	CreateFence();
+	// 5. 리소스(Texture, Buffer)를 사용하기 위해 Descriptor Heap을 생성
+	CreateDescriptorHeap();
 }
 
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
@@ -131,14 +134,18 @@ void GameFramework::CreateFence()
 	m_FenceEvent = CreateEvent(NULL, false, false, NULL);
 }
 
+// 리소스(Texture, Buffer) 사용을 위해 Resource View를 생성하고 가상 메모리 주소의 매개체로 쓸 Descriptor Heap을 생성
+void GameFramework::CreateDescriptorHeap()
+{
+
+}
+
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
 	// CommandList에서 렌더링을 하기 전에 Reset을 호출하여 CommandList를 Open 상태로 만들어야 Commands를 담을 수 있음
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
-
-	
 
 	/* Rendering, Timer Reset 등의 작업 수행 */
 
