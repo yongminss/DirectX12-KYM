@@ -20,6 +20,11 @@ GameFramework::~GameFramework()
 
 	if (m_Fence != nullptr) m_Fence->Release();
 	CloseHandle(m_FenceEvent);
+
+	if (m_RenderTargetViewDescriptorHeap != nullptr) m_RenderTargetViewDescriptorHeap->Release();
+	for (int i = 0; i < 2; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
+	if (m_DepthStencilViewDescriptorHeap != nullptr) m_DepthStencilViewDescriptorHeap->Release();
+	if (m_DepthStencilBuffer != nullptr) m_DepthStencilBuffer->Release();
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
@@ -33,8 +38,8 @@ void GameFramework::CreateGameFramework(HWND &hwnd)
 	CreateSwapChain(hwnd);
 	// 4. CPU - GPU 동기화를 위해 Fence를 생성
 	CreateFence();
-	// 5. 리소스(Texture, Buffer)를 사용하기 위해 Descriptor Heap을 생성
-	CreateDescriptorHeap();
+	// 5. 리소스(Texture, Buffer)를 사용하기 위해 Descriptor Heap, Resource View, Resource를 생성
+	CreateResource();
 }
 
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
@@ -100,8 +105,8 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	m_Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &MultiSampleQualityLevel, sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
 
 	// 품질 수준이 1보다 크면 다중 샘플링을 활성화
-	unsigned int nMultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
-	m_ActiveMSAA = (nMultiSampleQualityLevel > 1) ? true : false;
+	m_ActiveMSAA = (m_nMultiSampleQualityLevel > 1) ? true : false;
+	m_nMultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
 
 	// SwapChain 생성
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
@@ -115,7 +120,7 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // 모니터 해상도에 맞게 확대하는 방법, 스케일링 지정 x
 	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
 	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
-	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? nMultiSampleQualityLevel - 1 : 0;
+	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_nMultiSampleQualityLevel - 1 : 0;
 	SwapChainDesc.OutputWindow = hwnd; // 출력 될 windows 설정
 	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
 	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
@@ -134,10 +139,62 @@ void GameFramework::CreateFence()
 	m_FenceEvent = CreateEvent(NULL, false, false, NULL);
 }
 
-// 리소스(Texture, Buffer) 사용을 위해 Resource View를 생성하고 가상 메모리 주소의 매개체로 쓸 Descriptor Heap을 생성
-void GameFramework::CreateDescriptorHeap()
+// 리소스(Texture, Buffer)를 만들기 위해 Resource View를 생성하고 가상 메모리 주소의 매개체로 쓸 Descriptor Heap을 생성
+void GameFramework::CreateResource()
 {
+	// RenderTarget View를 위한 Descriptor Heap을 생성
+	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
+	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	DescriptorHeapDesc.NumDescriptors = 2; // 서술자의 개수 결정 - 전면과 후면을 사용할 것이므로 2
+	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	DescriptorHeapDesc.NodeMask = 0;
+	m_Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_RenderTargetViewDescriptorHeap);
 
+	// Depth-Stencil View를 위한 Descriptor Heap을 생성
+	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DescriptorHeapDesc.NumDescriptors = 1; // 1개의 Depth-Stencil Buffer만 사용
+	m_Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_DepthStencilViewDescriptorHeap);
+
+	// RenderTarget View 생성 - 이미 SwapChain을 만들었으므로 별도의 리소스가 필요 없음 (View를 생성하려면 리소스가 필요)
+	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	for (int i = 0; i < 2; ++i) { // 2개의 Buffer
+		m_SwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_RenderTargetBuffer[i]);
+		m_Device->CreateRenderTargetView(m_RenderTargetBuffer[i], nullptr, RenderTargetDescriptorHandle); // nullptr - 리소스 형식과 같은 뷰를 만들어줌
+		RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
+
+	// Depth-Stencil Buffer 생성 - RenderTarget View와 달리 미리 만들어둔 리소스가 없으므로 리소스를 생성해야 함
+	// CreateCommittedResource()로 리소스를 만드려면 D3D12_HEAP_PROPERTIES, D3D12_RESOURCE_DESC, D3D12_CLEAR_VALUE 구조체를 설정해야 함
+	D3D12_HEAP_PROPERTIES HeapProperties;
+	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // Default - CPU는 접근 불가, GPU는 읽고 쓰기가 가능, 가장 빠르게 동작하는 메모리 힙에 만들어짐
+	HeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	HeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	HeapProperties.CreationNodeMask = 1;
+	HeapProperties.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC ResourceDesc;
+	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	ResourceDesc.Alignment = 0;
+	ResourceDesc.Width = 800;
+	ResourceDesc.Height = 600;
+	ResourceDesc.DepthOrArraySize = 1;
+	ResourceDesc.MipLevels = 1;
+	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	ResourceDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
+	ResourceDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_nMultiSampleQualityLevel - 1 : 0;
+
+	D3D12_CLEAR_VALUE ClearValue;
+	ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	ClearValue.DepthStencil.Depth = 1.f;
+	ClearValue.DepthStencil.Stencil = 0;
+
+	m_Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &ClearValue, __uuidof(ID3D12Resource), (void**)&m_DepthStencilBuffer);
+
+	// 리소스를 생성했으므로 Depth-Stencil View 생성
+	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_Device->CreateDepthStencilView(m_DepthStencilBuffer, nullptr, DepthStencilDescriptorHandle);
 }
 
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)

@@ -15,7 +15,13 @@ private:
 	ID3D12Fence *m_Fence = nullptr;
 	HANDLE m_FenceEvent = NULL;
 
+	ID3D12DescriptorHeap *m_RenderTargetViewDescriptorHeap = nullptr;
+	ID3D12Resource *m_RenderTargetBuffer[2]{ nullptr };
+	ID3D12DescriptorHeap *m_DepthStencilViewDescriptorHeap = nullptr;
+	ID3D12Resource *m_DepthStencilBuffer = nullptr;
+
 	bool m_ActiveMSAA = false;
+	unsigned int m_nMultiSampleQualityLevel = 0;
 
 public:
 	GameFramework();
@@ -27,7 +33,7 @@ public:
 	void CreateCommandQueueAndList();
 	void CreateSwapChain(HWND &hwnd);
 	void CreateFence();
-	void CreateDescriptorHeap();
+	void CreateResource();
 
 	void GameFrameworkLoop();
 };
