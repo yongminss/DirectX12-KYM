@@ -81,6 +81,7 @@ void GameFramework::CreateDirectDevice()
 void GameFramework::CreateCommandQueueAndList()
 {
 	D3D12_COMMAND_QUEUE_DESC CommandQueueDesc;
+	ZeroMemory(&CommandQueueDesc, sizeof(D3D12_COMMAND_QUEUE_DESC));
 	CommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // 기본적인 CommandQueue
 	CommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT; // GPU가 직접 실행할 수 있는 CommandList
 
@@ -156,12 +157,12 @@ void GameFramework::CreateResource()
 	m_Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_DepthStencilViewDescriptorHeap);
 
 	// RenderTarget View 생성 - 이미 SwapChain을 만들었으므로 별도의 리소스가 필요 없음 (View를 생성하려면 리소스가 필요)
-	//D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	//for (int i = 0; i < 2; ++i) { // 2개의 Buffer
-	//	m_SwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_RenderTargetBuffer[i]);
-	//	m_Device->CreateRenderTargetView(m_RenderTargetBuffer[i], nullptr, RenderTargetDescriptorHandle); // nullptr - 리소스 형식과 같은 뷰를 만들어줌
-	//	RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	//}
+	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	for (int i = 0; i < 2; ++i) { // 2개의 Buffer
+		m_SwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_RenderTargetBuffer[i]);
+		m_Device->CreateRenderTargetView(m_RenderTargetBuffer[i], nullptr, RenderTargetDescriptorHandle); // nullptr - 리소스 형식과 같은 뷰를 만들어줌
+		RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
 
 	// Depth-Stencil Buffer 생성 - RenderTarget View와 달리 미리 만들어둔 리소스가 없으므로 리소스를 생성해야 함
 	// CreateCommittedResource()로 리소스를 만드려면 D3D12_HEAP_PROPERTIES, D3D12_RESOURCE_DESC, D3D12_CLEAR_VALUE 구조체를 설정해야 함
@@ -225,6 +226,6 @@ void GameFramework::GameFrameworkLoop()
 	// 큐에 명령을 담기 위해 CommandList를 Close
 	m_CommandList->Close();
 
-	ID3D12CommandList *CommandList[] = { m_CommandList };
-	m_CommandQueue->ExecuteCommandLists(1, CommandList);
+	ID3D12CommandList *CommandLists[] = { m_CommandList };
+	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
