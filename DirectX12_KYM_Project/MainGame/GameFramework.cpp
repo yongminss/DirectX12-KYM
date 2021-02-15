@@ -209,13 +209,23 @@ void GameFramework::GameFrameworkLoop()
 	D3D12_RESOURCE_BARRIER ResourceBarrier;
 	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // 리소스 사용 변화를 나타내는 전이 장벽
 	ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	ResourceBarrier.Transition.pResource = m_RenderTargetBuffer[1];
+	ResourceBarrier.Transition.pResource = m_RenderTargetBuffer[0];
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 후면 버퍼에 write 할 수 있는 상태로 변경
 	ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_CommandList->ResourceBarrier(1, &ResourceBarrier);
 
-	// ----- Clear View and Rendering ... etc. ----- //
+	// RenderTarget & Depth-Stencil View의 CPU 주소를 Descriptor를 통해 가져옴
+	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+	// RenderTarget & Depth-Stencil를 원하는 값으로 초기화
+	float BackgroundColor[4] = { 0.2f, 0.f, 0.2f, 1.f };
+	m_CommandList->ClearRenderTargetView(RenderTargetDescriptorHandle, BackgroundColor, 0, nullptr);
+	m_CommandList->ClearDepthStencilView(DepthStencilDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+
+	// RenderTarget View와 Depth-Stencil View를 Descriptor를 통해 출력-병합(OM) 단계에 연결
+	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
 
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -228,4 +238,6 @@ void GameFramework::GameFrameworkLoop()
 
 	ID3D12CommandList *CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
+
+	m_SwapChain->Present(0, 0);
 }
