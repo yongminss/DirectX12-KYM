@@ -58,6 +58,7 @@ void GameFramework::CreateDirectDevice()
 	// 성능이 가장 높은 그래픽 카드를 찾는 검사 수행
 	for (int i = 0; DXGI_ERROR_NOT_FOUND != m_Factory->EnumAdapters1(i, &Adapter); ++i) {
 		DXGI_ADAPTER_DESC1 AdapterDesc;
+		ZeroMemory(&AdapterDesc, sizeof(DXGI_ADAPTER_DESC1));
 		Adapter->GetDesc1(&AdapterDesc);
 		if (HighPerformance <= AdapterDesc.DedicatedVideoMemory) {
 			GraphicIndex = i;
@@ -111,6 +112,7 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 
 	// SwapChain 생성
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
+	ZeroMemory(&SwapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 	// BufferDesc - 스왑 체인 버퍼의 성질을 설정하는 구조체 (ex. width, height, RefreshRate ... etc.)
 	SwapChainDesc.BufferDesc.Width = 800;
 	SwapChainDesc.BufferDesc.Height = 600;
@@ -145,6 +147,7 @@ void GameFramework::CreateResource()
 {
 	// RenderTarget View를 위한 Descriptor Heap을 생성
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
+	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	DescriptorHeapDesc.NumDescriptors = 2; // 서술자의 개수 결정 - 전면과 후면을 사용할 것이므로 2
 	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -174,6 +177,7 @@ void GameFramework::CreateResource()
 	HeapProperties.VisibleNodeMask = 1;
 
 	D3D12_RESOURCE_DESC ResourceDesc;
+	ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
 	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	ResourceDesc.Alignment = 0;
 	ResourceDesc.Width = 800;

@@ -25,6 +25,12 @@
     <Filter Include="소스 파일\Scene">
       <UniqueIdentifier>{027958cc-314d-433a-93e2-9ca448923fa8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Shader">
+      <UniqueIdentifier>{10cc2c3e-9833-4468-ad31-ed69b8c1aa92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HLSL">
+      <UniqueIdentifier>{04b1e7ec-37ca-4718-bec3-4c9d9d537c95}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -45,6 +51,9 @@
     <ClInclude Include="Scene.h">
       <Filter>소스 파일\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>소스 파일\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
@@ -59,6 +68,9 @@
     <ClCompile Include="Scene.cpp">
       <Filter>소스 파일\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>소스 파일\Shader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MainGame.rc">
@@ -72,5 +84,10 @@
     <Image Include="MainGame.ico">
       <Filter>리소스 파일</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shader.hlsl">
+      <Filter>소스 파일\HLSL</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

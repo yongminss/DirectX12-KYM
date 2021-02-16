@@ -9,5 +9,5 @@ public:
 	Scene();
 	~Scene();
 
-	void CreateRootSignature(ID3D12Device &Device);
+	void CreateRootSignature(ID3D12Device* &Device);
 };
