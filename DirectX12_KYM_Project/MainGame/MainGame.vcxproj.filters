@@ -22,6 +22,9 @@
     <Filter Include="소스 파일\GameFramework">
       <UniqueIdentifier>{ffa92d33-c1a7-48a0-827c-2b163f8240a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Scene">
+      <UniqueIdentifier>{027958cc-314d-433a-93e2-9ca448923fa8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -39,6 +42,9 @@
     <ClInclude Include="GameFramework.h">
       <Filter>소스 파일\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>소스 파일\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
@@ -49,6 +55,9 @@
     </ClCompile>
     <ClCompile Include="GameFramework.cpp">
       <Filter>소스 파일\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>소스 파일\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
