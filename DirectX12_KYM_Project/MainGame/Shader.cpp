@@ -95,30 +95,30 @@ D3D12_DEPTH_STENCIL_DESC Shader::CreateDepthStencilState()
 
 D3D12_SHADER_BYTECODE Shader::CreateVertexShader()
 {
-	ID3DBlob *m_VertexBlob = nullptr;
+	ID3DBlob *VertexBlob = nullptr;
 
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "VS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "VS", "vs_5_1", 0, 0, &VertexBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
+	ShaderByteCode.pShaderBytecode = VertexBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = VertexBlob->GetBufferSize();
 
-	if (m_VertexBlob != nullptr) m_VertexBlob->Release();
+	if (VertexBlob != nullptr) VertexBlob->Release();
 
 	return ShaderByteCode;
 }
 
 D3D12_SHADER_BYTECODE Shader::CreatePixelShader()
 {
-	ID3DBlob *m_PixelBlob = nullptr;
+	ID3DBlob *PixelBlob = nullptr;
 
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "PS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "PS", "ps_5_1", 0, 0, &PixelBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+	ShaderByteCode.pShaderBytecode = PixelBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = PixelBlob->GetBufferSize();
 
-	if (m_PixelBlob != nullptr) m_PixelBlob->Release();
+	if (PixelBlob != nullptr) PixelBlob->Release();
 
 	return ShaderByteCode;
 }

@@ -40,6 +40,8 @@ void GameFramework::CreateGameFramework(HWND &hwnd)
 	CreateFence();
 	// 5. 리소스(Texture, Buffer)를 사용하기 위해 Descriptor Heap, Resource View, Resource를 생성
 	CreateResource();
+	// 6. 실제 게임이 진행되는 (ex. Game Play or Rendering) 영역인 Scene을 생성
+	CreateScene();
 }
 
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
@@ -200,6 +202,16 @@ void GameFramework::CreateResource()
 	// 리소스를 생성했으므로 Depth-Stencil View 생성
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_Device->CreateDepthStencilView(m_DepthStencilBuffer, nullptr, DepthStencilDescriptorHandle);
+}
+
+// 실제 게임이 진행되며 RenderTarget에 Rendering을 할 오브젝트를 가지고 있는 Scene을 생성
+void GameFramework::CreateScene()
+{
+	m_Scene = new Scene();
+	// 리소스를 그래픽스 파이프라인에 연결하기 위해 RootSignature 생성
+	m_Scene->CreateRootSignature(m_Device);
+	// 그래픽스 파이프라인과 HLSL을 연결하기 위해 Shader 클래스 생성
+	m_Scene->CreateShader(m_Device);
 }
 
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)

@@ -31,3 +31,10 @@ void Scene::CreateRootSignature(ID3D12Device* &Device)
 	if (RootSignatureBlob != nullptr) RootSignatureBlob->Release();
 	if (ErrorBlob != nullptr) ErrorBlob->Release();
 }
+
+void Scene::CreateShader(ID3D12Device* &Device)
+{
+	m_Shader = new Shader();
+
+	m_Shader->CreateShader(Device, m_RootSignature);
+}

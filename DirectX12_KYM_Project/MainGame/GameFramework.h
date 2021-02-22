@@ -1,4 +1,7 @@
 #pragma once
+
+#include "Scene.h"
+
 // DirectX Device 초기화 및 관리
 class GameFramework
 {
@@ -20,6 +23,8 @@ private:
 	ID3D12DescriptorHeap *m_DepthStencilViewDescriptorHeap = nullptr;
 	ID3D12Resource *m_DepthStencilBuffer = nullptr;
 
+	Scene *m_Scene = nullptr;
+
 	bool m_ActiveMSAA = false;
 	unsigned int m_nMultiSampleQualityLevel = 0;
 
@@ -34,6 +39,7 @@ public:
 	void CreateSwapChain(HWND &hwnd);
 	void CreateFence();
 	void CreateResource();
+	void CreateScene();
 
 	void GameFrameworkLoop();
 };
