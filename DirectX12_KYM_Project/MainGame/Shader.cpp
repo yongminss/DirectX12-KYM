@@ -12,7 +12,7 @@ Shader::~Shader()
 	if (m_PipelineState != nullptr) m_PipelineState->Release();
 }
 
-void Shader::CreateShader(ID3D12Device* &Device, ID3D12RootSignature* &RootSignature)
+void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipelineStateDesc;
 	ZeroMemory(&GraphicsPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -95,9 +95,11 @@ D3D12_DEPTH_STENCIL_DESC Shader::CreateDepthStencilState()
 
 D3D12_SHADER_BYTECODE Shader::CreateVertexShader()
 {
+	unsigned int nCompileFlag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+
 	ID3DBlob *VertexBlob = nullptr;
 
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "VS", "vs_5_1", 0, 0, &VertexBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_1", nCompileFlag, 0, &VertexBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = VertexBlob->GetBufferPointer();
@@ -121,4 +123,9 @@ D3D12_SHADER_BYTECODE Shader::CreatePixelShader()
 	if (PixelBlob != nullptr) PixelBlob->Release();
 
 	return ShaderByteCode;
+}
+
+void Shader::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	CommandList->SetPipelineState(m_PipelineState);
 }

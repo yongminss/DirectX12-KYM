@@ -14,6 +14,8 @@ public:
 	Scene();
 	~Scene();
 
-	void CreateRootSignature(ID3D12Device* &Device);
-	void CreateShader(ID3D12Device* &Device);
+	void CreateRootSignature(ID3D12Device* Device);
+	void CreateShader(ID3D12Device* Device);
+
+	void Render(ID3D12GraphicsCommandList* CommandList);
 };

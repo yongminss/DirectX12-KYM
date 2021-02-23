@@ -3,13 +3,13 @@
 class Shader
 {
 private:
-	ID3D12PipelineState *m_PipelineState;
+	ID3D12PipelineState *m_PipelineState = nullptr;
 
 public:
 	Shader();
 	~Shader();
 
-	void CreateShader(ID3D12Device* &Device, ID3D12RootSignature* &RootSignature);
+	void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature);
 
 	D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -18,4 +18,6 @@ public:
 
 	D3D12_SHADER_BYTECODE CreateVertexShader();
 	D3D12_SHADER_BYTECODE CreatePixelShader();
+
+	void Render(ID3D12GraphicsCommandList* CommandList);
 };

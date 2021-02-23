@@ -208,6 +208,7 @@ void GameFramework::CreateResource()
 void GameFramework::CreateScene()
 {
 	m_Scene = new Scene();
+
 	// 리소스를 그래픽스 파이프라인에 연결하기 위해 RootSignature 생성
 	m_Scene->CreateRootSignature(m_Device);
 	// 그래픽스 파이프라인과 HLSL을 연결하기 위해 Shader 클래스 생성
@@ -242,6 +243,9 @@ void GameFramework::GameFrameworkLoop()
 
 	// RenderTarget View와 Depth-Stencil View를 Descriptor를 통해 출력-병합(OM) 단계에 연결
 	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
+
+	// Rendering
+	m_Scene->Render(m_CommandList);
 
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;

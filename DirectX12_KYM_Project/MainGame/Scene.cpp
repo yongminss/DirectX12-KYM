@@ -12,7 +12,7 @@ Scene::~Scene()
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 }
 
-void Scene::CreateRootSignature(ID3D12Device* &Device)
+void Scene::CreateRootSignature(ID3D12Device* Device)
 {
 	D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc;
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
@@ -32,9 +32,20 @@ void Scene::CreateRootSignature(ID3D12Device* &Device)
 	if (ErrorBlob != nullptr) ErrorBlob->Release();
 }
 
-void Scene::CreateShader(ID3D12Device* &Device)
+void Scene::CreateShader(ID3D12Device* Device)
 {
 	m_Shader = new Shader();
 
 	m_Shader->CreateShader(Device, m_RootSignature);
+}
+
+void Scene::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+	m_Shader->Render(CommandList);
+
+	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	CommandList->DrawInstanced(3, 1, 0, 0);
 }

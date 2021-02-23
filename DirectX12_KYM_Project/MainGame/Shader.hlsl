@@ -1,4 +1,4 @@
-float4 VS(uint nVertexID : SV_VertexID)
+float4 VS(uint nVertexID : SV_VertexID) :SV_Position
 {
     float4 output;
     
