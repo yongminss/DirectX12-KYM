@@ -21,6 +21,10 @@
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
 
+#include <iostream>
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+
+#pragma comment(linker, "/entry:wWinMainCRTStartup /subsystem:console")

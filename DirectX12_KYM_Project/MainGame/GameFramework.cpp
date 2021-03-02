@@ -25,6 +25,8 @@ GameFramework::~GameFramework()
 	for (int i = 0; i < 2; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
 	if (m_DepthStencilViewDescriptorHeap != nullptr) m_DepthStencilViewDescriptorHeap->Release();
 	if (m_DepthStencilBuffer != nullptr) m_DepthStencilBuffer->Release();
+
+	if (m_Scene != nullptr) delete m_Scene;
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
@@ -47,10 +49,8 @@ void GameFramework::CreateGameFramework(HWND &hwnd)
 // Direct3D를 사용하기 위해 장치를 생성 - DXGI
 void GameFramework::CreateDirectDevice()
 {
-	unsigned int nFactoryFlag = 0;
-
 	// DXGI 팩토리 생성 - 출력 담당, 어댑터의 생성 or 열거 등을 수행하는 역할, COM 객체
-	CreateDXGIFactory2(nFactoryFlag, __uuidof(IDXGIFactory4), (void**)&m_Factory);
+	CreateDXGIFactory2(0, __uuidof(IDXGIFactory4), (void**)&m_Factory);
 
 	// DXGI 팩토리를 생성했으니 그래픽 어댑터를 열거
 	IDXGIAdapter1 *Adapter = nullptr;
@@ -109,8 +109,8 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	m_Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &MultiSampleQualityLevel, sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
 
 	// 품질 수준이 1보다 크면 다중 샘플링을 활성화
-	m_ActiveMSAA = (m_nMultiSampleQualityLevel > 1) ? true : false;
-	m_nMultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
+	m_MultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
+	m_ActiveMSAA = (m_MultiSampleQualityLevel > 1) ? true : false;
 
 	// SwapChain 생성
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
@@ -125,7 +125,7 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // 모니터 해상도에 맞게 확대하는 방법, 스케일링 지정 x
 	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
 	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
-	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_nMultiSampleQualityLevel - 1 : 0;
+	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
 	SwapChainDesc.OutputWindow = hwnd; // 출력 될 windows 설정
 	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
 	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
@@ -190,7 +190,7 @@ void GameFramework::CreateResource()
 	ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	ResourceDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
-	ResourceDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_nMultiSampleQualityLevel - 1 : 0;
+	ResourceDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
 
 	D3D12_CLEAR_VALUE ClearValue;
 	ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -226,7 +226,7 @@ void GameFramework::GameFrameworkLoop()
 	D3D12_RESOURCE_BARRIER ResourceBarrier;
 	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // 리소스 사용 변화를 나타내는 전이 장벽
 	ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	ResourceBarrier.Transition.pResource = m_RenderTargetBuffer[0];
+	ResourceBarrier.Transition.pResource = m_RenderTargetBuffer[m_SwapChainIndex];
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 후면 버퍼에 write 할 수 있는 상태로 변경
 	ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -237,7 +237,7 @@ void GameFramework::GameFrameworkLoop()
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// RenderTarget & Depth-Stencil를 원하는 값으로 초기화
-	float BackgroundColor[4] = { 0.2f, 0.f, 0.2f, 1.f };
+	float BackgroundColor[4] = { 0.2f, 0.2f, 0.2f, 1.f };
 	m_CommandList->ClearRenderTargetView(RenderTargetDescriptorHandle, BackgroundColor, 0, nullptr);
 	m_CommandList->ClearDepthStencilView(DepthStencilDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 

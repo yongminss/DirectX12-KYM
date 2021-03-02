@@ -26,7 +26,9 @@ private:
 	Scene *m_Scene = nullptr;
 
 	bool m_ActiveMSAA = false;
-	unsigned int m_nMultiSampleQualityLevel = 0;
+	unsigned int m_MultiSampleQualityLevel = 0;
+
+	unsigned int m_SwapChainIndex = 0;
 
 public:
 	GameFramework();

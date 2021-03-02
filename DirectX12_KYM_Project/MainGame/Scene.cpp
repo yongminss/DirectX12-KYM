@@ -10,6 +10,8 @@ Scene::Scene()
 Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
+
+	if (m_Shader != nullptr) delete m_Shader;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -42,6 +44,9 @@ void Scene::CreateShader(ID3D12Device* Device)
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+	CommandList->RSSetViewports(1, &m_Viewport);
+	CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
 	m_Shader->Render(CommandList);
 

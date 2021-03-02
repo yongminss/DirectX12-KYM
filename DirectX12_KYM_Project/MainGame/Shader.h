@@ -5,6 +5,9 @@ class Shader
 private:
 	ID3D12PipelineState *m_PipelineState = nullptr;
 
+	ID3DBlob *m_VertexBlob = nullptr;
+	ID3DBlob *m_PixelBlob = nullptr;
+
 public:
 	Shader();
 	~Shader();
