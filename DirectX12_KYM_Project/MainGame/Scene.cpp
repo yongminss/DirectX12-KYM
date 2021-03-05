@@ -11,7 +11,7 @@ Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
-	if (m_Shader != nullptr) delete m_Shader;
+	if (m_GameObject != nullptr) delete m_GameObject;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -34,11 +34,11 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	if (ErrorBlob != nullptr) ErrorBlob->Release();
 }
 
-void Scene::CreateShader(ID3D12Device* Device)
+void Scene::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
-	m_Shader = new Shader();
+	m_GameObject = new GameObject();
 
-	m_Shader->CreateShader(Device, m_RootSignature);
+	m_GameObject->CreateGameObject(Device, CommandList, m_RootSignature);
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -48,9 +48,5 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	CommandList->RSSetViewports(1, &m_Viewport);
 	CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
-	m_Shader->Render(CommandList);
-
-	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	CommandList->DrawInstanced(3, 1, 0, 0);
+	m_GameObject->Render(CommandList);
 }

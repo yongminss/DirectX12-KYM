@@ -16,7 +16,7 @@ private:
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
 	ID3D12Fence *m_Fence = nullptr;
-	HANDLE m_FenceEvent = NULL;
+	HANDLE m_FenceEvent{ 0 };
 
 	ID3D12DescriptorHeap *m_RenderTargetViewDescriptorHeap = nullptr;
 	ID3D12Resource *m_RenderTargetBuffer[2]{ nullptr };

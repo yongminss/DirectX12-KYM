@@ -1,18 +1,26 @@
-float4 VS(uint nVertexID : SV_VertexID) :SV_Position
+struct VS_Input
 {
-    float4 output;
+    float3 position : POSITION;
+    float4 diffuse : COLOR;
+};
+
+struct VS_Output
+{
+    float4 position : SV_Position;
+    float4 diffuse : COLOR;
+};
+
+VS_Output VS(VS_Input Input)
+{
+    VS_Output output;
     
-    if (nVertexID == 0)
-        output = float4(0.f, 0.5f, 0.f, 1.f);
-    else if (nVertexID == 1)
-        output = float4(0.5f, -0.5f, 0.f, 1.f);
-    else if (nVertexID == 2)
-        output = float4(-0.5f, -0.5f, 0.f, 1.f);
+    output.position = float4(Input.position, 1.f);
+    output.diffuse = Input.diffuse;
     
     return output;
 }
 
-float4 PS(float4 input : SV_Position) : SV_TARGET
+float4 PS(VS_Output Input) : SV_TARGET
 {
-    return float4(1.f, 0.f, 0.f, 1.f);
+    return Input.diffuse;
 }

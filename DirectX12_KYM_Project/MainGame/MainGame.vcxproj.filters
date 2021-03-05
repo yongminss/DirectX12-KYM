@@ -25,11 +25,20 @@
     <Filter Include="소스 파일\Scene">
       <UniqueIdentifier>{027958cc-314d-433a-93e2-9ca448923fa8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\Shader">
-      <UniqueIdentifier>{10cc2c3e-9833-4468-ad31-ed69b8c1aa92}</UniqueIdentifier>
-    </Filter>
     <Filter Include="소스 파일\HLSL">
       <UniqueIdentifier>{04b1e7ec-37ca-4718-bec3-4c9d9d537c95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\GameObject">
+      <UniqueIdentifier>{ba4b4b22-80cc-4937-b451-b583a08e349c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\GameObject\Shader">
+      <UniqueIdentifier>{10cc2c3e-9833-4468-ad31-ed69b8c1aa92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\GameObject\Mesh">
+      <UniqueIdentifier>{e2f3b99a-a9a3-4b12-8178-311e86941528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\GameObject\Vertex">
+      <UniqueIdentifier>{4cfba3ae-2766-42ac-b872-d90f496cc00f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,7 +61,16 @@
       <Filter>소스 파일\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
-      <Filter>소스 파일\Shader</Filter>
+      <Filter>소스 파일\GameObject\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>소스 파일\GameObject\Vertex</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>소스 파일\GameObject\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>소스 파일\GameObject</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -69,7 +87,16 @@
       <Filter>소스 파일\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
-      <Filter>소스 파일\Shader</Filter>
+      <Filter>소스 파일\GameObject\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Vertex.cpp">
+      <Filter>소스 파일\GameObject\Vertex</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>소스 파일\GameObject\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>소스 파일\GameObject</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
