@@ -15,13 +15,64 @@ Mesh::~Mesh()
 
 void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
-	Vertex MeshVertex[3];
+	Vertex MeshVertex[36];
 
-	unsigned int ByteSize = sizeof(Vertex) * 3;
+	m_VertexCount = 36;
+	unsigned int ByteSize = sizeof(Vertex) * m_VertexCount;
 
-	MeshVertex[0] = Vertex(DirectX::XMFLOAT3(0.f, 0.5f, 0.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
-	MeshVertex[1] = Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.f), DirectX::XMFLOAT4(0.f, 1.f, 0.f, 1.f));
-	MeshVertex[2] = Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.f), DirectX::XMFLOAT4(0.f, 0.f, 1.f, 1.f));
+	// 사각형 앞면의 위쪽 삼각형
+	MeshVertex[0] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[1] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[2] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	// 사각형 앞면의 아래쪽 삼각형
+	MeshVertex[3] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+	MeshVertex[4] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+	MeshVertex[5] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+
+	// 사각형 윗면의 위쪽 삼각형
+	MeshVertex[6] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 0.f, 1.f));
+	MeshVertex[7] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 0.f, 1.f));
+	MeshVertex[8] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 1.f, 0.f, 1.f));
+	// 사각형 윗면의 아래쪽 삼각형
+	MeshVertex[9] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[10] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[11] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+
+	// 사각형 뒷면의 위쪽 삼각형
+	MeshVertex[12] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[13] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[14] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	// 사각형 뒷면의 아래쪽 삼각형
+	MeshVertex[15] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[16] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[17] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+
+	// 사각형 아랫면의 위쪽 삼각형
+	MeshVertex[18] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[19] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	MeshVertex[20] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 0.f, 1.f));
+	// 사각형 아랫면의 아래쪽 삼각형
+	MeshVertex[21] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+	MeshVertex[22] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+	MeshVertex[23] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+
+	// 사각형 왼쪽면의 위쪽 삼각형
+	MeshVertex[24] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, +10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+	MeshVertex[25] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+	MeshVertex[26] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 1.f, 0.f, 1.f));
+	// 사각형 왼쪽면의 아래쪽 삼각형
+	MeshVertex[27] = Vertex(DirectX::XMFLOAT3(-10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[28] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, -10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+	MeshVertex[29] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
+
+	// 사각형 오른쪽면의 위쪽 삼각형
+	MeshVertex[30] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+	MeshVertex[31] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+	MeshVertex[32] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+	// 사각형 오른쪽면의 아래쪽 삼각형
+	MeshVertex[33] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+	MeshVertex[34] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+	MeshVertex[35] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
 
 	CreateVertexBuffer(Device, CommandList, MeshVertex, ByteSize);
 
@@ -33,6 +84,7 @@ void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandLi
 void Mesh::CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int size)
 {
 	D3D12_HEAP_PROPERTIES HeapProperties;
+	ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
 	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 	HeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 	HeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
@@ -83,5 +135,5 @@ void Mesh::Render(ID3D12GraphicsCommandList* CommandList)
 
 	CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
 
-	CommandList->DrawInstanced(3, 1, 0, 0);
+	CommandList->DrawInstanced(m_VertexCount, 1, 0, 0);
 }

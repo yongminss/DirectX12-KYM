@@ -22,7 +22,7 @@ GameFramework::~GameFramework()
 	CloseHandle(m_FenceEvent);
 
 	if (m_RenderTargetViewDescriptorHeap != nullptr) m_RenderTargetViewDescriptorHeap->Release();
-	//for (int i = 0; i < 2; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
+	for (int i = 0; i < 2; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
 	if (m_DepthStencilViewDescriptorHeap != nullptr) m_DepthStencilViewDescriptorHeap->Release();
 	if (m_DepthStencilBuffer != nullptr) m_DepthStencilBuffer->Release();
 
@@ -207,12 +207,14 @@ void GameFramework::CreateResource()
 // 실제 게임이 진행되며 RenderTarget에 Rendering을 할 오브젝트를 가지고 있는 Scene을 생성
 void GameFramework::CreateScene()
 {
-	m_Scene = new Scene();
+	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
-	// 리소스를 그래픽스 파이프라인에 연결하기 위해 RootSignature 생성
-	m_Scene->CreateRootSignature(m_Device);
-	// 그래픽스 파이프라인과 HLSL을 연결하기 위해 Shader 클래스 생성
-	m_Scene->CreateGameObject(m_Device, m_CommandList);
+	m_Scene = new Scene();
+	m_Scene->CreateScene(m_Device, m_CommandList);
+
+	m_CommandList->Close();
+	ID3D12CommandList *CommandLists[] = { m_CommandList };
+	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)

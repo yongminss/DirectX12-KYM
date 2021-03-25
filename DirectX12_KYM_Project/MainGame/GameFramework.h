@@ -16,10 +16,10 @@ private:
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
 	ID3D12Fence *m_Fence = nullptr;
-	HANDLE m_FenceEvent{ 0 };
+	HANDLE m_FenceEvent{};
 
 	ID3D12DescriptorHeap *m_RenderTargetViewDescriptorHeap = nullptr;
-	ID3D12Resource *m_RenderTargetBuffer[2]{ nullptr };
+	ID3D12Resource *m_RenderTargetBuffer[2]{};
 	ID3D12DescriptorHeap *m_DepthStencilViewDescriptorHeap = nullptr;
 	ID3D12Resource *m_DepthStencilBuffer = nullptr;
 

@@ -1,5 +1,5 @@
 #pragma once
-// 오브젝트가 사용하는 정점 설정
+// 오브젝트가 사용하는 정점
 class Vertex
 {
 private:

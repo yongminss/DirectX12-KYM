@@ -8,7 +8,9 @@ class Mesh
 private:
 	ID3D12Resource *m_VertexBuffer = nullptr;
 	ID3D12Resource *m_UploadVertexBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView{ 0 };
+	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView{};
+
+	unsigned int m_VertexCount = 0;
 
 public:
 	Mesh();

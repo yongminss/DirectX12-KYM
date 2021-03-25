@@ -40,7 +40,6 @@ void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignatu
 D3D12_INPUT_LAYOUT_DESC Shader::CreateInputLayout()
 {
 	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
-	//ZeroMemory(&InputElementDesc, sizeof(InputElementDesc));
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	InputElementDesc[1] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
