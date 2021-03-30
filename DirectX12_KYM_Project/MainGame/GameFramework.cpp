@@ -32,12 +32,14 @@ GameFramework::~GameFramework()
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
 void GameFramework::CreateGameFramework(HWND &hwnd)
 {
+	m_hwnd = hwnd;
+
 	// 1. DirectX 12를 사용하기 위해 Device를 생성
 	CreateDirectDevice();
 	// 2. DirectX 12 그래픽 렌더링을 위해 CommandQueue와 CommandList를 생성
 	CreateCommandQueueAndList();
 	// 3. Double Buffering을 위해 SwapChain을 생성
-	CreateSwapChain(hwnd);
+	CreateSwapChain();
 	// 4. CPU - GPU 동기화를 위해 Fence를 생성
 	CreateFence();
 	// 5. 리소스(Texture, Buffer)를 사용하기 위해 Descriptor Heap, Resource View, Resource를 생성
@@ -54,21 +56,21 @@ void GameFramework::CreateDirectDevice()
 
 	// DXGI 팩토리를 생성했으니 그래픽 어댑터를 열거
 	IDXGIAdapter1 *Adapter = nullptr;
-	int GraphicIndex = 0;
+	unsigned int GpuIndex = 0;
 	unsigned int HighPerformance = 0;
 
 	// 성능이 가장 높은 그래픽 카드를 찾는 검사 수행
-	for (int i = 0; DXGI_ERROR_NOT_FOUND != m_Factory->EnumAdapters1(i, &Adapter); ++i) {
+	for (unsigned int i = 0; DXGI_ERROR_NOT_FOUND != m_Factory->EnumAdapters1(i, &Adapter); ++i) {
 		DXGI_ADAPTER_DESC1 AdapterDesc;
 		ZeroMemory(&AdapterDesc, sizeof(DXGI_ADAPTER_DESC1));
 		Adapter->GetDesc1(&AdapterDesc);
 		if (HighPerformance <= AdapterDesc.DedicatedVideoMemory) {
-			GraphicIndex = i;
+			GpuIndex = i;
 			HighPerformance = AdapterDesc.DedicatedVideoMemory;
 		}
 	}
 	// 위의 검사에서 찾은 그래픽 카드를 연결 - DirectX 12를 지원하면 특성 레벨 12.0을 연결하고 그렇지 않으면 11.0을 연결
-	m_Factory->EnumAdapters1(GraphicIndex, &Adapter);
+	m_Factory->EnumAdapters1(GpuIndex, &Adapter);
 	if (Adapter == nullptr) {
 		m_Factory->EnumWarpAdapter(__uuidof(IDXGIAdapter1), (void**)&Adapter);
 		D3D12CreateDevice(Adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**)&m_Device);
@@ -96,7 +98,7 @@ void GameFramework::CreateCommandQueueAndList()
 }
 
 // Double Buffering을 하기 위해 SwapChain을 생성해야 함
-void GameFramework::CreateSwapChain(HWND &hwnd)
+void GameFramework::CreateSwapChain()
 {
 	// SwapChain을 만들기 전에 다중 샘플링을 하기 위해 품질 지원을 검사
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS MultiSampleQualityLevel;
@@ -116,8 +118,8 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
 	ZeroMemory(&SwapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 	// BufferDesc - 스왑 체인 버퍼의 성질을 설정하는 구조체 (ex. width, height, RefreshRate ... etc.)
-	SwapChainDesc.BufferDesc.Width = 800;
-	SwapChainDesc.BufferDesc.Height = 600;
+	SwapChainDesc.BufferDesc.Width = Window_Width;
+	SwapChainDesc.BufferDesc.Height = Window_Height;
 	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1; // RefreshRate - 화면 갱신 횟수, 1초에 60Hz
 	SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 후면 버퍼(픽셀)의 형식, 하나의 픽셀은 32bit로 설정
@@ -126,7 +128,7 @@ void GameFramework::CreateSwapChain(HWND &hwnd)
 	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
 	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
 	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
-	SwapChainDesc.OutputWindow = hwnd; // 출력 될 windows 설정
+	SwapChainDesc.OutputWindow = m_hwnd; // 출력 될 windows 설정
 	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
 	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
 	SwapChainDesc.Windowed = true; // 창모드 설정 - true이면 창 모드, false이면 전체 모드
@@ -182,8 +184,8 @@ void GameFramework::CreateResource()
 	ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
 	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	ResourceDesc.Alignment = 0;
-	ResourceDesc.Width = 800;
-	ResourceDesc.Height = 600;
+	ResourceDesc.Width = Window_Width;
+	ResourceDesc.Height = Window_Height;
 	ResourceDesc.DepthOrArraySize = 1;
 	ResourceDesc.MipLevels = 1;
 	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -207,6 +209,8 @@ void GameFramework::CreateResource()
 // 실제 게임이 진행되며 RenderTarget에 Rendering을 할 오브젝트를 가지고 있는 Scene을 생성
 void GameFramework::CreateScene()
 {
+	// CommandList에서 렌더링을 하기 전에 Reset을 호출하여 CommandList를 Open 상태로 만들어야 Commands를 담을 수 있음
+	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
 	m_Scene = new Scene();
@@ -220,8 +224,6 @@ void GameFramework::CreateScene()
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
-	// CommandList에서 렌더링을 하기 전에 Reset을 호출하여 CommandList를 Open 상태로 만들어야 Commands를 담을 수 있음
-	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
 	// RenderTarget Buffer에 대한 Resource Barrier를 설정
@@ -261,5 +263,6 @@ void GameFramework::GameFrameworkLoop()
 	ID3D12CommandList *CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 
+	// Rendering이 끝난 RenderTarget이 화면에 보이도록 Present 호출
 	m_SwapChain->Present(0, 0);
 }

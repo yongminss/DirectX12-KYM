@@ -25,6 +25,8 @@ private:
 
 	Scene *m_Scene = nullptr;
 
+	HWND m_hwnd{};
+
 	bool m_ActiveMSAA = false;
 	unsigned int m_MultiSampleQualityLevel = 0;
 
@@ -38,7 +40,7 @@ public:
 
 	void CreateDirectDevice();
 	void CreateCommandQueueAndList();
-	void CreateSwapChain(HWND &hwnd);
+	void CreateSwapChain();
 	void CreateFence();
 	void CreateResource();
 	void CreateScene();

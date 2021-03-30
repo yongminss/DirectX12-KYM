@@ -29,3 +29,6 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 #pragma comment(linker, "/entry:wWinMainCRTStartup /subsystem:console")
+
+#define Window_Width 800
+#define Window_Height 600

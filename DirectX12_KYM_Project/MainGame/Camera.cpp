@@ -17,13 +17,14 @@ void Camera::CreateCamera()
 	XMStoreFloat4x4(&m_CameraPos, DirectX::XMMatrixIdentity());
 	XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixIdentity());
 
-	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixPerspectiveFovLH(60.f, 800.f / 600.f, 1.01f, 5000.f));
-
-	DirectX::XMFLOAT3 position = { 0.f, 15.f, -25.f };
+	DirectX::XMFLOAT3 position = { 0.f, 20.f, -20.f };
 	DirectX::XMFLOAT3 look = { 0.f, 0.f, 0.f };
 	DirectX::XMFLOAT3 up = { 0.f, 1.f, 0.f };
 
 	DirectX::XMStoreFloat4x4(&m_CameraPos, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&position), DirectX::XMLoadFloat3(&look), DirectX::XMLoadFloat3(&up)));
+
+	float AspectRatio = static_cast<float>(Window_Width) / static_cast<float>(Window_Height);
+	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixPerspectiveFovLH(60.f, AspectRatio, 1.01f, 5000.f));
 }
 
 void Camera::SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList)

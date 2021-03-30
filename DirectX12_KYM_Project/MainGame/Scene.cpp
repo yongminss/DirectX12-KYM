@@ -11,6 +11,7 @@ Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
+	if (m_Camera != nullptr) delete m_Camera;
 	if (m_GameObject != nullptr) delete m_GameObject;
 }
 

@@ -9,8 +9,8 @@ class Scene
 private:
 	ID3D12RootSignature *m_RootSignature = nullptr;
 
-	GameObject *m_GameObject = nullptr;
 	Camera *m_Camera = nullptr;
+	GameObject *m_GameObject = nullptr;
 
 public:
 	Scene();

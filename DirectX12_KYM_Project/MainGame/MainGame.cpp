@@ -106,7 +106,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	DWORD dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_BORDER;
 
-	HWND hWnd = CreateWindow(szWindowClass, szTitle, dwStyle, 100, 100, 800, 600, NULL, NULL, hInstance, NULL);
+	HWND hWnd = CreateWindow(szWindowClass, szTitle, dwStyle, 100, 100, Window_Width, Window_Height, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{

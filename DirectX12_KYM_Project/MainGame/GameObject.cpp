@@ -9,7 +9,8 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {
-
+	if (m_Mesh != nullptr) delete m_Mesh;
+	if (m_Shader != nullptr) delete m_Shader;
 }
 
 void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
