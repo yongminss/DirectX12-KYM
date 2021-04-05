@@ -26,9 +26,32 @@ void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	m_Shader->CreateShader(Device, RootSignature);
 }
 
+void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
+{
+	m_WorldPos._41 = Position.x;
+	m_WorldPos._42 = Position.y;
+	m_WorldPos._43 = Position.z;
+}
+
+DirectX::XMFLOAT3 GameObject::GetPosition()
+{
+	return DirectX::XMFLOAT3(m_WorldPos._41, m_WorldPos._42, m_WorldPos._43);
+}
+
+void GameObject::MoveForward()
+{
+	m_WorldPos._43 += 50.f;
+}
+
+void GameObject::MoveBackward()
+{
+	m_WorldPos._43 -= 50.f;
+}
+
 void GameObject::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)
 {
 	DirectX::XMFLOAT4X4 worldpos{};
+
 	DirectX::XMStoreFloat4x4(&worldpos, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_WorldPos)));
 	CommandList->SetGraphicsRoot32BitConstants(1, 16, &worldpos, 0);
 }

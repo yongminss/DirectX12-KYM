@@ -46,4 +46,6 @@ public:
 	void CreateScene();
 
 	void GameFrameworkLoop();
+
+	void KeyboardMessage(UINT MessageIndex, WPARAM wParam);
 };

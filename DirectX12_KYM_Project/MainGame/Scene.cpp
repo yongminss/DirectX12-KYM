@@ -11,7 +11,7 @@ Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
-	if (m_Camera != nullptr) delete m_Camera;
+	if (m_Player != nullptr) delete m_Player;
 	if (m_GameObject != nullptr) delete m_GameObject;
 }
 
@@ -55,21 +55,42 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 리소스를 그래픽스 파이프라인에 연결하는 역할을 하는 RootSignature 생성
 	CreateRootSignature(Device);
 
-	// 게임 월드를 Scene에서 보여주기 위해 Camera 생성
-	m_Camera = new Camera();
-	m_Camera->CreateCamera();
+	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
+	m_Player = new Player();
+	m_Player->CreatePlayer(Device, CommandList, m_RootSignature);
 
 	// 게임 월드에 등장하는 Game Object 생성
 	m_GameObject = new GameObject();
 	m_GameObject->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_GameObject->SetPosition(DirectX::XMFLOAT3(100.f, 0.f, 100.f));
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
-	if (m_Camera != nullptr) m_Camera->SetViewportAndScissorRect(CommandList);
-	if (m_Camera != nullptr) m_Camera->UpdateShaderCode(CommandList);
+	if (m_Player != nullptr) m_Player->Render(CommandList);
 
 	if (m_GameObject != nullptr) m_GameObject->Render(CommandList);
+}
+
+void Scene::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
+{
+	switch (MessageIndex)
+	{
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case 'w':
+		case 'W':
+			m_Player->MoveForward();
+			break;
+
+		case 's':
+		case 'S':
+			m_Player->MoveBackward();
+			break;
+		}
+		break;
+	}
 }

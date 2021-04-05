@@ -17,4 +17,5 @@ public:
 
 	void SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
+	void Update(ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Position);
 };

@@ -224,6 +224,7 @@ void GameFramework::CreateScene()
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
+	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
 	// RenderTarget Buffer에 대한 Resource Barrier를 설정
@@ -238,6 +239,7 @@ void GameFramework::GameFrameworkLoop()
 
 	// RenderTarget & Depth-Stencil View의 CPU 주소를 Descriptor를 통해 가져옴
 	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * m_SwapChainIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// RenderTarget & Depth-Stencil를 원하는 값으로 초기화
@@ -249,7 +251,7 @@ void GameFramework::GameFrameworkLoop()
 	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
 
 	// Rendering
-	m_Scene->Render(m_CommandList);
+	if (m_Scene) m_Scene->Render(m_CommandList);
 
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -265,4 +267,11 @@ void GameFramework::GameFrameworkLoop()
 
 	// Rendering이 끝난 RenderTarget이 화면에 보이도록 Present 호출
 	m_SwapChain->Present(0, 0);
+
+	m_SwapChainIndex = m_SwapChain->GetCurrentBackBufferIndex();
+}
+
+void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
+{
+	m_Scene->KeyboardMessage(MessageIndex, wParam);
 }

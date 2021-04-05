@@ -45,3 +45,10 @@ void Camera::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)
 
 	CommandList->SetGraphicsRoot32BitConstants(0, 16, &ProjectionPos, 16);
 }
+
+void Camera::Update(ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Position)
+{
+	SetViewportAndScissorRect(CommandList);
+
+	UpdateShaderCode(CommandList);
+}
