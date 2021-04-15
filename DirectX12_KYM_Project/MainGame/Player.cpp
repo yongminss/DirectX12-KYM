@@ -29,7 +29,7 @@ void Player::CreatePlayer(ID3D12Device* Device, ID3D12GraphicsCommandList* Comma
 
 void Player::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	m_Camera->Update(CommandList, GetPosition());
+	m_Camera->Update(CommandList, this);
 
 	UpdateShaderCode(CommandList);
 

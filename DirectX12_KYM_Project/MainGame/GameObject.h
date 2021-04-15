@@ -19,9 +19,16 @@ public:
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
 	void SetPosition(DirectX::XMFLOAT3 Position);
+
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetUp();
+	DirectX::XMFLOAT3 GetLook();
 	DirectX::XMFLOAT3 GetPosition();
+
 	void MoveForward();
 	void MoveBackward();
+	void MoveLeft();
+	void MoveRight();
 
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	void Render(ID3D12GraphicsCommandList* CommandList);

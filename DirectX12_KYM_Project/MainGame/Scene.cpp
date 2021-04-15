@@ -12,7 +12,7 @@ Scene::~Scene()
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
 	if (m_Player != nullptr) delete m_Player;
-	if (m_GameObject != nullptr) delete m_GameObject;
+	//if (m_GameObject != nullptr) delete m_GameObject;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -60,9 +60,14 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Player->CreatePlayer(Device, CommandList, m_RootSignature);
 
 	// 게임 월드에 등장하는 Game Object 생성
-	m_GameObject = new GameObject();
-	m_GameObject->CreateGameObject(Device, CommandList, m_RootSignature);
-	m_GameObject->SetPosition(DirectX::XMFLOAT3(100.f, 0.f, 100.f));
+	m_GameObjects.reserve(100);
+	for (int i = 0; i < 10; ++i) {
+		for (int j = 0; j < 10; ++j) {
+			m_GameObjects.emplace_back(new GameObject());
+			m_GameObjects.back()->CreateGameObject(Device, CommandList, m_RootSignature);
+			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(-225.f + (i * 50), -50.f, 50.f + (50 * j)));
+		}
+	}
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -71,7 +76,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
 
-	if (m_GameObject != nullptr) m_GameObject->Render(CommandList);
+	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
 }
 
 void Scene::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
@@ -89,6 +94,16 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
 		case 's':
 		case 'S':
 			m_Player->MoveBackward();
+			break;
+
+		case 'a':
+		case 'A':
+			m_Player->MoveLeft();
+			break;
+
+		case 'd':
+		case 'D':
+			m_Player->MoveRight();
 			break;
 		}
 		break;

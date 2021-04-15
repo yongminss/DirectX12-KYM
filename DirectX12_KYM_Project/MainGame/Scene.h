@@ -10,7 +10,7 @@ private:
 	ID3D12RootSignature *m_RootSignature = nullptr;
 
 	Player *m_Player = nullptr;
-	GameObject *m_GameObject = nullptr;
+	std::vector<GameObject*> m_GameObjects{};
 
 public:
 	Scene();
