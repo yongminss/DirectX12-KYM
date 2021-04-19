@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameFramework.h"
+#include <chrono>
 
 
 GameFramework::GameFramework()
@@ -224,6 +225,8 @@ void GameFramework::CreateScene()
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
+	std::chrono::system_clock::time_point LoopStartTime = std::chrono::system_clock::now();
+
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
@@ -269,6 +272,18 @@ void GameFramework::GameFrameworkLoop()
 	m_SwapChain->Present(0, 0);
 
 	m_SwapChainIndex = m_SwapChain->GetCurrentBackBufferIndex();
+
+	// 프레임 당 경과 시간(Elapsed Time)과 1초에 몇 번의 프레임을 진행(Frame Rate) 하는지 계산
+	std::chrono::duration<float> ElapsedTime = std::chrono::system_clock::now() - LoopStartTime;
+	m_ElapsedTime = ElapsedTime.count();
+	m_SecondsCounter += m_ElapsedTime;
+
+	if (m_SecondsCounter >= 1.f) {
+		std::cout << "Frame Rate : " << m_FrameRate << "\n";
+		m_SecondsCounter = 0.f;
+		m_FrameRate = 0;
+	}
+	++m_FrameRate;
 }
 
 void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM wParam)

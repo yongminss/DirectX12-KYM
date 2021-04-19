@@ -32,6 +32,10 @@ private:
 
 	unsigned int m_SwapChainIndex = 0;
 
+	unsigned int m_FrameRate = 0;
+	float m_ElapsedTime = 0.f;
+	float m_SecondsCounter = 0.f;
+
 public:
 	GameFramework();
 	~GameFramework();

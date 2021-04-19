@@ -13,35 +13,38 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="소스 파일\Main">
-      <UniqueIdentifier>{d0acab63-a1e0-43d7-8548-ed9929c4149b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="소스 파일\Custom">
       <UniqueIdentifier>{a0c3b3ce-e2f1-4ebe-a567-de8815bd490b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\GameFramework">
-      <UniqueIdentifier>{ffa92d33-c1a7-48a0-827c-2b163f8240a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\Scene">
-      <UniqueIdentifier>{027958cc-314d-433a-93e2-9ca448923fa8}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\HLSL">
       <UniqueIdentifier>{04b1e7ec-37ca-4718-bec3-4c9d9d537c95}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\GameObject">
+    <Filter Include="소스 파일\01. Main">
+      <UniqueIdentifier>{d0acab63-a1e0-43d7-8548-ed9929c4149b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\02. GameFramework">
+      <UniqueIdentifier>{ffa92d33-c1a7-48a0-827c-2b163f8240a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\03. Scene">
+      <UniqueIdentifier>{027958cc-314d-433a-93e2-9ca448923fa8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject">
       <UniqueIdentifier>{ba4b4b22-80cc-4937-b451-b583a08e349c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\GameObject\Shader">
+    <Filter Include="소스 파일\04. GameObject\Shader">
       <UniqueIdentifier>{10cc2c3e-9833-4468-ad31-ed69b8c1aa92}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\GameObject\Mesh">
+    <Filter Include="소스 파일\04. GameObject\Mesh">
       <UniqueIdentifier>{e2f3b99a-a9a3-4b12-8178-311e86941528}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\GameObject\Vertex">
+    <Filter Include="소스 파일\04. GameObject\Vertex">
       <UniqueIdentifier>{4cfba3ae-2766-42ac-b872-d90f496cc00f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\Camera">
+    <Filter Include="소스 파일\05. Camera">
       <UniqueIdentifier>{a13e3427-2f4f-46c7-bdd4-db828d481ee3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\Child">
+      <UniqueIdentifier>{40ad34bb-3fd3-44b7-b1e6-9186318705e2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -55,63 +58,63 @@
       <Filter>소스 파일\Custom</Filter>
     </ClInclude>
     <ClInclude Include="MainGame.h">
-      <Filter>소스 파일\Main</Filter>
+      <Filter>소스 파일\01. Main</Filter>
     </ClInclude>
     <ClInclude Include="GameFramework.h">
-      <Filter>소스 파일\GameFramework</Filter>
+      <Filter>소스 파일\02. GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
-      <Filter>소스 파일\Scene</Filter>
+      <Filter>소스 파일\03. Scene</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
-      <Filter>소스 파일\GameObject\Shader</Filter>
+      <Filter>소스 파일\04. GameObject\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Vertex.h">
-      <Filter>소스 파일\GameObject\Vertex</Filter>
+      <Filter>소스 파일\04. GameObject\Vertex</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
-      <Filter>소스 파일\GameObject\Mesh</Filter>
+      <Filter>소스 파일\04. GameObject\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.h">
-      <Filter>소스 파일\GameObject</Filter>
+      <Filter>소스 파일\04. GameObject</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>소스 파일\Camera</Filter>
+      <Filter>소스 파일\05. Camera</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
-      <Filter>소스 파일\GameObject</Filter>
+      <Filter>소스 파일\04. GameObject\Child</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
-      <Filter>소스 파일\Main</Filter>
+      <Filter>소스 파일\01. Main</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일\Custom</Filter>
     </ClCompile>
     <ClCompile Include="GameFramework.cpp">
-      <Filter>소스 파일\GameFramework</Filter>
+      <Filter>소스 파일\02. GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
-      <Filter>소스 파일\Scene</Filter>
+      <Filter>소스 파일\03. Scene</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
-      <Filter>소스 파일\GameObject\Shader</Filter>
+      <Filter>소스 파일\04. GameObject\Shader</Filter>
     </ClCompile>
     <ClCompile Include="Vertex.cpp">
-      <Filter>소스 파일\GameObject\Vertex</Filter>
+      <Filter>소스 파일\04. GameObject\Vertex</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
-      <Filter>소스 파일\GameObject\Mesh</Filter>
+      <Filter>소스 파일\04. GameObject\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="GameObject.cpp">
-      <Filter>소스 파일\GameObject</Filter>
+      <Filter>소스 파일\04. GameObject</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>소스 파일\Camera</Filter>
+      <Filter>소스 파일\05. Camera</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
-      <Filter>소스 파일\GameObject</Filter>
+      <Filter>소스 파일\04. GameObject\Child</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
