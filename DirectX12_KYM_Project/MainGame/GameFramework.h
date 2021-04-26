@@ -25,7 +25,7 @@ private:
 
 	Scene *m_Scene = nullptr;
 
-	HWND m_hwnd{};
+	HWND m_Hwnd{};
 
 	bool m_ActiveMSAA = false;
 	unsigned int m_MultiSampleQualityLevel = 0;

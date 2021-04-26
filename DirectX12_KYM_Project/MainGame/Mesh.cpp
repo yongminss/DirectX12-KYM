@@ -66,9 +66,9 @@ void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandLi
 	MeshVertex[29] = Vertex(DirectX::XMFLOAT3(-10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 1.f, 1.f, 1.f));
 
 	// 사각형 오른쪽면의 위쪽 삼각형
-	MeshVertex[30] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
-	MeshVertex[31] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
-	MeshVertex[32] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+	MeshVertex[30] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(0.f, 0.5f, 0.f, 1.f));
+	MeshVertex[31] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.5f, 0.f, 1.f));
+	MeshVertex[32] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(0.f, 0.5f, 0.f, 1.f));
 	// 사각형 오른쪽면의 아래쪽 삼각형
 	MeshVertex[33] = Vertex(DirectX::XMFLOAT3(+10.f, +10.f, -10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
 	MeshVertex[34] = Vertex(DirectX::XMFLOAT3(+10.f, -10.f, +10.f), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
@@ -81,7 +81,7 @@ void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandLi
 	m_VertexBufferView.SizeInBytes = ByteSize;
 }
 
-void Mesh::CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int size)
+void Mesh::CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int Size)
 {
 	D3D12_HEAP_PROPERTIES HeapProperties;
 	ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -95,7 +95,7 @@ void Mesh::CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
 	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	ResourceDesc.Alignment = 0;
-	ResourceDesc.Width = size;
+	ResourceDesc.Width = Size;
 	ResourceDesc.Height = 1;
 	ResourceDesc.DepthOrArraySize = 1;
 	ResourceDesc.MipLevels = 1;
@@ -114,7 +114,7 @@ void Mesh::CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	D3D12_RANGE Range = { 0 };
 	void* BufferDataBegin = nullptr;
 	m_UploadVertexBuffer->Map(0, &Range, (void**)&BufferDataBegin);
-	memcpy(BufferDataBegin, MeshVertex, size);
+	memcpy(BufferDataBegin, MeshVertex, Size);
 	m_UploadVertexBuffer->Unmap(0, nullptr);
 
 	CommandList->CopyResource(m_VertexBuffer, m_UploadVertexBuffer);

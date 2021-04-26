@@ -12,7 +12,7 @@ Scene::~Scene()
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
 	if (m_Player != nullptr) delete m_Player;
-	//if (m_GameObject != nullptr) delete m_GameObject;
+	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) delete m_GameObjects[i];
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)

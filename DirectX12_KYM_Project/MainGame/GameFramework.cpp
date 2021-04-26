@@ -31,9 +31,9 @@ GameFramework::~GameFramework()
 }
 
 // GameFramework를 사용하기 위해 필요한 (Device, CommandList, Object 등) 객체를 생성
-void GameFramework::CreateGameFramework(HWND &hwnd)
+void GameFramework::CreateGameFramework(HWND &Hwnd)
 {
-	m_hwnd = hwnd;
+	m_Hwnd = Hwnd;
 
 	// 1. DirectX 12를 사용하기 위해 Device를 생성
 	CreateDirectDevice();
@@ -129,7 +129,7 @@ void GameFramework::CreateSwapChain()
 	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
 	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
 	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
-	SwapChainDesc.OutputWindow = m_hwnd; // 출력 될 windows 설정
+	SwapChainDesc.OutputWindow = m_Hwnd; // 출력 될 windows 설정
 	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
 	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
 	SwapChainDesc.Windowed = true; // 창모드 설정 - true이면 창 모드, false이면 전체 모드

@@ -17,3 +17,20 @@ Vertex::~Vertex()
 {
 
 }
+
+
+TextureVertex::TextureVertex()
+{
+
+}
+
+TextureVertex::TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv)
+{
+	m_Position = Position;
+	m_Uv = Uv;
+}
+
+TextureVertex::~TextureVertex()
+{
+
+}

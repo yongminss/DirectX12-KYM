@@ -17,7 +17,7 @@ public:
 	~Mesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
-	void CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int size);
+	void CreateVertexBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int Size);
 
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };
