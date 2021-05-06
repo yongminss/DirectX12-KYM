@@ -12,15 +12,17 @@ Player::~Player()
 	if (m_Camera != nullptr) delete m_Camera;
 }
 
-void Player::CreatePlayer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
-	m_Mesh = new Mesh();
-	m_Mesh->CreateMesh(Device, CommandList);
+	Mesh *UsingMesh = new Mesh();
+	UsingMesh->CreateMesh(Device, CommandList, 10.f);
+	SetMesh(UsingMesh);
 
-	m_Shader = new Shader();
-	m_Shader->CreateShader(Device, RootSignature);
+	Shader *UsingShader = new Shader();
+	UsingShader->CreateShader(Device, RootSignature);
+	SetShader(UsingShader);
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
 	m_Camera = new Camera();
@@ -34,5 +36,6 @@ void Player::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
+	if (m_Texture != nullptr) m_Texture->Render(CommandList);
 	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
 }

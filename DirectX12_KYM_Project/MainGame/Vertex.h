@@ -21,6 +21,6 @@ private:
 
 public:
 	TextureVertex();
-	TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 uv);
+	TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv);
 	~TextureVertex();
 };

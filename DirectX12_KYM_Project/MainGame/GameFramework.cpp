@@ -113,7 +113,7 @@ void GameFramework::CreateSwapChain()
 
 	// 품질 수준이 1보다 크면 다중 샘플링을 활성화
 	m_MultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
-	m_ActiveMSAA = (m_MultiSampleQualityLevel > 1) ? true : false;
+	m_ActiveMsaa = (m_MultiSampleQualityLevel > 1) ? true : false;
 
 	// SwapChain 생성
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
@@ -127,8 +127,8 @@ void GameFramework::CreateSwapChain()
 	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // 스캔 라인 그리기 모드 지정, 스캔 라인 순서를 지정하지 않음
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // 모니터 해상도에 맞게 확대하는 방법, 스케일링 지정 x
 	// SampleDesc - 다중 샘플링의 품질을 설정할 수 있는 구조체, 품질 검사에서 얻은 값으로 설정해야 함
-	SwapChainDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
-	SwapChainDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
+	SwapChainDesc.SampleDesc.Count = (m_ActiveMsaa) ? 4 : 1;
+	SwapChainDesc.SampleDesc.Quality = (m_ActiveMsaa) ? m_MultiSampleQualityLevel - 1 : 0;
 	SwapChainDesc.OutputWindow = m_Hwnd; // 출력 될 windows 설정
 	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 후면 버퍼에 대한 표면 사용 방식과 CPU의 접근 방법 설정, 렌더 타겟용으로 사용하도록 결정
 	SwapChainDesc.BufferCount = 2; // 스왑 체인의 버퍼 개수, 전면 버퍼와 후면 버퍼를 사용
@@ -192,8 +192,8 @@ void GameFramework::CreateResource()
 	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	ResourceDesc.SampleDesc.Count = (m_ActiveMSAA) ? 4 : 1;
-	ResourceDesc.SampleDesc.Quality = (m_ActiveMSAA) ? m_MultiSampleQualityLevel - 1 : 0;
+	ResourceDesc.SampleDesc.Count = (m_ActiveMsaa) ? 4 : 1;
+	ResourceDesc.SampleDesc.Quality = (m_ActiveMsaa) ? m_MultiSampleQualityLevel - 1 : 0;
 
 	D3D12_CLEAR_VALUE ClearValue;
 	ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -286,7 +286,7 @@ void GameFramework::GameFrameworkLoop()
 	++m_FrameRate;
 }
 
-void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
+void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 {
-	m_Scene->KeyboardMessage(MessageIndex, wParam);
+	m_Scene->KeyboardMessage(MessageIndex, Wparam);
 }

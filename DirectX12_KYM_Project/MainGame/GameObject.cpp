@@ -11,6 +11,7 @@ GameObject::~GameObject()
 {
 	if (m_Mesh != nullptr) delete m_Mesh;
 	if (m_Shader != nullptr) delete m_Shader;
+	if (m_Texture != nullptr) delete m_Texture;
 }
 
 void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
@@ -18,12 +19,32 @@ void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
 	// 오브젝트의 정점들의 집합인 Mesh 생성
-	m_Mesh = new Mesh();
-	m_Mesh->CreateMesh(Device, CommandList);
+	Mesh *UsingMesh = new Mesh();
+	UsingMesh->CreateMesh(Device, CommandList, 10.f);
+	SetMesh(UsingMesh);
 
 	// 오브젝트가 사용할 그래픽스 파이프라인을 생성
-	m_Shader = new Shader();
-	m_Shader->CreateShader(Device, RootSignature);
+	Shader *UsingShader = new Shader();
+	UsingShader->CreateShader(Device, RootSignature);
+	SetShader(UsingShader);
+}
+
+void GameObject::SetMesh(Mesh* ObjectMesh)
+{
+	if (m_Mesh != nullptr) delete m_Mesh;
+	m_Mesh = ObjectMesh;
+}
+
+void GameObject::SetShader(Shader* ObjectShader)
+{
+	if (m_Shader != nullptr) delete m_Shader;
+	m_Shader = ObjectShader;
+}
+
+void GameObject::SetTexture(Texture* ObjectTexture)
+{
+	if (m_Texture != nullptr) delete m_Texture;
+	m_Texture = ObjectTexture;
 }
 
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
@@ -86,5 +107,6 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
+	if (m_Texture != nullptr) m_Texture->Render(CommandList);
 	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
 }

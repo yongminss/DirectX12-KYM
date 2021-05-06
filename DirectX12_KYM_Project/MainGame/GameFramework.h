@@ -27,7 +27,7 @@ private:
 
 	HWND m_Hwnd{};
 
-	bool m_ActiveMSAA = false;
+	bool m_ActiveMsaa = false;
 	unsigned int m_MultiSampleQualityLevel = 0;
 
 	unsigned int m_SwapChainIndex = 0;
@@ -40,7 +40,7 @@ public:
 	GameFramework();
 	~GameFramework();
 
-	void CreateGameFramework(HWND &hwnd);
+	void CreateGameFramework(HWND &Hwnd);
 
 	void CreateDirectDevice();
 	void CreateCommandQueueAndList();
@@ -51,5 +51,5 @@ public:
 
 	void GameFrameworkLoop();
 
-	void KeyboardMessage(UINT MessageIndex, WPARAM wParam);
+	void KeyboardMessage(UINT MessageIndex, WPARAM Wparam);
 };

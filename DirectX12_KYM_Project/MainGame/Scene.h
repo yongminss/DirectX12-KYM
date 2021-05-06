@@ -2,6 +2,7 @@
 
 #include "GameObject.h"
 #include "Player.h"
+#include "UserInterface.h"
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene
@@ -11,6 +12,7 @@ private:
 
 	Player *m_Player = nullptr;
 	std::vector<GameObject*> m_GameObjects{};
+	UserInterface *m_UserInterface = nullptr;
 
 public:
 	Scene();
@@ -21,5 +23,5 @@ public:
 
 	void Render(ID3D12GraphicsCommandList* CommandList);
 
-	void KeyboardMessage(UINT MessageIndex, WPARAM wParam);
+	void KeyboardMessage(UINT MessageIndex, WPARAM Wparam);
 };

@@ -13,11 +13,21 @@ Scene::~Scene()
 
 	if (m_Player != nullptr) delete m_Player;
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) delete m_GameObjects[i];
+	if (m_UserInterface != nullptr) delete m_UserInterface;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
 {
-	D3D12_ROOT_PARAMETER RootParameter[2];
+	D3D12_DESCRIPTOR_RANGE DescriptorRange;
+	// Texture Count 1
+	ZeroMemory(&DescriptorRange, sizeof(DescriptorRange));
+	DescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	DescriptorRange.BaseShaderRegister = 0;
+	DescriptorRange.RegisterSpace = 0;
+	DescriptorRange.NumDescriptors = 1;
+	DescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER RootParameter[3];
 	ZeroMemory(&RootParameter, sizeof(RootParameter));
 	// Camera
 	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -31,14 +41,34 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[1].Constants.RegisterSpace = 0;
 	RootParameter[1].Constants.Num32BitValues = 16;
 	RootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	// Texture
+	RootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	RootParameter[2].DescriptorTable.pDescriptorRanges = &DescriptorRange;
+	RootParameter[2].DescriptorTable.NumDescriptorRanges = 1;
+	RootParameter[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	D3D12_STATIC_SAMPLER_DESC StaticSamplerDesc;
+	ZeroMemory(&StaticSamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
+	StaticSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	StaticSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	StaticSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	StaticSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	StaticSamplerDesc.MipLODBias = 0;
+	StaticSamplerDesc.MaxAnisotropy = 1;
+	StaticSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	StaticSamplerDesc.MinLOD = 0;
+	StaticSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	StaticSamplerDesc.ShaderRegister = 0;
+	StaticSamplerDesc.RegisterSpace = 0;
+	StaticSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc;
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // 입력-조립(IA) 단계 허용
 	RootSignatureDesc.pParameters = RootParameter;
-	RootSignatureDesc.NumParameters = 2;
-	RootSignatureDesc.pStaticSamplers = nullptr;
-	RootSignatureDesc.NumStaticSamplers = 0;
+	RootSignatureDesc.NumParameters = 3;
+	RootSignatureDesc.pStaticSamplers = &StaticSamplerDesc;
+	RootSignatureDesc.NumStaticSamplers = 1;
 
 	ID3DBlob *RootSignatureBlob = nullptr;
 	ID3DBlob *ErrorBlob = nullptr;
@@ -57,7 +87,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player();
-	m_Player->CreatePlayer(Device, CommandList, m_RootSignature);
+	m_Player->CreateGameObject(Device, CommandList, m_RootSignature);
 
 	// 게임 월드에 등장하는 Game Object 생성
 	m_GameObjects.reserve(100);
@@ -68,6 +98,9 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(-225.f + (i * 50), -50.f, 50.f + (50 * j)));
 		}
 	}
+	// 게임에 필요한 UI 생성
+	m_UserInterface = new UserInterface();
+	m_UserInterface->CreateGameObject(Device, CommandList, m_RootSignature);
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -75,16 +108,16 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
-
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
+	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
 }
 
-void Scene::KeyboardMessage(UINT MessageIndex, WPARAM wParam)
+void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 {
 	switch (MessageIndex)
 	{
 	case WM_KEYDOWN:
-		switch (wParam)
+		switch (Wparam)
 		{
 		case 'w':
 		case 'W':

@@ -99,6 +99,9 @@
     <ClInclude Include="DDSTextureLoader12.h">
       <Filter>소스 파일\DDSFileLoad</Filter>
     </ClInclude>
+    <ClInclude Include="UserInterface.h">
+      <Filter>소스 파일\04. GameObject\Child</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
@@ -136,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="DDSTextureLoader12.cpp">
       <Filter>소스 파일\DDSFileLoad</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface.cpp">
+      <Filter>소스 파일\04. GameObject\Child</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

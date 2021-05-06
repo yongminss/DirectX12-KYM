@@ -35,3 +35,35 @@ float4 PS(VS_Output Input) : SV_TARGET
 {
     return Input.color;
 }
+
+Texture2D Texture : register(t0);
+SamplerState Sampler : register(s0);
+
+struct TextureVS_Input
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+};
+
+struct TextureVS_Output
+{
+    float4 position : SV_Position;
+    float2 uv : UV;
+};
+
+TextureVS_Output UserInterfaceVS(TextureVS_Input Input)
+{
+    TextureVS_Output output;
+    
+    output.position = mul(float4(Input.position, 1.0f), WorldPos);
+    output.uv = Input.uv;
+    
+    return output;
+}
+
+float4 TexturePS(TextureVS_Output Input) : SV_TARGET
+{
+    float4 color = Texture.Sample(Sampler, Input.uv);
+    
+    return color;
+}
