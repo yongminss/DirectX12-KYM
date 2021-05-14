@@ -139,6 +139,16 @@ void Mesh::Render(ID3D12GraphicsCommandList* CommandList)
 }
 
 
+TextureMesh::TextureMesh()
+{
+
+}
+
+TextureMesh::~TextureMesh()
+{
+
+}
+
 void TextureMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size)
 {
 	TextureVertex MeshVertex[6];
@@ -159,4 +169,45 @@ void TextureMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	m_VertexBufferView.StrideInBytes = sizeof(TextureVertex);
 	m_VertexBufferView.SizeInBytes = ByteSize;
+}
+
+
+TerrainMesh::TerrainMesh()
+{
+
+}
+
+TerrainMesh::~TerrainMesh()
+{
+
+}
+
+void TerrainMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size, BYTE* VertexYPosition)
+{
+	Vertex *MeshVertex = new Vertex[257 * 257];
+
+	m_VertexCount = 257 * 257;
+	unsigned int ByteSize = sizeof(Vertex) * m_VertexCount;
+
+	for (int i = 0, z = 0; z < 257; ++z) {
+		for (int x = 0; x < 257; ++x, ++i) {
+			MeshVertex[i] = Vertex(DirectX::XMFLOAT3(x * Size, static_cast<float>(VertexYPosition[i]), z * Size), DirectX::XMFLOAT4(0.25f, 0.45f, 0.f, 1.f));
+		}
+	}
+	CreateVertexBuffer(Device, CommandList, MeshVertex, ByteSize);
+
+	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
+	m_VertexBufferView.StrideInBytes = sizeof(Vertex);
+	m_VertexBufferView.SizeInBytes = ByteSize;
+
+	delete[] MeshVertex;
+}
+
+void TerrainMesh::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
+
+	CommandList->DrawInstanced(m_VertexCount, 1, 0, 0);
 }

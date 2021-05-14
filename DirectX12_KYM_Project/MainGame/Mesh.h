@@ -25,8 +25,19 @@ public:
 class TextureMesh : public Mesh
 {
 public:
-	TextureMesh() {};
-	~TextureMesh() {};
+	TextureMesh();
+	~TextureMesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
+};
+
+class TerrainMesh : public Mesh
+{
+public:
+	TerrainMesh();
+	~TerrainMesh();
+
+	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size, BYTE* VertexYPosition);
+
+	void Render(ID3D12GraphicsCommandList* CommandList);
 };

@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "Player.h"
 #include "UserInterface.h"
+#include "Terrain.h"
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene
@@ -11,8 +12,9 @@ private:
 	ID3D12RootSignature *m_RootSignature = nullptr;
 
 	Player *m_Player = nullptr;
-	std::vector<GameObject*> m_GameObjects{};
 	UserInterface *m_UserInterface = nullptr;
+	Terrain *m_Terrain = nullptr;
+	std::vector<GameObject*> m_GameObjects{};
 
 public:
 	Scene();

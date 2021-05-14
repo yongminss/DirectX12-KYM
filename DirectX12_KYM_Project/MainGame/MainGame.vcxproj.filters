@@ -102,6 +102,9 @@
     <ClInclude Include="UserInterface.h">
       <Filter>소스 파일\04. GameObject\Child</Filter>
     </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>소스 파일\04. GameObject\Child</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
@@ -141,6 +144,9 @@
       <Filter>소스 파일\DDSFileLoad</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface.cpp">
+      <Filter>소스 파일\04. GameObject\Child</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain.cpp">
       <Filter>소스 파일\04. GameObject\Child</Filter>
     </ClCompile>
   </ItemGroup>
