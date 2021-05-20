@@ -16,11 +16,14 @@ void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
+	m_MeshCount = 1;
+	m_Mesh = new Mesh*[m_MeshCount];
+
 	LoadHeightMapFile();
 
 	TerrainMesh *UsingMesh = new TerrainMesh();
 	UsingMesh->CreateMesh(Device, CommandList, 1.f, m_HeightMapPos);
-	SetMesh(UsingMesh);
+	SetMesh(0, UsingMesh);
 
 	Shader *UsingShader = new Shader();
 	UsingShader->CreateShader(Device, RootSignature);

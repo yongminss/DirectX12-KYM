@@ -17,7 +17,7 @@ public:
 
 	void CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind);
 	void CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind);
-	void CreateDescriptorHeap(ID3D12Device* Device, int TextureCount);
+	void CreateDescriptorHeap(ID3D12Device* Device);
 	void CreateShaderResourceView(ID3D12Device* Device);
 
 	void Render(ID3D12GraphicsCommandList* CommandList);

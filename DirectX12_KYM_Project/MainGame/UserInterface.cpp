@@ -16,15 +16,21 @@ void UserInterface::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommand
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
-	TextureMesh *UsingMesh = new TextureMesh();
-	UsingMesh->CreateMesh(Device, CommandList, 0.25f);
-	SetMesh(UsingMesh);
+	m_MeshCount = 1;
+	m_Mesh = new Mesh*[m_MeshCount];
 
-	TextureShader *UsingShader = new TextureShader();
+	m_TextureCount = 1;
+	m_Texture = new Texture*[m_TextureCount];
+
+	TextureMesh *UsingMesh = new TextureMesh();
+	UsingMesh->CreateMesh(Device, CommandList, 0.25f, 0);
+	SetMesh(0, UsingMesh);
+
+	UserInterfaceShader *UsingShader = new UserInterfaceShader();
 	UsingShader->CreateShader(Device, RootSignature);
 	SetShader(UsingShader);
 
 	Texture *UsingTexture = new Texture();
 	UsingTexture->CreateTexture(Device, CommandList, 0);
-	SetTexture(UsingTexture);
+	SetTexture(0, UsingTexture);
 }

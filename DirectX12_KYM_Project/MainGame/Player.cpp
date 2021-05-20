@@ -16,9 +16,12 @@ void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
+	m_MeshCount = 1;
+	m_Mesh = new Mesh*[m_MeshCount];
+
 	Mesh *UsingMesh = new Mesh();
 	UsingMesh->CreateMesh(Device, CommandList, 10.f);
-	SetMesh(UsingMesh);
+	SetMesh(0, UsingMesh);
 
 	Shader *UsingShader = new Shader();
 	UsingShader->CreateShader(Device, RootSignature);
@@ -36,6 +39,6 @@ void Player::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	if (m_Texture != nullptr) m_Texture->Render(CommandList);
-	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
+	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) m_Texture[i]->Render(CommandList);
+	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
 }

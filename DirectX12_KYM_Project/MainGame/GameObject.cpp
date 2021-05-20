@@ -9,19 +9,24 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {
-	if (m_Mesh != nullptr) delete m_Mesh;
+	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) delete m_Mesh[i];
+	delete[] m_Mesh;
 	if (m_Shader != nullptr) delete m_Shader;
-	if (m_Texture != nullptr) delete m_Texture;
+	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) delete m_Texture[i];
+	delete[] m_Texture;
 }
 
 void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
+	m_MeshCount = 1;
+	m_Mesh = new Mesh*[m_MeshCount];
+
 	// 오브젝트의 정점들의 집합인 Mesh 생성
 	Mesh *UsingMesh = new Mesh();
 	UsingMesh->CreateMesh(Device, CommandList, 10.f);
-	SetMesh(UsingMesh);
+	SetMesh(0, UsingMesh);
 
 	// 오브젝트가 사용할 그래픽스 파이프라인을 생성
 	Shader *UsingShader = new Shader();
@@ -29,22 +34,19 @@ void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	SetShader(UsingShader);
 }
 
-void GameObject::SetMesh(Mesh* ObjectMesh)
+void GameObject::SetMesh(int MeshIndex, Mesh* ObjectMesh)
 {
-	if (m_Mesh != nullptr) delete m_Mesh;
-	m_Mesh = ObjectMesh;
+	m_Mesh[MeshIndex] = ObjectMesh;
 }
 
 void GameObject::SetShader(Shader* ObjectShader)
 {
-	if (m_Shader != nullptr) delete m_Shader;
 	m_Shader = ObjectShader;
 }
 
-void GameObject::SetTexture(Texture* ObjectTexture)
+void GameObject::SetTexture(int TextureIndex, Texture* ObjectTexture)
 {
-	if (m_Texture != nullptr) delete m_Texture;
-	m_Texture = ObjectTexture;
+	m_Texture[TextureIndex] = ObjectTexture;
 }
 
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
@@ -107,6 +109,6 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	if (m_Texture != nullptr) m_Texture->Render(CommandList);
-	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
+	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) m_Texture[i]->Render(CommandList);
+	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
 }

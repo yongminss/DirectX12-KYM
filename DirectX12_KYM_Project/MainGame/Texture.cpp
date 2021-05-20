@@ -21,7 +21,7 @@ void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* Com
 	// 1. 오브젝트에 매핑할 텍스처 파일(DDS)을 읽고 리소스를 생성
 	CreateTextureBuffer(Device, CommandList, Kind);
 	// 2. ShaderResource View를 만들기 위해 Descriptor Heap을 생성
-	CreateDescriptorHeap(Device, 1);
+	CreateDescriptorHeap(Device);
 	// 3. 텍스처 매핑을 위해 ShaderResource View 생성
 	CreateShaderResourceView(Device);
 }
@@ -81,12 +81,12 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	CommandList->ResourceBarrier(1, &ResourceBarrier);
 }
 
-void Texture::CreateDescriptorHeap(ID3D12Device* Device, int TextureCount)
+void Texture::CreateDescriptorHeap(ID3D12Device* Device)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
 	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	DescriptorHeapDesc.NumDescriptors = TextureCount;
+	DescriptorHeapDesc.NumDescriptors = 1;
 	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	DescriptorHeapDesc.NodeMask = 0;
 	Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_ShaderResourceViewDescriptorHeap);

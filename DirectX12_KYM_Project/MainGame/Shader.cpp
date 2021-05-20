@@ -140,7 +140,7 @@ void Shader::Render(ID3D12GraphicsCommandList* CommandList)
 }
 
 
-D3D12_INPUT_LAYOUT_DESC TextureShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC UserInterfaceShader::CreateInputLayout()
 {
 	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -154,7 +154,7 @@ D3D12_INPUT_LAYOUT_DESC TextureShader::CreateInputLayout()
 	return InputLayoutDesc;
 }
 
-D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
+D3D12_SHADER_BYTECODE UserInterfaceShader::CreateVertexShader()
 {
 	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "UserInterfaceVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
@@ -165,7 +165,7 @@ D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 	return ShaderByteCode;
 }
 
-D3D12_SHADER_BYTECODE TextureShader::CreatePixelShader()
+D3D12_SHADER_BYTECODE UserInterfaceShader::CreatePixelShader()
 {
 	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
 

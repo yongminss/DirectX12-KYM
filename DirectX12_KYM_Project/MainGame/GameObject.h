@@ -8,9 +8,12 @@
 class GameObject
 {
 protected:
-	Mesh *m_Mesh = nullptr;
+	Mesh **m_Mesh = nullptr;
 	Shader *m_Shader = nullptr;
-	Texture *m_Texture = nullptr;
+	Texture **m_Texture = nullptr;
+
+	int m_MeshCount = 0;
+	int m_TextureCount = 0;
 
 	DirectX::XMFLOAT4X4 m_WorldPos{};
 
@@ -20,9 +23,9 @@ public:
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
-	void SetMesh(Mesh* ObjectMesh);
+	void SetMesh(int MeshIndex, Mesh* ObjectMesh);
 	void SetShader(Shader* ObjectShader);
-	void SetTexture(Texture* ObjectTexture);
+	void SetTexture(int TextureIndex, Texture* ObjectTexture);
 
 	void SetPosition(DirectX::XMFLOAT3 Position);
 

@@ -26,11 +26,11 @@ public:
 };
 
 
-class TextureShader : public Shader
+class UserInterfaceShader : public Shader
 {
 public:
-	TextureShader() {}
-	~TextureShader() {}
+	UserInterfaceShader() {}
+	~UserInterfaceShader() {}
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
