@@ -12,8 +12,9 @@ Scene::~Scene()
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
 	if (m_Player != nullptr) delete m_Player;
-	if (m_UserInterface != nullptr) delete m_UserInterface;
 	if (m_Terrain != nullptr) delete m_Terrain;
+	if (m_Skybox != nullptr) delete m_Skybox;
+	if (m_UserInterface != nullptr) delete m_UserInterface;
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) delete m_GameObjects[i];
 }
 
@@ -90,14 +91,18 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Player = new Player();
 	m_Player->CreateGameObject(Device, CommandList, m_RootSignature);
 
+	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
+	m_Terrain = new Terrain();
+	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
+
+	// 게임의 배경 역할을 하는 Skybox 생성
+	m_Skybox = new Skybox();
+	m_Skybox->CreateGameObject(Device, CommandList, m_RootSignature);
+
 	// 게임에 필요한 UI 생성
 	m_UserInterface = new UserInterface();
 	m_UserInterface->CreateGameObject(Device, CommandList, m_RootSignature);
 	m_UserInterface->SetPosition(DirectX::XMFLOAT3(-0.75f, -0.75f, 0.f));
-
-	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
-	m_Terrain = new Terrain();
-	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
 
 	// 게임 월드에 등장하는 Game Object 생성
 	m_GameObjects.reserve(100);
@@ -115,8 +120,9 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
-	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
+	if (m_Skybox != nullptr) m_Skybox->Render(CommandList, m_Player->GetPosition());
+	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
 }
 

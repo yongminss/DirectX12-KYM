@@ -39,6 +39,6 @@ void Player::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) m_Texture[i]->Render(CommandList);
+	if (m_Texture != nullptr) m_Texture->Render(CommandList, 0);
 	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
 }

@@ -28,7 +28,7 @@ public:
 	TextureMesh();
 	~TextureMesh();
 
-	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
+	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind);
 };
 
 class TerrainMesh : public Mesh

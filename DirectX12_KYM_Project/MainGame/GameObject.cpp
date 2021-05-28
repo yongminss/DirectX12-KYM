@@ -12,8 +12,7 @@ GameObject::~GameObject()
 	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) delete m_Mesh[i];
 	delete[] m_Mesh;
 	if (m_Shader != nullptr) delete m_Shader;
-	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) delete m_Texture[i];
-	delete[] m_Texture;
+	if (m_Texture != nullptr) delete m_Texture;
 }
 
 void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
@@ -44,9 +43,9 @@ void GameObject::SetShader(Shader* ObjectShader)
 	m_Shader = ObjectShader;
 }
 
-void GameObject::SetTexture(int TextureIndex, Texture* ObjectTexture)
+void GameObject::SetTexture(Texture* ObjectTexture)
 {
-	m_Texture[TextureIndex] = ObjectTexture;
+	m_Texture = ObjectTexture;
 }
 
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
@@ -109,6 +108,8 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	for (int i = 0; i < m_TextureCount; ++i) if (m_Texture[i] != nullptr) m_Texture[i]->Render(CommandList);
-	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
+	for (int i = 0; i < m_MeshCount; ++i) {
+		if (m_Texture != nullptr) m_Texture->Render(CommandList, i);
+		if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
+	}
 }

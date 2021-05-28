@@ -175,3 +175,62 @@ D3D12_SHADER_BYTECODE UserInterfaceShader::CreatePixelShader()
 
 	return ShaderByteCode;
 }
+
+
+D3D12_INPUT_LAYOUT_DESC SkyboxShader::CreateInputLayout()
+{
+	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
+	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
+	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
+	InputLayoutDesc.pInputElementDescs = InputElementDesc;
+	InputLayoutDesc.NumElements = 2;
+
+	return InputLayoutDesc;
+}
+
+D3D12_DEPTH_STENCIL_DESC SkyboxShader::CreateDepthStencilState()
+{
+	D3D12_DEPTH_STENCIL_DESC DepthStencilDesc;
+	ZeroMemory(&DepthStencilDesc, sizeof(D3D12_DEPTH_STENCIL_DESC));
+	DepthStencilDesc.DepthEnable = true;
+	DepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	DepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	DepthStencilDesc.StencilEnable = false;
+	DepthStencilDesc.StencilWriteMask = 0;
+	DepthStencilDesc.StencilReadMask = 0;
+	DepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
+	DepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+	return DepthStencilDesc;
+}
+
+D3D12_SHADER_BYTECODE SkyboxShader::CreateVertexShader()
+{
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+
+	D3D12_SHADER_BYTECODE ShaderByteCode;
+	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
+
+	return ShaderByteCode;
+}
+
+D3D12_SHADER_BYTECODE SkyboxShader::CreatePixelShader()
+{
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+
+	D3D12_SHADER_BYTECODE ShaderByteCode;
+	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+
+	return ShaderByteCode;
+}

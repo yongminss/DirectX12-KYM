@@ -149,21 +149,86 @@ TextureMesh::~TextureMesh()
 
 }
 
-void TextureMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size)
+void TextureMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind)
 {
 	TextureVertex MeshVertex[6];
 
 	m_VertexCount = 6;
 	unsigned int ByteSize = sizeof(TextureVertex) * m_VertexCount;
 
-	MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size, +Size, 0.f), DirectX::XMFLOAT2(1.0f, 0.0f));
-	MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size, -Size, 0.f), DirectX::XMFLOAT2(1.0f, 1.0f));
-	MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size, -Size, 0.f), DirectX::XMFLOAT2(0.0f, 1.0f));
+	switch (Kind) {
+	case 0:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
 
-	MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size, -Size, 0.f), DirectX::XMFLOAT2(0.0f, 1.0f));
-	MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size, +Size, 0.f), DirectX::XMFLOAT2(0.0f, 0.0f));
-	MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size, +Size, 0.f), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
 
+	case 1:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
+
+	case 2:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
+
+	case 3:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
+
+	case 4:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
+
+	case 5:
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.0f, 1.0f));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.0f, 1.0f));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.0f, 0.0f));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.0f, 0.0f));
+	}
+	break;
+	}
 	CreateVertexBuffer(Device, CommandList, MeshVertex, ByteSize);
 
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();

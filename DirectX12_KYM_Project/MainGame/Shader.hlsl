@@ -61,6 +61,16 @@ TextureVS_Output UserInterfaceVS(TextureVS_Input Input)
     return output;
 }
 
+TextureVS_Output TextureVS(TextureVS_Input Input)
+{
+    TextureVS_Output output;
+    
+    output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    output.uv = Input.uv;
+    
+    return output;
+}
+
 float4 TexturePS(TextureVS_Output Input) : SV_TARGET
 {
     float4 color = Texture.Sample(Sampler, Input.uv);

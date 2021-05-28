@@ -10,10 +10,9 @@ class GameObject
 protected:
 	Mesh **m_Mesh = nullptr;
 	Shader *m_Shader = nullptr;
-	Texture **m_Texture = nullptr;
+	Texture *m_Texture = nullptr;
 
 	int m_MeshCount = 0;
-	int m_TextureCount = 0;
 
 	DirectX::XMFLOAT4X4 m_WorldPos{};
 
@@ -25,7 +24,7 @@ public:
 
 	void SetMesh(int MeshIndex, Mesh* ObjectMesh);
 	void SetShader(Shader* ObjectShader);
-	void SetTexture(int TextureIndex, Texture* ObjectTexture);
+	void SetTexture(Texture* ObjectTexture);
 
 	void SetPosition(DirectX::XMFLOAT3 Position);
 
