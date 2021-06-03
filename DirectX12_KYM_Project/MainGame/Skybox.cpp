@@ -60,15 +60,7 @@ void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	SetTexture(UsingTexture);
 }
 
-void Skybox::Render(ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 PlayerPosition)
+void Skybox::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)
 {
-	SetPosition(PlayerPosition);
-
-	UpdateShaderCode(CommandList);
-
-	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	for (int i = 0; i < m_MeshCount; ++i) {
-		if (m_Texture != nullptr) m_Texture->Render(CommandList, i);
-		if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
-	}
+	SetPosition(Position);
 }

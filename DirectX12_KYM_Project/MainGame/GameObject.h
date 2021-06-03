@@ -26,6 +26,9 @@ public:
 	void SetShader(Shader* ObjectShader);
 	void SetTexture(Texture* ObjectTexture);
 
+	void SetRight(DirectX::XMFLOAT3 Right);
+	void SetUp(DirectX::XMFLOAT3 Up);
+	void SetLook(DirectX::XMFLOAT3 Look);
 	void SetPosition(DirectX::XMFLOAT3 Position);
 
 	DirectX::XMFLOAT3 GetRight();
@@ -33,11 +36,9 @@ public:
 	DirectX::XMFLOAT3 GetLook();
 	DirectX::XMFLOAT3 GetPosition();
 
-	void MoveForward();
-	void MoveBackward();
-	void MoveLeft();
-	void MoveRight();
+	void Rotate(DirectX::XMFLOAT3 Angle);
 
+	void Animate(float ElapsedTime);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };

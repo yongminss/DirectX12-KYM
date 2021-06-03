@@ -48,6 +48,27 @@ void GameObject::SetTexture(Texture* ObjectTexture)
 	m_Texture = ObjectTexture;
 }
 
+void GameObject::SetRight(DirectX::XMFLOAT3 Right)
+{
+	m_WorldPos._11 = Right.x;
+	m_WorldPos._12 = Right.y;
+	m_WorldPos._13 = Right.z;
+}
+
+void GameObject::SetUp(DirectX::XMFLOAT3 Up)
+{
+	m_WorldPos._21 = Up.x;
+	m_WorldPos._22 = Up.y;
+	m_WorldPos._23 = Up.z;
+}
+
+void GameObject::SetLook(DirectX::XMFLOAT3 Look)
+{
+	m_WorldPos._31 = Look.x;
+	m_WorldPos._32 = Look.y;
+	m_WorldPos._33 = Look.z;
+}
+
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
 {
 	m_WorldPos._41 = Position.x;
@@ -75,24 +96,15 @@ DirectX::XMFLOAT3 GameObject::GetPosition()
 	return DirectX::XMFLOAT3(m_WorldPos._41, m_WorldPos._42, m_WorldPos._43);
 }
 
-void GameObject::MoveForward()
+void GameObject::Rotate(DirectX::XMFLOAT3 Angle)
 {
-	m_WorldPos._43 += 50.f;
+	DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(Angle.x), DirectX::XMConvertToRadians(Angle.y), DirectX::XMConvertToRadians(Angle.z));
+	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_WorldPos)));
 }
 
-void GameObject::MoveBackward()
+void GameObject::Animate(float ElapsedTime)
 {
-	m_WorldPos._43 -= 50.f;
-}
 
-void GameObject::MoveLeft()
-{
-	m_WorldPos._41 -= 50.f;
-}
-
-void GameObject::MoveRight()
-{
-	m_WorldPos._41 += 50.f;
 }
 
 void GameObject::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)

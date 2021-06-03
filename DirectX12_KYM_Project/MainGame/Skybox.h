@@ -13,5 +13,5 @@ public:
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
-	void Render(ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 PlayerPosition);
+	void Animate(float ElapsedTime, DirectX::XMFLOAT3 Position);
 };

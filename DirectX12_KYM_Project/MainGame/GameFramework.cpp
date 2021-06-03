@@ -253,9 +253,11 @@ void GameFramework::GameFrameworkLoop()
 	// RenderTarget View와 Depth-Stencil View를 Descriptor를 통해 출력-병합(OM) 단계에 연결
 	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
 
-	// Rendering
-	if (m_Scene) m_Scene->Render(m_CommandList);
-
+	// Animation & Rendering
+	if (m_Scene) {
+		m_Scene->Animate(m_ElapsedTime);
+		m_Scene->Render(m_CommandList);
+	}
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // Present를 하여 read 상태로 변경
@@ -289,4 +291,9 @@ void GameFramework::GameFrameworkLoop()
 void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 {
 	m_Scene->KeyboardMessage(MessageIndex, Wparam);
+}
+
+void GameFramework::MouseMessage(UINT MessageIndex, LPARAM Lparam)
+{
+	m_Scene->MouseMessage(m_Hwnd, MessageIndex, Lparam);
 }

@@ -4,7 +4,7 @@ class Vertex
 {
 private:
 	DirectX::XMFLOAT3 m_Position = { 0.f, 0.f, 0.f };
-	DirectX::XMFLOAT4 m_Diffuse = { 0.f ,0.f, 0.f, 1.f };
+	DirectX::XMFLOAT4 m_Color = { 0.f ,0.f, 0.f, 1.f };
 
 public:
 	Vertex();

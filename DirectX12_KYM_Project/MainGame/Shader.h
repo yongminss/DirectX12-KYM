@@ -29,8 +29,8 @@ public:
 class UserInterfaceShader : public Shader
 {
 public:
-	UserInterfaceShader() {}
-	~UserInterfaceShader() {}
+	UserInterfaceShader() { }
+	~UserInterfaceShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
@@ -42,6 +42,9 @@ public:
 class SkyboxShader : public Shader
 {
 public:
+	SkyboxShader() { }
+	~SkyboxShader() { }
+
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 

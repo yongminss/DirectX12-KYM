@@ -170,6 +170,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	break;
 
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_MOUSEMOVE:
+	{
+		g_GameFramework->MouseMessage(message, lParam);
+	}
+	break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;

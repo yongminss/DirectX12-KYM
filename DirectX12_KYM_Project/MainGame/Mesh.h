@@ -22,6 +22,7 @@ public:
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
+
 class TextureMesh : public Mesh
 {
 public:
@@ -30,6 +31,7 @@ public:
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind);
 };
+
 
 class TerrainMesh : public Mesh
 {

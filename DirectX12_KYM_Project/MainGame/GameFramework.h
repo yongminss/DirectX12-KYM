@@ -52,4 +52,5 @@ public:
 	void GameFrameworkLoop();
 
 	void KeyboardMessage(UINT MessageIndex, WPARAM Wparam);
+	void MouseMessage(UINT MessageIndex, LPARAM Lparam);
 };

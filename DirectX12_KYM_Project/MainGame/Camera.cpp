@@ -81,7 +81,15 @@ void Camera::Update(ID3D12GraphicsCommandList* CommandList, Player *Target)
 		DirectX::XMStoreFloat3(&m_Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Direction)));
 	}
 
-	// 8. 변환된 카메라 좌표를 HLSL에 전달할 수 있도록 대입
+	// 8. 플레이어 회전 정보에 따라 카메라의 회전 정보도 변경
+	DirectX::XMFLOAT4X4 RotateInfo{};
+	DirectX::XMStoreFloat4x4(&RotateInfo, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Target->GetPosition()), DirectX::XMLoadFloat3(&Target->GetUp())));
+
+	m_Right = DirectX::XMFLOAT3(RotateInfo._11, RotateInfo._21, RotateInfo._31);
+	m_Up = DirectX::XMFLOAT3(RotateInfo._12, RotateInfo._22, RotateInfo._32);
+	m_Look = DirectX::XMFLOAT3(RotateInfo._13, RotateInfo._23, RotateInfo._33);
+
+	// 9. 변환된 카메라 좌표를 HLSL에 전달할 수 있도록 대입
 	m_CameraPos._11 = m_Right.x; m_CameraPos._12 = m_Up.x; m_CameraPos._13 = m_Look.x;
 	m_CameraPos._21 = m_Right.y; m_CameraPos._22 = m_Up.y; m_CameraPos._23 = m_Look.y;
 	m_CameraPos._31 = m_Right.z; m_CameraPos._32 = m_Up.z; m_CameraPos._33 = m_Look.z;

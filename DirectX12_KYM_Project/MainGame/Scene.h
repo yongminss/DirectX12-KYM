@@ -18,6 +18,8 @@ private:
 	UserInterface *m_UserInterface = nullptr;
 	std::vector<GameObject*> m_GameObjects{};
 
+	POINT m_PreviousPos{};
+
 public:
 	Scene();
 	~Scene();
@@ -25,7 +27,9 @@ public:
 	void CreateRootSignature(ID3D12Device* Device);
 	void CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
+	void Animate(float ElapsedTime);
 	void Render(ID3D12GraphicsCommandList* CommandList);
 
 	void KeyboardMessage(UINT MessageIndex, WPARAM Wparam);
+	void MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam);
 };

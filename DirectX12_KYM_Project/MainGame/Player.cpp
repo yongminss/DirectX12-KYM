@@ -32,6 +32,36 @@ void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	m_Camera->CreateCamera();
 }
 
+void Player::Move(int Index, float Distance)
+{
+	DirectX::XMFLOAT3 Position{};
+
+	switch (Index) {
+	case 0:
+	case 1:
+	{
+		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), Distance)));
+	}
+	break;
+
+	case 2:
+	case 3:
+	{
+		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetRight()), Distance)));
+	}
+	break;
+	}
+	m_WorldPos._41 = Position.x, m_WorldPos._42 = Position.y, m_WorldPos._43 = Position.z;
+}
+
+void Player::Animate(float ElapsedTime)
+{
+	if (m_ActiveMove[0] == true) Move(0, +100.f * ElapsedTime);
+	if (m_ActiveMove[1] == true) Move(1, -100.f * ElapsedTime);
+	if (m_ActiveMove[2] == true) Move(2, -100.f * ElapsedTime);
+	if (m_ActiveMove[3] == true) Move(3, +100.f * ElapsedTime);
+}
+
 void Player::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	m_Camera->Update(CommandList, this);
@@ -39,6 +69,8 @@ void Player::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	if (m_Texture != nullptr) m_Texture->Render(CommandList, 0);
-	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
+	for (int i = 0; i < m_MeshCount; ++i) {
+		if (m_Texture != nullptr) m_Texture->Render(CommandList, i);
+		if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
+	}
 }

@@ -115,13 +115,20 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	}
 }
 
+void Scene::Animate(float ElapsedTime)
+{
+	if (m_Player != nullptr) m_Player->Animate(ElapsedTime);
+	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
+	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Animate(ElapsedTime);
+}
+
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
-	if (m_Skybox != nullptr) m_Skybox->Render(CommandList, m_Player->GetPosition());
+	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
 	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
 }
@@ -135,24 +142,81 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 		{
 		case 'w':
 		case 'W':
-			m_Player->MoveForward();
+			m_Player->ActiveMove(0, true);
 			break;
 
 		case 's':
 		case 'S':
-			m_Player->MoveBackward();
+			m_Player->ActiveMove(1, true);
 			break;
 
 		case 'a':
 		case 'A':
-			m_Player->MoveLeft();
+			m_Player->ActiveMove(2, true);
 			break;
 
 		case 'd':
 		case 'D':
-			m_Player->MoveRight();
+			m_Player->ActiveMove(3, true);
 			break;
 		}
 		break;
+
+	case WM_KEYUP:
+		switch (Wparam)
+		{
+		case 'w':
+		case 'W':
+			m_Player->ActiveMove(0, false);
+			break;
+
+		case 's':
+		case 'S':
+			m_Player->ActiveMove(1, false);
+			break;
+
+		case 'a':
+		case 'A':
+			m_Player->ActiveMove(2, false);
+			break;
+
+		case 'd':
+		case 'D':
+			m_Player->ActiveMove(3, false);
+			break;
+		}
+		break;
+	}
+}
+
+void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
+{
+	switch (MessageIndex)
+	{
+	case WM_MOUSEMOVE:
+	{
+		SetCursor(NULL);
+		POINT MousePos{};
+		MousePos.x = LOWORD(Lparam);
+		MousePos.y = HIWORD(Lparam);
+
+		// 플레이어가 움직이는 마우스 좌표에 따라 플레이어 오브젝트가 회전
+		if (MousePos.x > m_PreviousPos.x) {
+			m_Player->Rotate(DirectX::XMFLOAT3(0.f, +1.5f, 0.f));
+		}
+		else {
+			m_Player->Rotate(DirectX::XMFLOAT3(0.f, -1.5f, 0.f));
+		}
+		m_PreviousPos.x = MousePos.x;
+
+		// 마우스 커서가 클라이언트 밖으로 벗어나지 않게 설정
+		POINT NewMousePos = { Window_Width / 2, Window_Height / 2 };
+		ClientToScreen(Hwnd, &NewMousePos);
+		if (MousePos.x <= Window_Width / 3) SetCursorPos(NewMousePos.x, NewMousePos.y);
+		if (MousePos.x >= Window_Width / 1.5) SetCursorPos(NewMousePos.x, NewMousePos.y);
+	}
+	break;
+
+	break;
 	}
 }
