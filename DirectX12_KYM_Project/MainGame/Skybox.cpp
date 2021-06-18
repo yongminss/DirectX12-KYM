@@ -56,7 +56,7 @@ void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	SetShader(UsingShader);
 
 	Texture *UsingTexture = new Texture();
-	UsingTexture->CreateTexture(Device, CommandList, 0, 6);
+	UsingTexture->CreateTexture(Device, CommandList, 0, 2, 6);
 	SetTexture(UsingTexture);
 }
 

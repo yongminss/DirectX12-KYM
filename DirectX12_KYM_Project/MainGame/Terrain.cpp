@@ -19,25 +19,38 @@ void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 	m_MeshCount = 1;
 	m_Mesh = new Mesh*[m_MeshCount];
 
-	LoadHeightMapFile();
+	int Width = 257, Length = 257;
+
+	LoadHeightMapFile(Width, Length);
 
 	TerrainMesh *UsingMesh = new TerrainMesh();
-	UsingMesh->CreateMesh(Device, CommandList, 1.f, m_HeightMapPos);
+	UsingMesh->CreateMesh(Device, CommandList, DirectX::XMFLOAT3(10.f, 2.f, 10.f), Width, Length, m_HeightMapPos);
 	SetMesh(0, UsingMesh);
 
-	Shader *UsingShader = new Shader();
+	TerrainShader *UsingShader = new TerrainShader();
 	UsingShader->CreateShader(Device, RootSignature);
 	SetShader(UsingShader);
+
+	Texture *UsingTexture = new Texture();
+	UsingTexture->CreateTexture(Device, CommandList, 6, 3, 2);
+	SetTexture(UsingTexture);
 }
 
-void Terrain::LoadHeightMapFile()
+void Terrain::LoadHeightMapFile(int Width, int Length)
 {
-	HANDLE HeightMapFile = CreateFile(L"HeightMap.raw", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY, NULL);
+	HANDLE HeightMapFile = CreateFile(L"Map/HeightMap.raw", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY, NULL);
 
-	m_HeightMapPos = new BYTE[257 * 257];
+	BYTE *HeightMapPixel = new BYTE[Width * Length];
 	DWORD ByteRead{};
-
-	ReadFile(HeightMapFile, m_HeightMapPos, 257 * 257, &ByteRead, NULL);
-
+	ReadFile(HeightMapFile, HeightMapPixel, Width * Length, &ByteRead, NULL);
 	CloseHandle(HeightMapFile);
+
+	m_HeightMapPos = new BYTE[Width * Length];
+
+	for (int i = 0; i < Length; ++i) {
+		for (int j = 0; j < Width; ++j) {
+			m_HeightMapPos[i + (Length - 1 - j) * Width] = HeightMapPixel[i + (j * Width)];
+		}
+	}
+	delete[] HeightMapPixel;
 }

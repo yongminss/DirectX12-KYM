@@ -16,9 +16,10 @@ Texture::~Texture()
 	if (m_ShaderResourceViewDescriptorHeap != nullptr) m_ShaderResourceViewDescriptorHeap->Release();
 }
 
-void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind, int TextureCount)
+void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind, int RootParameterIndex, int TextureCount)
 {
 	m_DescriptorHandleIncrementSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_RootParameterIndex = RootParameterIndex;
 	m_TextureCount = TextureCount;
 	m_TextureBuffer = new ID3D12Resource*[m_TextureCount];
 	m_UploadTextureBuffer = new ID3D12Resource*[m_TextureCount];
@@ -78,6 +79,20 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		case 5:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Bottom.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case 6:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Base.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case 7:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Detail.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
@@ -159,9 +174,9 @@ void Texture::CreateShaderResourceView(ID3D12Device* Device)
 
 void Texture::Render(ID3D12GraphicsCommandList* CommandList, int TextureIndex)
 {
+	if (TextureIndex == 0) CommandList->SetDescriptorHeaps(1, &m_ShaderResourceViewDescriptorHeap);
+
 	D3D12_GPU_DESCRIPTOR_HANDLE TargetGpuDescriptorHandle;
 	TargetGpuDescriptorHandle.ptr = m_GpuDescriptorHandle.ptr + (TextureIndex * m_DescriptorHandleIncrementSize);
-
-	if (TextureIndex == 0) CommandList->SetDescriptorHeaps(1, &m_ShaderResourceViewDescriptorHeap);
-	CommandList->SetGraphicsRootDescriptorTable(2, TargetGpuDescriptorHandle);
+	CommandList->SetGraphicsRootDescriptorTable(m_RootParameterIndex, TargetGpuDescriptorHandle);
 }

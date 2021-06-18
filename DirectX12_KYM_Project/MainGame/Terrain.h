@@ -13,5 +13,5 @@ public:
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
-	void LoadHeightMapFile();
+	void LoadHeightMapFile(int Width, int Length);
 };

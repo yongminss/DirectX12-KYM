@@ -28,6 +28,6 @@ void UserInterface::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommand
 	SetShader(UsingShader);
 
 	Texture *UsingTexture = new Texture();
-	UsingTexture->CreateTexture(Device, CommandList, 0, 1);
+	UsingTexture->CreateTexture(Device, CommandList, 0, 2, 1);
 	SetTexture(UsingTexture);
 }

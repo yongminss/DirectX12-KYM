@@ -20,16 +20,22 @@ Scene::~Scene()
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
 {
-	D3D12_DESCRIPTOR_RANGE DescriptorRange;
+	D3D12_DESCRIPTOR_RANGE DescriptorRange[2];
 	// Texture Count 1
 	ZeroMemory(&DescriptorRange, sizeof(DescriptorRange));
-	DescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	DescriptorRange.BaseShaderRegister = 0;
-	DescriptorRange.RegisterSpace = 0;
-	DescriptorRange.NumDescriptors = 1;
-	DescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	DescriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	DescriptorRange[0].BaseShaderRegister = 0;
+	DescriptorRange[0].RegisterSpace = 0;
+	DescriptorRange[0].NumDescriptors = 1;
+	DescriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	// Texture Count 2
+	DescriptorRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	DescriptorRange[1].BaseShaderRegister = 1;
+	DescriptorRange[1].RegisterSpace = 0;
+	DescriptorRange[1].NumDescriptors = 2;
+	DescriptorRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER RootParameter[3];
+	D3D12_ROOT_PARAMETER RootParameter[4];
 	ZeroMemory(&RootParameter, sizeof(RootParameter));
 	// Camera
 	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -45,12 +51,17 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Texture
 	RootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	RootParameter[2].DescriptorTable.pDescriptorRanges = &DescriptorRange;
+	RootParameter[2].DescriptorTable.pDescriptorRanges = &DescriptorRange[0];
 	RootParameter[2].DescriptorTable.NumDescriptorRanges = 1;
 	RootParameter[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	// Texture - Base + Detail
+	RootParameter[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	RootParameter[3].DescriptorTable.pDescriptorRanges = &DescriptorRange[1];
+	RootParameter[3].DescriptorTable.NumDescriptorRanges = 1;
+	RootParameter[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSamplerDesc;
-	ZeroMemory(&StaticSamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
+	ZeroMemory(&StaticSamplerDesc, sizeof(StaticSamplerDesc));
 	StaticSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	StaticSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	StaticSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -68,7 +79,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // 입력-조립(IA) 단계 허용
 	RootSignatureDesc.pParameters = RootParameter;
-	RootSignatureDesc.NumParameters = 3;
+	RootSignatureDesc.NumParameters = 4;
 	RootSignatureDesc.pStaticSamplers = &StaticSamplerDesc;
 	RootSignatureDesc.NumStaticSamplers = 1;
 
@@ -94,6 +105,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	m_Terrain = new Terrain();
 	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_Terrain->SetPosition(DirectX::XMFLOAT3(-1250.f, -150.f, -1250.f));
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox();
@@ -119,7 +131,6 @@ void Scene::Animate(float ElapsedTime)
 {
 	if (m_Player != nullptr) m_Player->Animate(ElapsedTime);
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
-	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Animate(ElapsedTime);
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)

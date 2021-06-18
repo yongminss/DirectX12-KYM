@@ -24,3 +24,18 @@ public:
 	TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv);
 	~TextureVertex();
 };
+
+// 지형에 사용되는 정점
+class TerrainVertex
+{
+private:
+	DirectX::XMFLOAT3 m_Position = { 0.f, 0.f, 0.f };
+	DirectX::XMFLOAT2 m_BaseUv = { 0.f, 0.f };
+	DirectX::XMFLOAT2 m_DetailUv = { 0.f, 0.f };
+	DirectX::XMFLOAT4 m_Diffuse = { 0.f ,0.f, 0.f, 1.f };
+
+public:
+	TerrainVertex();
+	TerrainVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 BaseUv, DirectX::XMFLOAT2 DetailUv, DirectX::XMFLOAT4 Diffuse);
+	~TerrainVertex();
+};

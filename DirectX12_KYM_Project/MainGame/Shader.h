@@ -25,7 +25,7 @@ public:
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
-
+// UI에 사용할 Shader
 class UserInterfaceShader : public Shader
 {
 public:
@@ -38,7 +38,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
 
-
+// Skybox에 사용할 Shader
 class SkyboxShader : public Shader
 {
 public:
@@ -47,6 +47,19 @@ public:
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+};
+
+// 지형에 사용할 Shader
+class TerrainShader : public Shader
+{
+public:
+	TerrainShader() { }
+	~TerrainShader() { }
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
