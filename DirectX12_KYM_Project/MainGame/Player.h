@@ -11,6 +11,8 @@ private:
 
 	bool m_ActiveMove[4]{};
 
+	float m_ElapsedTime = 0.f;
+
 public:
 	Player();
 	~Player();

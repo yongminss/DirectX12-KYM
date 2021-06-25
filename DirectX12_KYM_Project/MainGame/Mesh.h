@@ -17,12 +17,16 @@ protected:
 	unsigned int m_VertexCount = 0;
 	unsigned int m_IndexCount = 0;
 
+	float m_HeightMapYPos[257][257]{};
+
 public:
 	Mesh();
 	~Mesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
 	ID3D12Resource *CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int Size, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);
+
+	float GetHeightMapYPos(int x, int z) { return m_HeightMapYPos[x][z]; }
 
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };

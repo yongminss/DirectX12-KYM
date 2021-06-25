@@ -19,8 +19,10 @@ void Camera::CreateCamera()
 	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixIdentity());
 
 	float AspectRatio = static_cast<float>(Window_Width) / static_cast<float>(Window_Height);
-	
+
 	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(60.f), AspectRatio, 1.01f, 5000.f));
+
+	m_TimeLag = 0.25f;
 }
 
 void Camera::SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList)
@@ -42,7 +44,7 @@ void Camera::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)
 	CommandList->SetGraphicsRoot32BitConstants(0, 16, &ProjectionPos, 16);
 }
 
-void Camera::Update(ID3D12GraphicsCommandList* CommandList, Player *Target)
+void Camera::Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, Player *Target)
 {
 	SetViewportAndScissorRect(CommandList);
 
@@ -70,24 +72,29 @@ void Camera::Update(ID3D12GraphicsCommandList* CommandList, Player *Target)
 	DirectX::XMFLOAT3 Direction{};
 	DirectX::XMStoreFloat3(&Direction, DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&Position), DirectX::XMLoadFloat3(&m_Position)));
 
-	// 6. 위에서 구한 벡터의 길이를 구함
+	// 6. 위에서 구한 벡터의 길이를 구하고, 카메라가 플레이어보다 조금 늦게 이동하도록 TimeLeg을 곱함
 	float Length = 0.f;
 	DirectX::XMFLOAT3 DirectionResult{};
 	DirectX::XMStoreFloat3(&DirectionResult, DirectX::XMVector3Length(DirectX::XMLoadFloat3(&Direction)));
 	Length = DirectionResult.x;
 
+	DirectX::XMStoreFloat3(&Direction, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&Direction)));
+
+	float TimeLagScale = ElapsedTime * (1.f / m_TimeLag);
+	float Distance = Length * TimeLagScale;
+
 	// 7. 벡터의 길이가 0보다 크면 카메라를 현재 위치에서 위에서 구한 벡터의 크기만큼 더하여 카메라를 이동
-	if (Length > 0.f) {
-		DirectX::XMStoreFloat3(&m_Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Direction)));
+	if (Distance > 0.f) {
+		DirectX::XMStoreFloat3(&m_Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&m_Position), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&Direction), Distance)));
+
+		// 8. 플레이어 회전 정보에 따라 카메라의 회전 정보도 변경
+		DirectX::XMFLOAT4X4 RotateInfo{};
+		DirectX::XMStoreFloat4x4(&RotateInfo, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Target->GetPosition()), DirectX::XMLoadFloat3(&Target->GetUp())));
+
+		m_Right = DirectX::XMFLOAT3(RotateInfo._11, RotateInfo._21, RotateInfo._31);
+		m_Up = DirectX::XMFLOAT3(RotateInfo._12, RotateInfo._22, RotateInfo._32);
+		m_Look = DirectX::XMFLOAT3(RotateInfo._13, RotateInfo._23, RotateInfo._33);
 	}
-
-	// 8. 플레이어 회전 정보에 따라 카메라의 회전 정보도 변경
-	DirectX::XMFLOAT4X4 RotateInfo{};
-	DirectX::XMStoreFloat4x4(&RotateInfo, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Target->GetPosition()), DirectX::XMLoadFloat3(&Target->GetUp())));
-
-	m_Right = DirectX::XMFLOAT3(RotateInfo._11, RotateInfo._21, RotateInfo._31);
-	m_Up = DirectX::XMFLOAT3(RotateInfo._12, RotateInfo._22, RotateInfo._32);
-	m_Look = DirectX::XMFLOAT3(RotateInfo._13, RotateInfo._23, RotateInfo._33);
 
 	// 9. 변환된 카메라 좌표를 HLSL에 전달할 수 있도록 대입
 	m_CameraPos._11 = m_Right.x; m_CameraPos._12 = m_Up.x; m_CameraPos._13 = m_Look.x;

@@ -24,7 +24,7 @@ void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 	LoadHeightMapFile(Width, Length);
 
 	TerrainMesh *UsingMesh = new TerrainMesh();
-	UsingMesh->CreateMesh(Device, CommandList, DirectX::XMFLOAT3(10.f, 2.f, 10.f), Width, Length, m_HeightMapPos);
+	UsingMesh->CreateMesh(Device, CommandList, DirectX::XMFLOAT3(20.f, 4.f, 20.f), Width, Length, m_HeightMapPos);
 	SetMesh(0, UsingMesh);
 
 	TerrainShader *UsingShader = new TerrainShader();

@@ -56,6 +56,8 @@ void Player::Move(int Index, float Distance)
 
 void Player::Animate(float ElapsedTime)
 {
+	m_ElapsedTime = ElapsedTime;
+
 	if (m_ActiveMove[0] == true) Move(0, +100.f * ElapsedTime);
 	if (m_ActiveMove[1] == true) Move(1, -100.f * ElapsedTime);
 	if (m_ActiveMove[2] == true) Move(2, -100.f * ElapsedTime);
@@ -64,7 +66,7 @@ void Player::Animate(float ElapsedTime)
 
 void Player::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	m_Camera->Update(CommandList, this);
+	m_Camera->Update(CommandList, m_ElapsedTime, this);
 
 	UpdateShaderCode(CommandList);
 

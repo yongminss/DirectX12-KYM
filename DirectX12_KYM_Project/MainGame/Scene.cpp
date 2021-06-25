@@ -103,9 +103,10 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Player->CreateGameObject(Device, CommandList, m_RootSignature);
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
+	float MapHalfSize = 1250.f;
 	m_Terrain = new Terrain();
 	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
-	m_Terrain->SetPosition(DirectX::XMFLOAT3(-1250.f, -150.f, -1250.f));
+	m_Terrain->SetPosition(DirectX::XMFLOAT3(0.f - MapHalfSize, -300.f, 0.f - MapHalfSize));
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox();
@@ -122,13 +123,20 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		for (int j = 0; j < 10; ++j) {
 			m_GameObjects.emplace_back(new GameObject());
 			m_GameObjects.back()->CreateGameObject(Device, CommandList, m_RootSignature);
-			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(-225.f + (i * 50), -50.f, 50.f + (50 * j)));
+			float x = -MapHalfSize + (i * 500.f), z = -MapHalfSize + (j * 500.f);
+			float y = m_Terrain->GetHeightMapYPos((x + MapHalfSize) / 20, (z + MapHalfSize) / 20) - 300.f;
+			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(x, y, z));
 		}
 	}
 }
 
 void Scene::Animate(float ElapsedTime)
 {
+	// 임시 --------------------
+	float x = (m_Player->GetPosition().x + 1250.f) / 20, z = (m_Player->GetPosition().z + 1250.f) / 20;
+	float y = m_Terrain->GetHeightMapYPos(static_cast<int>(x), static_cast<int>(z)) - 300.f;
+	m_Player->SetPosition(DirectX::XMFLOAT3(m_Player->GetPosition().x, y, m_Player->GetPosition().z));
+	// -------------------------
 	if (m_Player != nullptr) m_Player->Animate(ElapsedTime);
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 }
@@ -138,10 +146,10 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
-	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
-	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
 	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
+	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
+	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
 }
 
 void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)

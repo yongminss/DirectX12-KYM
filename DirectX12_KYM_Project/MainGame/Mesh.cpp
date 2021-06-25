@@ -267,6 +267,7 @@ void TerrainMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 			DirectX::XMFLOAT2 BaseUv = { static_cast<float>(x) / static_cast<float>(Width - 1), static_cast<float>(Length - 1 - z) / static_cast<float>(Length - 1) };
 			DirectX::XMFLOAT2 DetailUv = { static_cast<float>(x) / static_cast<float>(Scale.x * 0.5f), static_cast<float>(z) / static_cast<float>(Scale.z * 0.5f) };
 			MeshVertex[i] = TerrainVertex(Position, BaseUv, DetailUv, DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f));
+			m_HeightMapYPos[x][z] = Position.y;
 		}
 	}
 	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
