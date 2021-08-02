@@ -315,3 +315,365 @@ void TerrainMesh::Render(ID3D12GraphicsCommandList* CommandList)
 	CommandList->IASetIndexBuffer(&m_IndexBufferView);
 	CommandList->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);
 }
+
+// --------------------
+LoadFileMesh::LoadFileMesh()
+{
+
+}
+
+LoadFileMesh::~LoadFileMesh()
+{
+
+}
+
+void LoadFileMesh::LoadFile(FILE* File)
+{
+	/*char Word[64] = { '\0' };
+
+	fread(&m_VertexCount, sizeof(int), 1, File);
+
+	std::cout << "Vertex Count : " << m_VertexCount << std::endl;
+
+	BYTE WordCount = '\0';
+
+	fread(&WordCount, sizeof(BYTE), 1, File);
+	fread(Word, sizeof(char), WordCount, File);
+
+	Word[WordCount] = '\0';
+
+	std::cout << "Word Count : " << int(WordCount) << std::endl;
+	std::cout << "Word : " << Word << std::endl;
+
+	while (true) {
+
+		fread(&WordCount, sizeof(BYTE), 1, File);
+		fread(Word, sizeof(char), WordCount, File);
+
+		Word[WordCount] = '\0';
+
+		std::cout << "Word Count : " << int(WordCount) << std::endl;
+		std::cout << "Word : " << Word << std::endl;
+
+		if (!strcmp(Word, "<Bounds>:")) {
+
+			DirectX::XMFLOAT3 AabbCenter{}, AAbbExtent{};
+
+			fread(&AabbCenter, sizeof(float), 3, File);
+			fread(&AAbbExtent, sizeof(float), 3, File);
+
+			std::cout << "AABB Center : " << AabbCenter.x << ", " << AabbCenter.y << ", " << AabbCenter.z << std::endl;
+			std::cout << "AABB Extent : " << AAbbExtent.x << ", " << AAbbExtent.y << ", " << AAbbExtent.z << std::endl;
+		}
+
+		else if (!strcmp(Word, "<Positions>:")) {
+
+			int PositionCount = 0;
+			fread(&PositionCount, sizeof(int), 1, File);
+
+			std::cout << "Position Count : " << PositionCount << std::endl;
+
+			if (PositionCount > 0) {
+				DirectX::XMFLOAT3 *Position = new DirectX::XMFLOAT3[PositionCount];
+
+				fread(Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
+
+				for (int i = 0; i < PositionCount; ++i) {
+					std::cout << '[' << i << "] Position : " << Position[i].x << ", " << Position[i].y << ", " << Position[i].z << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<Colors>:")) {
+
+			int ColorCount = 0;
+			fread(&ColorCount, sizeof(int), 1, File);
+
+			std::cout << "Color Count : " << ColorCount << std::endl;
+		}
+
+		else if (!strcmp(Word, "<TextureCoords0>:")) {
+			int UvCount = 0;
+			fread(&UvCount, sizeof(int), 1, File);
+
+			std::cout << "Uv 0 Count : " << UvCount << std::endl;
+
+			if (UvCount > 0) {
+				DirectX::XMFLOAT2 *Uv = new DirectX::XMFLOAT2[UvCount];
+
+				fread(Uv, sizeof(DirectX::XMFLOAT2), UvCount, File);
+
+				for (int i = 0; i < UvCount; ++i) {
+					std::cout << '[' << i << "] Uv 0 : " << Uv[i].x << ", " << Uv[i].y << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<TextureCoords1>:")) {
+			int UvCount = 0;
+			fread(&UvCount, sizeof(int), 1, File);
+
+			std::cout << "Uv 1 Count : " << UvCount << std::endl;
+
+			if (UvCount > 0) {
+				DirectX::XMFLOAT2 *Uv = new DirectX::XMFLOAT2[UvCount];
+
+				fread(Uv, sizeof(DirectX::XMFLOAT2), UvCount, File);
+
+				for (int i = 0; i < UvCount; ++i) {
+					std::cout << '[' << i << "] Uv 1 : " << Uv[i].x << ", " << Uv[i].y << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<Normals>:")) {
+			int NormalCount = 0;
+			fread(&NormalCount, sizeof(int), 1, File);
+
+			std::cout << "Normal Count : " << NormalCount << std::endl;
+
+			if (NormalCount > 0) {
+				DirectX::XMFLOAT3 *Normal = new DirectX::XMFLOAT3[NormalCount];
+
+				fread(Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+
+				for (int i = 0; i < NormalCount; ++i) {
+					std::cout << '[' << i << "] Normal : " << Normal[i].x << ", " << Normal[i].y << ", " << Normal[i].z << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<Tangents>:")) {
+			int TangentCount = 0;
+			fread(&TangentCount, sizeof(int), 1, File);
+
+			std::cout << "Tangent Count : " << TangentCount << std::endl;
+
+			if (TangentCount > 0) {
+				DirectX::XMFLOAT3 *Tangent = new DirectX::XMFLOAT3[TangentCount];
+
+				fread(Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+
+				for (int i = 0; i < TangentCount; ++i) {
+					std::cout << '[' << i << "] Tangent : " << Tangent[i].x << ", " << Tangent[i].y << ", " << Tangent[i].z << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<BiTangents>:")) {
+
+			int BiTangentCount = 0;
+			fread(&BiTangentCount, sizeof(int), 1, File);
+
+			std::cout << "BiTangent Count : " << BiTangentCount << std::endl;
+
+			if (BiTangentCount > 0) {
+				DirectX::XMFLOAT3 *BiTangent = new DirectX::XMFLOAT3[BiTangentCount];
+
+				fread(BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+
+				for (int i = 0; i < BiTangentCount; ++i) {
+					std::cout << '[' << i << "] BiTangent : " << BiTangent[i].x << ", " << BiTangent[i].y << ", " << BiTangent[i].z << std::endl;
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "<SubMeshes>:")) {
+
+			int SubMeshCount = 0;
+			fread(&SubMeshCount, sizeof(int), 1, File);
+
+			std::cout << "SubMesh Count : " << SubMeshCount << std::endl;
+
+			if (SubMeshCount > 0) {
+				for (int i = 0; i < SubMeshCount; ++i) {
+
+					fread(&WordCount, sizeof(BYTE), 1, File);
+					fread(Word, sizeof(char), WordCount, File);
+
+					Word[WordCount] = '\0';
+
+					if (!strcmp(Word, "<SubMesh>:")) {
+
+						int IndexCount = 0;
+
+						fread(&IndexCount, sizeof(int), 1, File);
+						fread(&m_IndexCount, sizeof(int), 1, File);
+
+						std::cout << "Index Count : " << IndexCount << std::endl;
+						std::cout << "Index Count of Member : " << m_IndexCount << std::endl;
+
+						if (m_IndexCount > 0) {
+							UINT **SubIndex = new UINT*[SubMeshCount];
+							SubIndex[i] = new UINT[m_IndexCount];
+							fread(&SubIndex[i], sizeof(UINT), m_IndexCount, File);
+							std::cout << "Sub Index Buffer : " << SubIndex[i] << std::endl;
+						}
+					}
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "</Mesh>")) {
+			break;
+		}
+	}*/
+
+
+	char Token[64] = { '\0' };
+	BYTE nStrLength = 0;
+
+	int nPosition = 0, nColor = 0, nNormal = 0, nTangent = 0, nBiTangent = 0, nTextureCoord = 0, nIndice = 0, nSubMesh = 0, nSubIndice = 0;
+
+	fread(&m_VertexCount, sizeof(int), 1, File);
+	fread(&nStrLength, sizeof(BYTE), 1, File);
+	fread(&m_MeshName, sizeof(char), nStrLength, File);
+	m_MeshName[nStrLength] = '\0';
+
+	for (; ;) {
+		fread(&nStrLength, sizeof(BYTE), 1, File);
+		fread(&Token, sizeof(char), nStrLength, File);
+		Token[nStrLength] = '\0';
+
+		std::cout << "Word In Mesh : " << Token << std::endl;
+
+		if (!strcmp(Token, "<Bounds>:")) {
+			fread(&m_AabbCenter, sizeof(DirectX::XMFLOAT3), 1, File);
+			fread(&m_AAbbExtent, sizeof(DirectX::XMFLOAT3), 1, File);
+		}
+
+		else if (!strcmp(Token, "<Positions>:")) {
+			fread(&nPosition, sizeof(int), 1, File);
+			if (nPosition > 0) {
+				/*m_nType |= VERTEXT_POSITION;
+				m_Position = new XMFLOAT3[nPosition];*/
+				fread(&m_Position, sizeof(DirectX::XMFLOAT3), nPosition, File);
+
+				/*m_PositionBuffer = ::CreateBufferResource(Device, CommandList, m_Position, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_PositionUploadBuffer);
+
+				m_PositionBufferView.BufferLocation = m_PositionBuffer->GetGPUVirtualAddress();
+				m_PositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
+				m_PositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;*/
+			}
+		}
+
+		else if (!strcmp(Token, "<Colors>:")) {
+			fread(&nColor, sizeof(int), 1, File);
+			if (nColor > 0) {
+				/*m_nType |= VERTEXT_COLOR;
+				m_Color = new XMFLOAT4[nColor];*/
+				fread(&m_Color, sizeof(DirectX::XMFLOAT4), nColor, File);
+			}
+		}
+
+		else if (!strcmp(Token, "<TextureCoords0>:")) {
+			fread(&nTextureCoord, sizeof(int), 1, File);
+			if (nTextureCoord > 0) {
+				/*m_nType |= VERTEXT_TEXTURE_COORD0;
+				m_TextureCoord0 = new XMFLOAT2[nTextureCoord];*/
+				fread(&m_Uv0, sizeof(DirectX::XMFLOAT2), nTextureCoord, File);
+
+				/*m_TextureCoord0Buffer = ::CreateBufferResource(Device, CommandList, m_TextureCoord0, sizeof(XMFLOAT2) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_TextureCoord0UploadBuffer);
+
+				m_TextureCoord0BufferView.BufferLocation = m_TextureCoord0Buffer->GetGPUVirtualAddress();
+				m_TextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
+				m_TextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;*/
+			}
+		}
+		else if (!strcmp(Token, "<TextureCoords1>:")) {
+			fread(&nTextureCoord, sizeof(int), 1, File);
+			if (nTextureCoord > 0) {
+				/*m_nType |= VERTEXT_TEXTURE_COORD1;
+				m_TextureCoord1 = new XMFLOAT2[nTextureCoord];*/
+				fread(&m_Uv1, sizeof(DirectX::XMFLOAT2), nTextureCoord, File);
+
+				/*m_TextureCoord1Buffer = ::CreateBufferResource(Device, CommandList, m_TextureCoord1, sizeof(XMFLOAT2) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_TextureCoord1UploadBuffer);
+
+				m_TextureCoord1BufferView.BufferLocation = m_TextureCoord1Buffer->GetGPUVirtualAddress();
+				m_TextureCoord1BufferView.StrideInBytes = sizeof(XMFLOAT2);
+				m_TextureCoord1BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;*/
+			}
+		}
+
+		else if (!strcmp(Token, "<Normals>:")) {
+			fread(&nNormal, sizeof(int), 1, File);
+			if (nNormal > 0) {
+				/*m_nType |= VERTEXT_NORMAL;
+				m_Normal = new XMFLOAT3[nNormal];*/
+				fread(&m_Normal, sizeof(DirectX::XMFLOAT3), nNormal, File);
+
+				/*m_NormalBuffer = ::CreateBufferResource(Device, CommandList, m_Normal, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_NormalUploadBuffer);
+
+				m_NormalBufferView.BufferLocation = m_NormalBuffer->GetGPUVirtualAddress();
+				m_NormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+				m_NormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;*/
+			}
+		}
+
+		else if (!strcmp(Token, "<Tangents>:")) {
+			fread(&nTangent, sizeof(int), 1, File);
+			if (nTangent > 0) {
+				/*m_nType |= VERTEXT_TANGENT;
+				m_Tangent = new XMFLOAT3[nTangent];*/
+				fread(&m_Tangent, sizeof(DirectX::XMFLOAT3), nTangent, File);
+
+				/*m_TangentBuffer = ::CreateBufferResource(Device, CommandList, m_Tangent, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_TangentUploadBuffer);
+
+				m_TangentBufferView.BufferLocation = m_TangentBuffer->GetGPUVirtualAddress();
+				m_TangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+				m_TangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;*/
+			}
+		}
+
+		else if (!strcmp(Token, "<BiTangents>:")) {
+			fread(&nBiTangent, sizeof(int), 1, File);
+			if (nBiTangent > 0) {
+				/*m_BiTangent = new XMFLOAT3[nBiTangent];*/
+				fread(&m_BiTangent, sizeof(DirectX::XMFLOAT3), nBiTangent, File);
+
+				/*m_BiTangentBuffer = ::CreateBufferResource(Device, CommandList, m_BiTangent, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_BiTangentUploadBuffer);
+
+				m_BiTangentBufferView.BufferLocation = m_BiTangentBuffer->GetGPUVirtualAddress();
+				m_BiTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+				m_BiTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;*/
+			}
+		}
+
+		else if (!strcmp(Token, "<SubMeshes>:")) {
+		fread(&m_SubMeshCount, sizeof(int), 1, File);
+			if (m_SubMeshCount > 0) {
+				/*m_pnSubSetIndices = new int[m_nSubMesh];
+				m_ppnSubSetIndices = new UINT*[m_nSubMesh];
+
+				m_SubSetIndexBuffer = new ID3D12Resource*[m_nSubMesh];
+				m_SubSetIndexUploadBuffer = new ID3D12Resource*[m_nSubMesh];
+				m_SubSetIndexBufferView = new D3D12_INDEX_BUFFER_VIEW[m_nSubMesh];*/
+
+				for (int i = 0; i < m_SubMeshCount; ++i) {
+					fread(&nStrLength, sizeof(BYTE), 1, File);
+					fread(Token, sizeof(char), nStrLength, File);
+					Token[nStrLength] = '\0';
+					if (!strcmp(Token, "<SubMesh>:")) {
+						int nIndex = 0;
+						fread(&nIndex, sizeof(int), 1, File);
+						fread(&m_IndexCount, sizeof(int), 1, File);
+
+						if (m_IndexCount > 0) {
+							/*m_ppnSubSetIndices[i] = new UINT[m_pnSubSetIndices[i]];*/
+							fread(&m_tempSubMeshCount, sizeof(UINT), m_IndexCount, File);
+
+							/*m_SubSetIndexBuffer[i] = ::CreateBufferResource(Device, CommandList, m_ppnSubSetIndices[i], sizeof(UINT) * m_pnSubSetIndices[i], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_SubSetIndexUploadBuffer[i]);
+
+							m_SubSetIndexBufferView[i].BufferLocation = m_SubSetIndexBuffer[i]->GetGPUVirtualAddress();
+							m_SubSetIndexBufferView[i].Format = DXGI_FORMAT_R32_UINT;
+							m_SubSetIndexBufferView[i].SizeInBytes = sizeof(UINT) * m_pnSubSetIndices[i];*/
+						}
+					}
+				}
+			}
+		}
+		else if (!strcmp(Token, "</Mesh>")) {
+			break;
+		}
+	}
+}

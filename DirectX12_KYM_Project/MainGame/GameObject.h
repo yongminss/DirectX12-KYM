@@ -15,12 +15,18 @@ protected:
 	int m_MeshCount = 0;
 
 	DirectX::XMFLOAT4X4 m_WorldPos{};
+	DirectX::XMFLOAT4X4 m_TransformPos{};
+
+	char m_FrameName[64]{};
 
 public:
 	GameObject();
 	~GameObject();
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
+
+	void LoadModel();
+	GameObject* LoadModel2(FILE* File);
 
 	void SetMesh(int MeshIndex, Mesh* ObjectMesh);
 	void SetShader(Shader* ObjectShader);
@@ -31,10 +37,16 @@ public:
 	void SetLook(DirectX::XMFLOAT3 Look);
 	void SetPosition(DirectX::XMFLOAT3 Position);
 
+	void SetTransformPos(DirectX::XMFLOAT4X4 TransformPos);
+
+	void SetFrameName(char* FrameName) { memcpy(m_FrameName, FrameName, sizeof(m_FrameName)); }
+
 	DirectX::XMFLOAT3 GetRight();
 	DirectX::XMFLOAT3 GetUp();
 	DirectX::XMFLOAT3 GetLook();
 	DirectX::XMFLOAT3 GetPosition();
+
+	char* GetFrameName() { return m_FrameName; }
 
 	void Rotate(DirectX::XMFLOAT3 Angle);
 

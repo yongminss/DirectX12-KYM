@@ -19,6 +19,20 @@ protected:
 
 	float m_HeightMapYPos[257][257]{};
 
+	DirectX::XMFLOAT3 m_AabbCenter{};
+	DirectX::XMFLOAT3 m_AAbbExtent{};
+
+	DirectX::XMFLOAT3 m_Position{};
+	DirectX::XMFLOAT4 m_Color{};
+	DirectX::XMFLOAT2 m_Uv0{};
+	DirectX::XMFLOAT2 m_Uv1{};
+	DirectX::XMFLOAT3 m_Normal{};
+	DirectX::XMFLOAT3 m_Tangent{};
+	DirectX::XMFLOAT3 m_BiTangent{};
+
+	int m_SubMeshCount = 0;
+	UINT m_tempSubMeshCount = 0;
+
 public:
 	Mesh();
 	~Mesh();
@@ -51,4 +65,18 @@ public:
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Scale, int Width, int Length, BYTE* YPos);
 
 	void Render(ID3D12GraphicsCommandList* CommandList);
+};
+
+
+// -
+class LoadFileMesh : public Mesh
+{
+private:
+	char m_MeshName[64]{};
+
+public:
+	LoadFileMesh();
+	~LoadFileMesh();
+
+	void LoadFile(FILE* File);
 };
