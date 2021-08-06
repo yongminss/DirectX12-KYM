@@ -49,19 +49,22 @@
     <Filter Include="소스 파일\06. HLSL">
       <UniqueIdentifier>{04b1e7ec-37ca-4718-bec3-4c9d9d537c95}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\05. Child-Class">
+    <Filter Include="소스 파일\04. GameObject\05. Material">
+      <UniqueIdentifier>{b381f120-72ca-48c1-a3d6-920abe47fc2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\06. Child-Class">
       <UniqueIdentifier>{40ad34bb-3fd3-44b7-b1e6-9186318705e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\05. Child-Class\01. Player">
+    <Filter Include="소스 파일\04. GameObject\06. Child-Class\01. Player">
       <UniqueIdentifier>{dfe61ac3-f2ee-4c55-aafa-93f82823344c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\05. Child-Class\02. Terrain">
+    <Filter Include="소스 파일\04. GameObject\06. Child-Class\02. Terrain">
       <UniqueIdentifier>{a5f62b38-7b61-4d49-a8db-843ea937fb45}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\05. Child-Class\03. Skybox">
+    <Filter Include="소스 파일\04. GameObject\06. Child-Class\03. Skybox">
       <UniqueIdentifier>{331ecc9c-3a4c-416d-859a-ae7f9ebbdfa5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\05. Child-Class\04. UserInterface">
+    <Filter Include="소스 파일\04. GameObject\06. Child-Class\04. UserInterface">
       <UniqueIdentifier>{70daaf41-5874-46c3-b821-5f528fdd0720}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -109,16 +112,19 @@
       <Filter>소스 파일\DDSFileLoad</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\01. Player</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\01. Player</Filter>
     </ClInclude>
     <ClInclude Include="Terrain.h">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\02. Terrain</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\02. Terrain</Filter>
     </ClInclude>
     <ClInclude Include="Skybox.h">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\03. Skybox</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\03. Skybox</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface.h">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\04. UserInterface</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\04. UserInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>소스 파일\04. GameObject\05. Material</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -156,16 +162,19 @@
       <Filter>소스 파일\DDSFileLoad</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\01. Player</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\01. Player</Filter>
     </ClCompile>
     <ClCompile Include="Terrain.cpp">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\02. Terrain</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\02. Terrain</Filter>
     </ClCompile>
     <ClCompile Include="Skybox.cpp">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\03. Skybox</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\03. Skybox</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface.cpp">
-      <Filter>소스 파일\04. GameObject\05. Child-Class\04. UserInterface</Filter>
+      <Filter>소스 파일\04. GameObject\06. Child-Class\04. UserInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>소스 파일\04. GameObject\05. Material</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -19,20 +19,6 @@ protected:
 
 	float m_HeightMapYPos[257][257]{};
 
-	DirectX::XMFLOAT3 m_AabbCenter{};
-	DirectX::XMFLOAT3 m_AAbbExtent{};
-
-	DirectX::XMFLOAT3 m_Position{};
-	DirectX::XMFLOAT4 m_Color{};
-	DirectX::XMFLOAT2 m_Uv0{};
-	DirectX::XMFLOAT2 m_Uv1{};
-	DirectX::XMFLOAT3 m_Normal{};
-	DirectX::XMFLOAT3 m_Tangent{};
-	DirectX::XMFLOAT3 m_BiTangent{};
-
-	int m_SubMeshCount = 0;
-	UINT m_tempSubMeshCount = 0;
-
 public:
 	Mesh();
 	~Mesh();
@@ -67,16 +53,48 @@ public:
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
-
-// -
-class LoadFileMesh : public Mesh
+// bin 파일로 로드한 오브젝트가 사용하는 Mesh
+class LoadedMesh : public Mesh
 {
-private:
+protected:
 	char m_MeshName[64]{};
 
-public:
-	LoadFileMesh();
-	~LoadFileMesh();
+	DirectX::XMFLOAT3 m_AabbCenter{};
+	DirectX::XMFLOAT3 m_AAbbExtent{};
 
-	void LoadFile(FILE* File);
+	DirectX::XMFLOAT3 m_Position{};
+	DirectX::XMFLOAT4 m_Color{};
+	DirectX::XMFLOAT2 m_Uv0{};
+	DirectX::XMFLOAT2 m_Uv1{};
+	DirectX::XMFLOAT3 m_Normal{};
+	DirectX::XMFLOAT3 m_Tangent{};
+	DirectX::XMFLOAT3 m_BiTangent{};
+	UINT m_SubMeshIndex = 0;
+
+public:
+	LoadedMesh();
+	~LoadedMesh();
+
+	void LoadMeshInfo(FILE* File);
+};
+
+// bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Mesh
+class SkinnedMesh : public LoadedMesh
+{
+private:
+	int m_BonePerVertex = 0;
+
+	int m_BoneCount = 0;
+	char(*m_BoneName)[64] = nullptr;
+
+	DirectX::XMFLOAT4X4 *m_BoneOffset = nullptr;
+
+	DirectX::XMUINT4 *m_BoneIndex = nullptr;
+	DirectX::XMFLOAT4 *m_BoneWeight = nullptr;
+
+public:
+	SkinnedMesh();
+	~SkinnedMesh();
+
+	void LoadMeshInfo(FILE* File);
 };

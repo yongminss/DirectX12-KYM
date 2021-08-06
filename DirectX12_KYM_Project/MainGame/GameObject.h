@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "Material.h"
 
 // 게임 월드에 등장하는 모든 오브젝트
 class GameObject
@@ -25,8 +24,8 @@ public:
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
-	void LoadModel();
-	GameObject* LoadModel2(FILE* File);
+	GameObject* LoadBinaryFileModel(const char* FileName);
+	GameObject* LoadFrameHierarchy(FILE* File);
 
 	void SetMesh(int MeshIndex, Mesh* ObjectMesh);
 	void SetShader(Shader* ObjectShader);
