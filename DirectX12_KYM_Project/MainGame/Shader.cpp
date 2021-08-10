@@ -273,3 +273,17 @@ D3D12_SHADER_BYTECODE TerrainShader::CreatePixelShader()
 
 	return ShaderByteCode;
 }
+
+// --------------------
+D3D12_INPUT_LAYOUT_DESC LoadedShader::CreateInputLayout()
+{
+	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[1];
+	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
+	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
+	InputLayoutDesc.pInputElementDescs = InputElementDesc;
+	InputLayoutDesc.NumElements = 1;
+
+	return InputLayoutDesc;
+}

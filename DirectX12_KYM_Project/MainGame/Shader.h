@@ -64,3 +64,13 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
+
+// -
+class LoadedShader : public Shader
+{
+public:
+	LoadedShader() {}
+	~LoadedShader() {}
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+};

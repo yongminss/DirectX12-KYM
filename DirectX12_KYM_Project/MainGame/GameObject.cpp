@@ -27,10 +27,8 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {
-	for (int i = 0; i < m_MeshCount; ++i) if (m_Mesh[i] != nullptr) delete m_Mesh[i];
-	delete[] m_Mesh;
-	if (m_Shader != nullptr) delete m_Shader;
-	if (m_Texture != nullptr) delete m_Texture;
+	if (m_Mesh != nullptr) delete m_Mesh;
+	if (m_Material != nullptr) delete m_Material;
 }
 
 void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
@@ -38,33 +36,30 @@ void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
-	m_MeshCount = 1;
-	m_Mesh = new Mesh*[m_MeshCount];
-
 	// 오브젝트의 정점들의 집합인 Mesh 생성
 	Mesh *UsingMesh = new Mesh();
 	UsingMesh->CreateMesh(Device, CommandList, 10.f);
-	SetMesh(0, UsingMesh);
+	SetMesh(UsingMesh);
 
 	// 오브젝트가 사용할 그래픽스 파이프라인을 생성
-	Shader *UsingShader = new Shader();
-	UsingShader->CreateShader(Device, RootSignature);
-	SetShader(UsingShader);
+	Material *UsingMaterial = new Material();
+	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, -1);
+	SetMaterial(UsingMaterial);
 }
 
-GameObject* GameObject::LoadBinaryFileModel(const char* FileName)
+GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName)
 {
 	FILE *File = nullptr;
 	fopen_s(&File, FileName, "rb");
 
-	GameObject *Model = LoadFrameHierarchy(File);
+	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
 
 	fclose(File);
 
 	return Model;
 }
 
-GameObject* GameObject::LoadFrameHierarchy(FILE* File)
+GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File)
 {
 	GameObject *Frame = nullptr;
 
@@ -103,20 +98,20 @@ GameObject* GameObject::LoadFrameHierarchy(FILE* File)
 
 			if (ChildCount > 0) {
 				for (int i = 0; i < ChildCount; ++i) {
-					GameObject *Child = LoadFrameHierarchy(File);
-					// 여기에서 모델에게 Child 오브젝트를 추가해줌
+					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
 				}
 			}
 		}
 
 		else if (!strcmp(Word, "<Mesh>:")) {
 			LoadedMesh *UsingMesh = new LoadedMesh[2];
-			UsingMesh->LoadMeshInfo(File);
+			UsingMesh->LoadMeshInfo(Device, CommandList, File);
+			Frame->SetMesh(UsingMesh);
 		}
 
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
-			UsingMaterial->LoadMaterialInfo(File);
+			UsingMaterial->LoadMaterialInfo(Device, RootSignature, File);
 		}
 
 		else if (!strcmp(Word, "<SkinningInfo>:")) {
@@ -129,21 +124,6 @@ GameObject* GameObject::LoadFrameHierarchy(FILE* File)
 		}
 	}
 	return Frame;
-}
-
-void GameObject::SetMesh(int MeshIndex, Mesh* ObjectMesh)
-{
-	m_Mesh[MeshIndex] = ObjectMesh;
-}
-
-void GameObject::SetShader(Shader* ObjectShader)
-{
-	m_Shader = ObjectShader;
-}
-
-void GameObject::SetTexture(Texture* ObjectTexture)
-{
-	m_Texture = ObjectTexture;
 }
 
 void GameObject::SetRight(DirectX::XMFLOAT3 Right)
@@ -225,9 +205,8 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	UpdateShaderCode(CommandList);
 
-	if (m_Shader != nullptr) m_Shader->Render(CommandList);
-	for (int i = 0; i < m_MeshCount; ++i) {
-		if (m_Texture != nullptr) m_Texture->Render(CommandList, i);
-		if (m_Mesh[i] != nullptr) m_Mesh[i]->Render(CommandList);
-	}
+	if (m_Material != nullptr) m_Material->SetPipeline(CommandList);
+
+	if (m_Material != nullptr) m_Material->MappingTexture(CommandList, 0);
+	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
 }

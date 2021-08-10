@@ -62,7 +62,7 @@ protected:
 	DirectX::XMFLOAT3 m_AabbCenter{};
 	DirectX::XMFLOAT3 m_AAbbExtent{};
 
-	DirectX::XMFLOAT3 m_Position{};
+	DirectX::XMFLOAT3 *m_Position = nullptr;
 	DirectX::XMFLOAT4 m_Color{};
 	DirectX::XMFLOAT2 m_Uv0{};
 	DirectX::XMFLOAT2 m_Uv1{};
@@ -75,7 +75,7 @@ public:
 	LoadedMesh();
 	~LoadedMesh();
 
-	void LoadMeshInfo(FILE* File);
+	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 };
 
 // bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Mesh

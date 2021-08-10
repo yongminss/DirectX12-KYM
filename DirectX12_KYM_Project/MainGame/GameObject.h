@@ -7,11 +7,8 @@
 class GameObject
 {
 protected:
-	Mesh **m_Mesh = nullptr;
-	Shader *m_Shader = nullptr;
-	Texture *m_Texture = nullptr;
-
-	int m_MeshCount = 0;
+	Mesh *m_Mesh = nullptr;
+	Material *m_Material = nullptr;
 
 	DirectX::XMFLOAT4X4 m_WorldPos{};
 	DirectX::XMFLOAT4X4 m_TransformPos{};
@@ -24,12 +21,11 @@ public:
 
 	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
-	GameObject* LoadBinaryFileModel(const char* FileName);
-	GameObject* LoadFrameHierarchy(FILE* File);
+	GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName);
+	GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
 
-	void SetMesh(int MeshIndex, Mesh* ObjectMesh);
-	void SetShader(Shader* ObjectShader);
-	void SetTexture(Texture* ObjectTexture);
+	void SetMesh(Mesh* UsingMesh) { m_Mesh = UsingMesh; }
+	void SetMaterial(Material* UsingMaterial) { m_Material = UsingMaterial; }
 
 	void SetRight(DirectX::XMFLOAT3 Right);
 	void SetUp(DirectX::XMFLOAT3 Up);

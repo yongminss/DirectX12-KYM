@@ -9,10 +9,60 @@ Material::Material()
 
 Material::~Material()
 {
-
+	if (m_Shader != nullptr) delete m_Shader;
+	if (m_Texture != nullptr) delete m_Texture;
 }
 
-void Material::LoadMaterialInfo(FILE *File)
+void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind)
+{
+	switch (Kind) {
+	case 0: // Terrain
+	{
+		TerrainShader *UsingShader = new TerrainShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, 6, 3, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case 1: // Skybox
+	{
+		SkyboxShader *UsingShader = new SkyboxShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, 0, 2, 6);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case 2: // UserInterface
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, 0, 2, 1);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	default:
+	{
+		Shader *UsingShader = new Shader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+	}
+	break;
+	}
+}
+
+void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootSignature, FILE *File)
 {
 	fread(&m_MaterialCount, sizeof(int), 1, File);
 
@@ -30,6 +80,9 @@ void Material::LoadMaterialInfo(FILE *File)
 			fread(&MaterialCount, sizeof(int), 1, File);
 
 			// Shader & Texture를 Set
+			LoadedShader *UsingShader = new LoadedShader();
+			UsingShader->CreateShader(Device, RootSignature);
+			SetShader(UsingShader);
 		}
 
 		else if (!strcmp(Word, "<AlbedoColor>:")) {
@@ -117,4 +170,14 @@ void Material::LoadTextureInfo(FILE *File)
 			// Texture를 생성
 		}
 	}
+}
+
+void Material::SetPipeline(ID3D12GraphicsCommandList* CommandList)
+{
+	if (m_Shader != nullptr) m_Shader->Render(CommandList);
+}
+
+void Material::MappingTexture(ID3D12GraphicsCommandList* CommandList, int Index)
+{
+	if (m_Texture != nullptr) m_Texture->Render(CommandList, Index);
 }

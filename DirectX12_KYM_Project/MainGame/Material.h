@@ -7,6 +7,9 @@
 class Material
 {
 private:
+	Shader *m_Shader = nullptr;
+	Texture *m_Texture = nullptr;
+
 	unsigned int m_MaterialCount = 0;
 
 	DirectX::XMFLOAT4 m_Albedo{};
@@ -22,6 +25,14 @@ public:
 	Material();
 	~Material();
 
-	void LoadMaterialInfo(FILE* File);
+	void CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind);
+
+	void LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootSignature, FILE* File);
 	void LoadTextureInfo(FILE* File);
+
+	void SetShader(Shader* ObjectShader) { m_Shader = ObjectShader; }
+	void SetTexture(Texture* ObjectTexture) { m_Texture = ObjectTexture; }
+
+	void SetPipeline(ID3D12GraphicsCommandList* CommandList);
+	void MappingTexture(ID3D12GraphicsCommandList* CommandList, int Index);
 };

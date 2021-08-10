@@ -324,10 +324,10 @@ LoadedMesh::LoadedMesh()
 
 LoadedMesh::~LoadedMesh()
 {
-
+	if (m_Position != nullptr) delete[] m_Position;
 }
 
-void LoadedMesh::LoadMeshInfo(FILE* File)
+void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
 {
 	fread(&m_VertexCount, sizeof(int), 1, File);
 
@@ -353,11 +353,18 @@ void LoadedMesh::LoadMeshInfo(FILE* File)
 
 		else if (!strcmp(Word, "<Positions>:")) {
 			fread(&PositionCount, sizeof(int), 1, File);
+			m_VertexCount = PositionCount;
 
 			if (PositionCount > 0) {
-				fread(&m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
+				m_Position = new DirectX::XMFLOAT3[PositionCount];
+				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
 
 				// Position Buffer¸¦ »ý¼º
+				m_VertexBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * PositionCount, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+
+				m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
+				m_VertexBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_VertexBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * PositionCount;
 			}
 		}
 
