@@ -99,6 +99,7 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 			if (ChildCount > 0) {
 				for (int i = 0; i < ChildCount; ++i) {
 					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
+					Frame->SetChild(Child);
 				}
 			}
 		}
@@ -112,11 +113,16 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
 			UsingMaterial->LoadMaterialInfo(Device, RootSignature, File);
+			Frame->SetMaterial(UsingMaterial);
 		}
 
 		else if (!strcmp(Word, "<SkinningInfo>:")) {
 			SkinnedMesh *UsingMesh = new SkinnedMesh[2];
-			UsingMesh->LoadMeshInfo(File);
+			UsingMesh->LoadSkinInfo(File);
+
+			ReadStringFile(File, Word);
+			UsingMesh->LoadMeshInfo(Device, CommandList, File);
+			Frame->SetMesh(UsingMesh);
 		}
 
 		else if (!strcmp(Word, "</Frame>")) {
@@ -162,24 +168,14 @@ void GameObject::SetTransformPos(DirectX::XMFLOAT4X4 TransformPos)
 	m_TransformPos._41 = TransformPos._41, m_TransformPos._42 = TransformPos._42, m_TransformPos._43 = TransformPos._43, m_TransformPos._44 = TransformPos._44;
 }
 
-DirectX::XMFLOAT3 GameObject::GetRight()
+void GameObject::SetChild(GameObject* Child)
 {
-	return DirectX::XMFLOAT3(m_WorldPos._11, m_WorldPos._12, m_WorldPos._13);
-}
-
-DirectX::XMFLOAT3 GameObject::GetUp()
-{
-	return DirectX::XMFLOAT3(m_WorldPos._21, m_WorldPos._22, m_WorldPos._23);
-}
-
-DirectX::XMFLOAT3 GameObject::GetLook()
-{
-	return DirectX::XMFLOAT3(m_WorldPos._31, m_WorldPos._32, m_WorldPos._33);
-}
-
-DirectX::XMFLOAT3 GameObject::GetPosition()
-{
-	return DirectX::XMFLOAT3(m_WorldPos._41, m_WorldPos._42, m_WorldPos._43);
+	if (m_Child != nullptr) {
+		Child->m_Sibling = m_Child->m_Sibling;
+		m_Child->m_Sibling = Child;
+	}
+	else
+		m_Child = Child;
 }
 
 void GameObject::Rotate(DirectX::XMFLOAT3 Angle)
@@ -209,4 +205,7 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 
 	if (m_Material != nullptr) m_Material->MappingTexture(CommandList, 0);
 	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
+
+	if (m_Sibling != nullptr) m_Sibling->Render(CommandList);
+	if (m_Child != nullptr) m_Child->Render(CommandList);
 }

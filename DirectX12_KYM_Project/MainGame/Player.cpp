@@ -17,6 +17,7 @@ void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 
 	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Monster.bin");
+	SetChild(Model);
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
 	m_Camera = new Camera();
@@ -59,10 +60,5 @@ void Player::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	m_Camera->Update(CommandList, m_ElapsedTime, this);
 
-	UpdateShaderCode(CommandList);
-
-	if (m_Material != nullptr) m_Material->SetPipeline(CommandList);
-
-	if (m_Material != nullptr) m_Material->MappingTexture(CommandList, 0);
-	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
+	GameObject::Render(CommandList);
 }

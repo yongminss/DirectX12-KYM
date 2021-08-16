@@ -15,6 +15,9 @@ protected:
 
 	char m_FrameName[64]{};
 
+	GameObject *m_Sibling = nullptr;
+	GameObject *m_Child = nullptr;
+
 public:
 	GameObject();
 	~GameObject();
@@ -36,10 +39,12 @@ public:
 
 	void SetFrameName(char* FrameName) { memcpy(m_FrameName, FrameName, sizeof(m_FrameName)); }
 
-	DirectX::XMFLOAT3 GetRight();
-	DirectX::XMFLOAT3 GetUp();
-	DirectX::XMFLOAT3 GetLook();
-	DirectX::XMFLOAT3 GetPosition();
+	void SetChild(GameObject* Child);
+
+	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_WorldPos._11, m_WorldPos._12, m_WorldPos._13); }
+	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_WorldPos._21, m_WorldPos._22, m_WorldPos._23); }
+	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_WorldPos._31, m_WorldPos._32, m_WorldPos._33); }
+	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_WorldPos._41, m_WorldPos._42, m_WorldPos._43); }
 
 	char* GetFrameName() { return m_FrameName; }
 

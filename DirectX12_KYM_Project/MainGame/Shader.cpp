@@ -9,10 +9,10 @@ Shader::Shader()
 
 Shader::~Shader()
 {
-	if (m_PipelineState != nullptr) m_PipelineState->Release();
-
 	if (m_VertexBlob != nullptr) m_VertexBlob->Release();
 	if (m_PixelBlob != nullptr) m_PixelBlob->Release();
+
+	if (m_PipelineState != nullptr) m_PipelineState->Release();
 }
 
 void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature)
@@ -286,4 +286,26 @@ D3D12_INPUT_LAYOUT_DESC LoadedShader::CreateInputLayout()
 	InputLayoutDesc.NumElements = 1;
 
 	return InputLayoutDesc;
+}
+
+D3D12_SHADER_BYTECODE LoadedShader::CreateVertexShader()
+{
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "LoadedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+
+	D3D12_SHADER_BYTECODE ShaderByteCode;
+	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
+
+	return ShaderByteCode;
+}
+
+D3D12_SHADER_BYTECODE LoadedShader::CreatePixelShader()
+{
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "LoadedPS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+
+	D3D12_SHADER_BYTECODE ShaderByteCode;
+	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+
+	return ShaderByteCode;
 }

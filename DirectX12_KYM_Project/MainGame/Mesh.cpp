@@ -359,6 +359,12 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 				m_Position = new DirectX::XMFLOAT3[PositionCount];
 				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
 
+				// 다른 Buffer를 생성하기 전에 임시로 좌표를 설정하기 위해 사용
+				for (int i = 0; i < m_VertexCount; ++i) {
+					m_Position[i].x *= 100.f, m_Position[i].y *= 100.f, m_Position[i].z *= 100.f;
+					m_Position[i].z -= 200.f;
+				}
+
 				// Position Buffer를 생성
 				m_VertexBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * PositionCount, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
@@ -441,8 +447,17 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 						fread(&m_IndexCount, sizeof(int), 1, File); // -> SubMesh의 Index Count
 
 						if (m_IndexCount > 0) {
-							fread(&m_SubMeshIndex, sizeof(UINT), m_IndexCount, File);
-							// SubMesh에 대한 Buffer 생성
+							// Index Buffer를 생성
+							UINT *MeshIndex = new UINT[m_IndexCount];
+							fread(MeshIndex, sizeof(UINT), m_IndexCount, File);
+
+							m_IndexBuffer = CreateBuffer(Device, CommandList, MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
+
+							m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+							m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+							m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
+
+							delete[] MeshIndex;
 						}
 					}
 				}
@@ -452,6 +467,21 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		else if (!strcmp(Word, "</Mesh>")) {
 			break;
 		}
+	}
+}
+
+void LoadedMesh::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
+
+	if (m_IndexBuffer != nullptr) {
+		CommandList->IASetIndexBuffer(&m_IndexBufferView);
+		CommandList->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);
+	}
+	else {
+		CommandList->DrawInstanced(m_VertexCount, 1, 0, 0);
 	}
 }
 
@@ -470,7 +500,7 @@ SkinnedMesh::~SkinnedMesh()
 	if (m_BoneWeight != nullptr) delete[] m_BoneWeight;
 }
 
-void SkinnedMesh::LoadMeshInfo(FILE *File)
+void SkinnedMesh::LoadSkinInfo(FILE *File)
 {
 	BYTE WordCount = '\0';
 

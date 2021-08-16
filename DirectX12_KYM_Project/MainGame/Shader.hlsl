@@ -124,3 +124,28 @@ float4 TerrainPS(TerrainVS_Output Input) : SV_TARGET
     
     return Color;
 }
+
+// -
+struct LoadedVS_Input
+{
+    float3 position : POSITION;
+};
+
+struct LoadedVS_Output
+{
+    float4 position : SV_Position;
+};
+
+LoadedVS_Output LoadedVS(LoadedVS_Input Input)
+{
+    LoadedVS_Output Output;
+            
+    Output.position = mul(mul(float4(Input.position, 1.0f), CameraPos), ProjectionPos);
+    
+    return Output;
+}
+
+float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
+{
+    return float4(1.f, 1.f, 1.f, 1.f);
+}

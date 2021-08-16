@@ -76,6 +76,8 @@ public:
 	~LoadedMesh();
 
 	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
+
+	void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
 // bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Mesh
@@ -96,5 +98,5 @@ public:
 	SkinnedMesh();
 	~SkinnedMesh();
 
-	void LoadMeshInfo(FILE* File);
+	void LoadSkinInfo(FILE* File);
 };
