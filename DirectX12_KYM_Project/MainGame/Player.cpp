@@ -15,6 +15,7 @@ Player::~Player()
 void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
 	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Monster.bin");
 	SetChild(Model);
@@ -43,7 +44,9 @@ void Player::Move(int Index, float Distance)
 	}
 	break;
 	}
-	m_WorldPos._41 = Position.x, m_WorldPos._42 = Position.y, m_WorldPos._43 = Position.z;
+	m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y, m_TransformPos._43 = Position.z;
+
+	UpdateTransform(nullptr);
 }
 
 void Player::Animate(float ElapsedTime)

@@ -101,21 +101,25 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player();
 	m_Player->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_Player->UpdateTransform(nullptr);
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	float MapHalfSize = 1250.f;
 	m_Terrain = new Terrain();
 	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
 	m_Terrain->SetPosition(DirectX::XMFLOAT3(0.f - MapHalfSize, -300.f, 0.f - MapHalfSize));
+	m_Terrain->UpdateTransform(nullptr);
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox();
 	m_Skybox->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_Skybox->UpdateTransform(nullptr);
 
 	// 게임에 필요한 UI 생성
 	m_UserInterface = new UserInterface();
 	m_UserInterface->CreateGameObject(Device, CommandList, m_RootSignature);
 	m_UserInterface->SetPosition(DirectX::XMFLOAT3(-0.75f, -0.75f, 0.f));
+	m_UserInterface->UpdateTransform(nullptr);
 
 	// 게임 월드에 등장하는 Game Object 생성
 	m_GameObjects.reserve(100);
@@ -126,6 +130,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 			float x = -MapHalfSize + (i * 500.f), z = -MapHalfSize + (j * 500.f);
 			float y = m_Terrain->GetHeightMapYPos((x + MapHalfSize) / 20, (z + MapHalfSize) / 20) - 300.f;
 			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(x, y, z));
+			m_GameObjects.back()->UpdateTransform(nullptr);
 		}
 	}
 }

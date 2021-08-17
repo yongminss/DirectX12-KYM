@@ -16,6 +16,7 @@ Skybox::~Skybox()
 void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
 	m_SkyboxMesh = new Mesh*[6];
 
@@ -59,6 +60,8 @@ void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 void Skybox::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)
 {
 	SetPosition(Position);
+
+	UpdateTransform(nullptr);
 }
 
 void Skybox::Render(ID3D12GraphicsCommandList* CommandList)

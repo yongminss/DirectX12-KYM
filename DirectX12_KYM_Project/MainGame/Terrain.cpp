@@ -15,6 +15,7 @@ Terrain::~Terrain()
 void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
 	int Width = 257, Length = 257;
 

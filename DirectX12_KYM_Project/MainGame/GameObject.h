@@ -41,15 +41,16 @@ public:
 
 	void SetChild(GameObject* Child);
 
-	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_WorldPos._11, m_WorldPos._12, m_WorldPos._13); }
-	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_WorldPos._21, m_WorldPos._22, m_WorldPos._23); }
-	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_WorldPos._31, m_WorldPos._32, m_WorldPos._33); }
-	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_WorldPos._41, m_WorldPos._42, m_WorldPos._43); }
+	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_TransformPos._11, m_TransformPos._12, m_TransformPos._13); }
+	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
+	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_TransformPos._31, m_TransformPos._32, m_TransformPos._33); }
+	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_TransformPos._41, m_TransformPos._42, m_TransformPos._43); }
 
 	char* GetFrameName() { return m_FrameName; }
 
 	void Rotate(DirectX::XMFLOAT3 Angle);
 
+	void UpdateTransform(DirectX::XMFLOAT4X4* Parents);
 	void Animate(float ElapsedTime);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	void Render(ID3D12GraphicsCommandList* CommandList);

@@ -134,30 +134,30 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 
 void GameObject::SetRight(DirectX::XMFLOAT3 Right)
 {
-	m_WorldPos._11 = Right.x;
-	m_WorldPos._12 = Right.y;
-	m_WorldPos._13 = Right.z;
+	m_TransformPos._11 = Right.x;
+	m_TransformPos._12 = Right.y;
+	m_TransformPos._13 = Right.z;
 }
 
 void GameObject::SetUp(DirectX::XMFLOAT3 Up)
 {
-	m_WorldPos._21 = Up.x;
-	m_WorldPos._22 = Up.y;
-	m_WorldPos._23 = Up.z;
+	m_TransformPos._21 = Up.x;
+	m_TransformPos._22 = Up.y;
+	m_TransformPos._23 = Up.z;
 }
 
 void GameObject::SetLook(DirectX::XMFLOAT3 Look)
 {
-	m_WorldPos._31 = Look.x;
-	m_WorldPos._32 = Look.y;
-	m_WorldPos._33 = Look.z;
+	m_TransformPos._31 = Look.x;
+	m_TransformPos._32 = Look.y;
+	m_TransformPos._33 = Look.z;
 }
 
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
 {
-	m_WorldPos._41 = Position.x;
-	m_WorldPos._42 = Position.y;
-	m_WorldPos._43 = Position.z;
+	m_TransformPos._41 = Position.x;
+	m_TransformPos._42 = Position.y;
+	m_TransformPos._43 = Position.z;
 }
 
 void GameObject::SetTransformPos(DirectX::XMFLOAT4X4 TransformPos)
@@ -181,7 +181,20 @@ void GameObject::SetChild(GameObject* Child)
 void GameObject::Rotate(DirectX::XMFLOAT3 Angle)
 {
 	DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(Angle.x), DirectX::XMConvertToRadians(Angle.y), DirectX::XMConvertToRadians(Angle.z));
-	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_WorldPos)));
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_TransformPos)));
+}
+
+void GameObject::UpdateTransform(DirectX::XMFLOAT4X4* Parents)
+{
+	if (Parents != nullptr) {
+		DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&m_TransformPos), DirectX::XMLoadFloat4x4(Parents)));
+	}
+	else {
+		DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMLoadFloat4x4(&m_TransformPos));
+	}
+
+	if (m_Sibling != nullptr) m_Sibling->UpdateTransform(Parents);
+	if (m_Child != nullptr) m_Child->UpdateTransform(&m_WorldPos);
 }
 
 void GameObject::Animate(float ElapsedTime)
