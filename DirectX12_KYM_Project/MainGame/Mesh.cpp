@@ -359,12 +359,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 				m_Position = new DirectX::XMFLOAT3[PositionCount];
 				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
 
-				// 다른 Buffer를 생성하기 전에 임시로 좌표를 설정하기 위해 사용
-				for (int i = 0; i < m_VertexCount; ++i) {
-					m_Position[i].x *= 100.f, m_Position[i].y *= 100.f, m_Position[i].z *= 100.f;
-					m_Position[i].z -= 200.f;
-				}
-
 				// Position Buffer를 생성
 				m_VertexBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * PositionCount, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 

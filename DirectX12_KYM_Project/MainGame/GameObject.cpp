@@ -182,6 +182,8 @@ void GameObject::Rotate(DirectX::XMFLOAT3 Angle)
 {
 	DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(Angle.x), DirectX::XMConvertToRadians(Angle.y), DirectX::XMConvertToRadians(Angle.z));
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_TransformPos)));
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::UpdateTransform(DirectX::XMFLOAT4X4* Parents)

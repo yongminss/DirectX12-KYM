@@ -140,7 +140,7 @@ LoadedVS_Output LoadedVS(LoadedVS_Input Input)
 {
     LoadedVS_Output Output;
             
-    Output.position = mul(mul(float4(Input.position, 1.0f), CameraPos), ProjectionPos);
+    Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
     
     return Output;
 }

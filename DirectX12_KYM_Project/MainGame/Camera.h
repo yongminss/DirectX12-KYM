@@ -9,7 +9,7 @@ private:
 	DirectX::XMFLOAT4X4 m_CameraPos{};
 	DirectX::XMFLOAT4X4 m_ProjectionPos{};
 
-	DirectX::XMFLOAT3 m_Offset = { 0.f, 20.f, -100.f };
+	DirectX::XMFLOAT3 m_Offset = { 0.f, 75.f, -200.f };
 
 	DirectX::XMFLOAT3 m_Right = { 1.f, 0.f, 0.f };
 	DirectX::XMFLOAT3 m_Up = { 0.f, 1.f, 0.f };
