@@ -112,7 +112,7 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
-			UsingMaterial->LoadMaterialInfo(Device, RootSignature, File);
+			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File);
 			Frame->SetMaterial(UsingMaterial);
 		}
 

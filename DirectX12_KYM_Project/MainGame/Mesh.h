@@ -64,11 +64,13 @@ protected:
 
 	DirectX::XMFLOAT3 *m_Position = nullptr;
 	DirectX::XMFLOAT4 m_Color{};
-	DirectX::XMFLOAT2 m_Uv0{};
+	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
 	DirectX::XMFLOAT2 m_Uv1{};
 	DirectX::XMFLOAT3 m_Normal{};
 	DirectX::XMFLOAT3 m_Tangent{};
 	DirectX::XMFLOAT3 m_BiTangent{};
+	UINT *m_MeshIndex = nullptr;
+
 	UINT m_SubMeshIndex = 0;
 
 public:

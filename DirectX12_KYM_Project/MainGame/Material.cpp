@@ -23,7 +23,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, 6, 3, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 2, 3);
 		SetTexture(UsingTexture);
 	}
 	break;
@@ -35,7 +35,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, 0, 2, 6);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 6, 2);
 		SetTexture(UsingTexture);
 	}
 	break;
@@ -47,7 +47,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, 0, 2, 1);
+		UsingTexture->CreateTexture(Device, CommandList, L"Texture/SkyBox_Bottom.dds", Kind, 1, 2);
 		SetTexture(UsingTexture);
 	}
 	break;
@@ -62,7 +62,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 }
 
-void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootSignature, FILE *File)
+void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File)
 {
 	fread(&m_MaterialCount, sizeof(int), 1, File);
 
@@ -118,31 +118,31 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootS
 		}
 
 		else if (!strcmp(Word, "<AlbedoMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<SpecularMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<NormalMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<MetallicMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<EmissionMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<DetailAlbedoMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "<DetailNormalMap>:")) {
-			LoadTextureInfo(File);
+			LoadTextureInfo(Device, CommandList, File);
 		}
 
 		else if (!strcmp(Word, "</Materials>")) {
@@ -151,7 +151,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootS
 	}
 }
 
-void Material::LoadTextureInfo(FILE *File)
+void Material::LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
 {
 	char TextureName[64] = { '\0' };
 	BYTE WordCount = '\0';
@@ -167,7 +167,21 @@ void Material::LoadTextureInfo(FILE *File)
 		Duplicated = (TextureName[0] == '@'); // 텍스처의 첫번째 글자가 @이면 이미 가져왔으므로 중복 생성하지 않음
 
 		if (Duplicated == false) {
+			char FilePath[64] = { '\0' };
+			strcpy_s(FilePath, 64, "Model/Texture/");
+			strcat_s(FilePath, TextureName);
+			strcat_s(FilePath, ".dds");
+
+			size_t ConvertCount = 0;
+			wchar_t* FrameTextureName = new wchar_t[64];
+			mbstowcs_s(&ConvertCount, FrameTextureName, 64, FilePath, _TRUNCATE);
+
 			// Texture를 생성
+			Texture *UsingTexture = new Texture();
+			UsingTexture->CreateTexture(Device, CommandList, FrameTextureName, -1, 1, 4);
+			SetTexture(UsingTexture);
+
+			delete[] FrameTextureName;
 		}
 	}
 }

@@ -19,8 +19,8 @@ public:
 	Texture();
 	~Texture();
 
-	void CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind, int RootParameterIndex, int TextureCount);
-	void CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind);
+	void CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind, int TextureCount, int RootParameterIndex);
+	void CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind);
 	void CreateDescriptorHeap(ID3D12Device* Device);
 	void CreateShaderResourceView(ID3D12Device* Device);
 

@@ -27,8 +27,8 @@ public:
 
 	void CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind);
 
-	void LoadMaterialInfo(ID3D12Device* Device, ID3D12RootSignature* RootSignature, FILE* File);
-	void LoadTextureInfo(FILE* File);
+	void LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
+	void LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 
 	void SetShader(Shader* ObjectShader) { m_Shader = ObjectShader; }
 	void SetTexture(Texture* ObjectTexture) { m_Texture = ObjectTexture; }

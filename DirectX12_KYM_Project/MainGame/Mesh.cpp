@@ -109,7 +109,7 @@ ID3D12Resource* Mesh::CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLi
 	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	ResourceDesc.SampleDesc.Count = 1;
 	ResourceDesc.SampleDesc.Quality = 0;
-
+	
 	Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)&Buffer);
 
 	// 업로드
@@ -324,7 +324,7 @@ LoadedMesh::LoadedMesh()
 
 LoadedMesh::~LoadedMesh()
 {
-	if (m_Position != nullptr) delete[] m_Position;
+
 }
 
 void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
@@ -353,18 +353,10 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 		else if (!strcmp(Word, "<Positions>:")) {
 			fread(&PositionCount, sizeof(int), 1, File);
-			m_VertexCount = PositionCount;
 
 			if (PositionCount > 0) {
 				m_Position = new DirectX::XMFLOAT3[PositionCount];
 				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
-
-				// Position Buffer를 생성
-				m_VertexBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * PositionCount, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
-
-				m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
-				m_VertexBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
-				m_VertexBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * PositionCount;
 			}
 		}
 
@@ -380,9 +372,8 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			fread(&UvCount, sizeof(int), 1, File);
 
 			if (UvCount > 0) {
-				fread(&m_Uv0, sizeof(DirectX::XMFLOAT2), UvCount, File);
-
-				// Uv0에 대한 Buffer 생성
+				m_Uv0 = new DirectX::XMFLOAT2[UvCount];
+				fread(m_Uv0, sizeof(DirectX::XMFLOAT2), UvCount, File);
 			}
 		}
 
@@ -391,8 +382,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 			if (UvCount > 0) {
 				fread(&m_Uv1, sizeof(DirectX::XMFLOAT2), UvCount, File);
-
-				// Uv1에 대한 Buffer 생성
 			}
 		}
 
@@ -401,8 +390,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 			if (NormalCount > 0) {
 				fread(&m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
-
-				// Normal에 대한 Buffer 생성
 			}
 		}
 
@@ -411,8 +398,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 			if (TangentCount > 0) {
 				fread(&m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
-
-				// Tangent에 대한 Buffer 생성
 			}
 		}
 
@@ -421,8 +406,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 			if (BiTangentCount > 0) {
 				fread(&m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
-
-				// BiTangent에 대한 Buffer 생성
 			}
 		}
 
@@ -442,16 +425,8 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 						if (m_IndexCount > 0) {
 							// Index Buffer를 생성
-							UINT *MeshIndex = new UINT[m_IndexCount];
-							fread(MeshIndex, sizeof(UINT), m_IndexCount, File);
-
-							m_IndexBuffer = CreateBuffer(Device, CommandList, MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
-
-							m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
-							m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-							m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
-
-							delete[] MeshIndex;
+							m_MeshIndex = new UINT[m_IndexCount];
+							fread(m_MeshIndex, sizeof(UINT), m_IndexCount, File);
 						}
 					}
 				}
@@ -459,6 +434,30 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		}
 
 		else if (!strcmp(Word, "</Mesh>")) {
+			if (m_Position != nullptr && m_Uv0 != nullptr && m_MeshIndex != 0) {
+				TextureVertex *MeshVertex = new TextureVertex[m_VertexCount];
+
+				unsigned int ByteSize = sizeof(TextureVertex) * m_VertexCount;
+
+				for (int i = 0; i < m_VertexCount; ++i) {
+					MeshVertex[i] = TextureVertex(m_Position[i], m_Uv0[i]);
+				}
+				m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+
+				m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
+				m_VertexBufferView.StrideInBytes = sizeof(TextureVertex);
+				m_VertexBufferView.SizeInBytes = ByteSize;
+
+				delete[] m_Position, delete[] m_Uv0, delete[] MeshVertex;
+
+				m_IndexBuffer = CreateBuffer(Device, CommandList, m_MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
+
+				m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+				m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+				m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
+
+				delete[] m_MeshIndex;
+			}
 			break;
 		}
 	}

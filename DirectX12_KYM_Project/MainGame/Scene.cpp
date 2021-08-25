@@ -20,7 +20,7 @@ Scene::~Scene()
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
 {
-	D3D12_DESCRIPTOR_RANGE DescriptorRange[2];
+	D3D12_DESCRIPTOR_RANGE DescriptorRange[3];
 	// Texture Count 1
 	ZeroMemory(&DescriptorRange, sizeof(DescriptorRange));
 	DescriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -34,8 +34,14 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	DescriptorRange[1].RegisterSpace = 0;
 	DescriptorRange[1].NumDescriptors = 2;
 	DescriptorRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	// Load Model Texture
+	DescriptorRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	DescriptorRange[2].BaseShaderRegister = 3;
+	DescriptorRange[2].RegisterSpace = 0;
+	DescriptorRange[2].NumDescriptors = 1;
+	DescriptorRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER RootParameter[4];
+	D3D12_ROOT_PARAMETER RootParameter[5];
 	ZeroMemory(&RootParameter, sizeof(RootParameter));
 	// Camera
 	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -59,6 +65,11 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[3].DescriptorTable.pDescriptorRanges = &DescriptorRange[1];
 	RootParameter[3].DescriptorTable.NumDescriptorRanges = 1;
 	RootParameter[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	// Load Model
+	RootParameter[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	RootParameter[4].DescriptorTable.pDescriptorRanges = &DescriptorRange[2];
+	RootParameter[4].DescriptorTable.NumDescriptorRanges = 1;
+	RootParameter[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSamplerDesc;
 	ZeroMemory(&StaticSamplerDesc, sizeof(StaticSamplerDesc));
@@ -79,7 +90,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // 입력-조립(IA) 단계 허용
 	RootSignatureDesc.pParameters = RootParameter;
-	RootSignatureDesc.NumParameters = 4;
+	RootSignatureDesc.NumParameters = 5;
 	RootSignatureDesc.pStaticSamplers = &StaticSamplerDesc;
 	RootSignatureDesc.NumStaticSamplers = 1;
 

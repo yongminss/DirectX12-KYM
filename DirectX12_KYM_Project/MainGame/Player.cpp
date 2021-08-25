@@ -17,7 +17,7 @@ void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
-	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Monster.bin");
+	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin");
 	SetChild(Model);
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성

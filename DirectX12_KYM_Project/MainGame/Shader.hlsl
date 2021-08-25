@@ -3,6 +3,8 @@ Texture2D Texture : register(t0);
 // Base + Detail - 2개의 텍스처를 매핑
 Texture2D BaseTexture : register(t1);
 Texture2D DetailTexture : register(t2);
+// Bin Model이 사용하는 텍스처
+Texture2D BinTexture : register(t3);
 
 // 카메라 and 투영 변환에 사용할 버퍼
 cbuffer Camera : register(b0)
@@ -129,11 +131,13 @@ float4 TerrainPS(TerrainVS_Output Input) : SV_TARGET
 struct LoadedVS_Input
 {
     float3 position : POSITION;
+    float2 uv : UV;
 };
 
 struct LoadedVS_Output
 {
     float4 position : SV_Position;
+    float2 uv : UV;
 };
 
 LoadedVS_Output LoadedVS(LoadedVS_Input Input)
@@ -141,11 +145,14 @@ LoadedVS_Output LoadedVS(LoadedVS_Input Input)
     LoadedVS_Output Output;
             
     Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
     
     return Output;
 }
 
 float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
 {
-    return float4(1.f, 1.f, 1.f, 1.f);
+    float4 Color = BinTexture.Sample(Sampler, Input.uv);
+    
+    return Color;
 }

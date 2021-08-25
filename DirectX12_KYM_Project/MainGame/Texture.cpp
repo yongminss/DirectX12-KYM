@@ -16,7 +16,7 @@ Texture::~Texture()
 	if (m_ShaderResourceViewDescriptorHeap != nullptr) m_ShaderResourceViewDescriptorHeap->Release();
 }
 
-void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind, int RootParameterIndex, int TextureCount)
+void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind, int TextureCount, int RootParameterIndex)
 {
 	m_DescriptorHandleIncrementSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_RootParameterIndex = RootParameterIndex;
@@ -25,74 +25,93 @@ void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* Com
 	m_UploadTextureBuffer = new ID3D12Resource*[m_TextureCount];
 
 	// 1. 오브젝트에 매핑할 텍스처 파일(DDS)을 읽고 리소스를 생성
-	CreateTextureBuffer(Device, CommandList, Kind);
+	CreateTextureBuffer(Device, CommandList, TextureName, Kind);
 	// 2. ShaderResource View를 만들기 위해 Descriptor Heap을 생성
 	CreateDescriptorHeap(Device);
 	// 3. 텍스처 매핑을 위해 ShaderResource View 생성
 	CreateShaderResourceView(Device);
 }
 
-void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int Kind)
+void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind)
 {
-	for (int i = 0; i < m_TextureCount; ++i, ++Kind) {
+	for (int i = 0; i < m_TextureCount; ++i) {
 		std::unique_ptr<uint8_t[]> TextureFileData{};
 		std::vector<D3D12_SUBRESOURCE_DATA> SubresourceData{};
 		DirectX::DDS_ALPHA_MODE TextureFileAlphaMode = DirectX::DDS_ALPHA_MODE_UNKNOWN;
 		bool ActiveCubeMap = false;
 
 		switch (Kind) {
-		case 0:
+		case 0: // Terrain
 		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Front.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			switch (i) {
+			case 0:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Base.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 1:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Detail.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+			}
 		}
 		break;
 
-		case 1:
+		case 1: // Skybox
 		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Back.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			switch (i) {
+			case 0:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Front.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 1:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Back.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 2:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Left.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 3:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Right.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 4:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Top.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 5:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Bottom.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+			}
 		}
 		break;
 
-		case 2:
+		default:
 		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Left.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case 3:
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Right.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case 4:
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Top.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case 5:
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/SkyBox_Bottom.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case 6:
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Base.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case 7:
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Terrain_Detail.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+			DirectX::LoadDDSTextureFromFileEx(Device, TextureName, 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
