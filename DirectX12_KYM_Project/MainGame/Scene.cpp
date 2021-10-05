@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "Scene.h"
 
+#include "Player.h"
+#include "Terrain.h"
+#include "Skybox.h"
+#include "UserInterface.h"
+
 
 Scene::Scene()
 {
@@ -34,14 +39,14 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	DescriptorRange[1].RegisterSpace = 0;
 	DescriptorRange[1].NumDescriptors = 2;
 	DescriptorRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	// Load Model Texture
+	// Binary Model Texture
 	DescriptorRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	DescriptorRange[2].BaseShaderRegister = 3;
 	DescriptorRange[2].RegisterSpace = 0;
 	DescriptorRange[2].NumDescriptors = 1;
 	DescriptorRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER RootParameter[5];
+	D3D12_ROOT_PARAMETER RootParameter[7];
 	ZeroMemory(&RootParameter, sizeof(RootParameter));
 	// Camera
 	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -49,7 +54,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[0].Constants.RegisterSpace = 0;
 	RootParameter[0].Constants.Num32BitValues = 32;
 	RootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	// GameObject
+	// GameObject World Pos
 	RootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	RootParameter[1].Constants.ShaderRegister = 1;
 	RootParameter[1].Constants.RegisterSpace = 0;
@@ -65,11 +70,21 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[3].DescriptorTable.pDescriptorRanges = &DescriptorRange[1];
 	RootParameter[3].DescriptorTable.NumDescriptorRanges = 1;
 	RootParameter[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	// Load Model
+	// Binary Loaded Model
 	RootParameter[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	RootParameter[4].DescriptorTable.pDescriptorRanges = &DescriptorRange[2];
 	RootParameter[4].DescriptorTable.NumDescriptorRanges = 1;
 	RootParameter[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	// Skinned Model - Offset
+	RootParameter[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	RootParameter[5].Descriptor.ShaderRegister = 2;
+	RootParameter[5].Descriptor.RegisterSpace = 0;
+	RootParameter[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	// Skinned Model - Transform
+	RootParameter[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	RootParameter[6].Descriptor.ShaderRegister = 3;
+	RootParameter[6].Descriptor.RegisterSpace = 0;
+	RootParameter[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSamplerDesc;
 	ZeroMemory(&StaticSamplerDesc, sizeof(StaticSamplerDesc));
@@ -84,13 +99,13 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	StaticSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 	StaticSamplerDesc.ShaderRegister = 0;
 	StaticSamplerDesc.RegisterSpace = 0;
-	StaticSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	StaticSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc;
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // 입력-조립(IA) 단계 허용
 	RootSignatureDesc.pParameters = RootParameter;
-	RootSignatureDesc.NumParameters = 5;
+	RootSignatureDesc.NumParameters = _countof(RootParameter);
 	RootSignatureDesc.pStaticSamplers = &StaticSamplerDesc;
 	RootSignatureDesc.NumStaticSamplers = 1;
 
@@ -110,25 +125,21 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	CreateRootSignature(Device);
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
-	m_Player = new Player();
-	m_Player->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_Player = new Player(Device, CommandList, m_RootSignature);
 	m_Player->UpdateTransform(nullptr);
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
+	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
 	float MapHalfSize = 1250.f;
-	m_Terrain = new Terrain();
-	m_Terrain->CreateGameObject(Device, CommandList, m_RootSignature);
 	m_Terrain->SetPosition(DirectX::XMFLOAT3(0.f - MapHalfSize, -300.f, 0.f - MapHalfSize));
 	m_Terrain->UpdateTransform(nullptr);
 
 	// 게임의 배경 역할을 하는 Skybox 생성
-	m_Skybox = new Skybox();
-	m_Skybox->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_Skybox = new Skybox(Device, CommandList, m_RootSignature);
 	m_Skybox->UpdateTransform(nullptr);
 
 	// 게임에 필요한 UI 생성
-	m_UserInterface = new UserInterface();
-	m_UserInterface->CreateGameObject(Device, CommandList, m_RootSignature);
+	m_UserInterface = new UserInterface(Device, CommandList, m_RootSignature);
 	m_UserInterface->SetPosition(DirectX::XMFLOAT3(-0.75f, -0.75f, 0.f));
 	m_UserInterface->UpdateTransform(nullptr);
 
@@ -136,8 +147,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_GameObjects.reserve(100);
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 10; ++j) {
-			m_GameObjects.emplace_back(new GameObject());
-			m_GameObjects.back()->CreateGameObject(Device, CommandList, m_RootSignature);
+			m_GameObjects.emplace_back(new GameObject(Device, CommandList, m_RootSignature));
 			float x = -MapHalfSize + (i * 500.f), z = -MapHalfSize + (j * 500.f);
 			float y = m_Terrain->GetHeightMapYPos((x + MapHalfSize) / 20, (z + MapHalfSize) / 20) - 300.f;
 			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(x, y, z));

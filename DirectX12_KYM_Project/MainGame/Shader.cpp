@@ -279,7 +279,7 @@ D3D12_INPUT_LAYOUT_DESC LoadedShader::CreateInputLayout()
 {
 	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
 	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
@@ -307,6 +307,34 @@ D3D12_SHADER_BYTECODE LoadedShader::CreatePixelShader()
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
 	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+
+	return ShaderByteCode;
+}
+
+// --------------------
+D3D12_INPUT_LAYOUT_DESC SkinnedShader::CreateInputLayout()
+{
+	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[4];
+	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[2] = { "BONEINDEX", 0, DXGI_FORMAT_R32G32B32A32_UINT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[3] = { "BONEWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
+	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
+	InputLayoutDesc.pInputElementDescs = InputElementDesc;
+	InputLayoutDesc.NumElements = 4;
+
+	return InputLayoutDesc;
+}
+
+D3D12_SHADER_BYTECODE SkinnedShader::CreateVertexShader()
+{
+	HRESULT hResult = D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "SkinedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+
+	D3D12_SHADER_BYTECODE ShaderByteCode;
+	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
+	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
 
 	return ShaderByteCode;
 }

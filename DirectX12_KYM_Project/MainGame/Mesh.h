@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vertex.h"
+class GameObject;
 
 // 오브젝트가 사용할 Vertex Buffer 생성 및 관리
 class Mesh
@@ -17,16 +17,12 @@ protected:
 	unsigned int m_VertexCount = 0;
 	unsigned int m_IndexCount = 0;
 
-	float m_HeightMapYPos[257][257]{};
-
 public:
 	Mesh();
 	~Mesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
-	ID3D12Resource *CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int Size, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);
-
-	float GetHeightMapYPos(int x, int z) { return m_HeightMapYPos[x][z]; }
+	ID3D12Resource *CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, unsigned int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);
 
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };
@@ -44,19 +40,32 @@ public:
 // 지형에 사용될 Mesh
 class TerrainMesh : public Mesh
 {
+private:
+	float m_HeightMapYPos[257][257]{};
+
 public:
 	TerrainMesh();
 	~TerrainMesh();
 
+	float GetHeightMapYPos(int x, int z) { return m_HeightMapYPos[x][z]; }
+
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Scale, int Width, int Length, BYTE* YPos);
 
-	void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
 // bin 파일로 로드한 오브젝트가 사용하는 Mesh
 class LoadedMesh : public Mesh
 {
 protected:
+	ID3D12Resource *m_PositionBuffer = nullptr;
+	ID3D12Resource *m_UploadPositionBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_PositionBufferView{};
+
+	ID3D12Resource *m_UvBuffer = nullptr;
+	ID3D12Resource *m_UploadUvBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_UvBufferView{};
+
 	char m_MeshName[64]{};
 
 	DirectX::XMFLOAT3 m_AabbCenter{};
@@ -79,26 +88,77 @@ public:
 
 	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 
-	void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
 // bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Mesh
-class SkinnedMesh : public LoadedMesh
+class SkinnedMesh : public Mesh
 {
 private:
+	DirectX::XMFLOAT4X4 *m_BindPoseBoneOffset = nullptr;
+	DirectX::XMFLOAT4X4 *m_BoneOffset = nullptr;
+	ID3D12Resource *m_BoneOffsetBuffer = nullptr;
+
+	DirectX::XMFLOAT4X4 *m_BoneTransform = nullptr;
+	ID3D12Resource *m_BoneTransformBuffer = nullptr;
+
+	DirectX::XMUINT4 *m_BoneIndex = nullptr;
+	ID3D12Resource *m_BoneIndexBuffer = nullptr;
+	ID3D12Resource *m_UploadBoneIndexBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_BoneIndexBufferView{};
+
+	DirectX::XMFLOAT4 *m_BoneWeight = nullptr;
+	ID3D12Resource *m_BoneWeightBuffer = nullptr;
+	ID3D12Resource *m_UploadBoneWeightBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_BoneWeightBufferView{};
+
 	int m_BonePerVertex = 0;
 
 	int m_BoneCount = 0;
 	char(*m_BoneName)[64] = nullptr;
+	GameObject **m_BoneFrame = nullptr;
 
-	DirectX::XMFLOAT4X4 *m_BoneOffset = nullptr;
+	// --------------------
+	ID3D12Resource *m_PositionBuffer = nullptr;
+	ID3D12Resource *m_UploadPositionBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_PositionBufferView{};
 
-	DirectX::XMUINT4 *m_BoneIndex = nullptr;
-	DirectX::XMFLOAT4 *m_BoneWeight = nullptr;
+	ID3D12Resource *m_UvBuffer = nullptr;
+	ID3D12Resource *m_UploadUvBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_UvBufferView{};
+
+	char m_MeshName[64]{};
+
+	DirectX::XMFLOAT3 m_AabbCenter{};
+	DirectX::XMFLOAT3 m_AAbbExtent{};
+
+	DirectX::XMFLOAT3 *m_Position = nullptr;
+	DirectX::XMFLOAT4 m_Color{};
+	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
+	DirectX::XMFLOAT2 m_Uv1{};
+	DirectX::XMFLOAT3 m_Normal{};
+	DirectX::XMFLOAT3 m_Tangent{};
+	DirectX::XMFLOAT3 m_BiTangent{};
+	UINT *m_MeshIndex = nullptr;
+
+	UINT m_SubMeshIndex = 0;
+	// --------------------
 
 public:
 	SkinnedMesh();
 	~SkinnedMesh();
 
-	void LoadSkinInfo(FILE* File);
+	void CreateShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
+	void LoadSkinInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
+
+	void SetBoneFrame(int Index, GameObject* Frame);
+
+	int GetBoneCount() { return m_BoneCount; }
+	char* GetBoneName(int Index) { return m_BoneName[Index]; }
+
+	void UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList);
+
+	// --------------------
+	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 };

@@ -1,18 +1,10 @@
 #include "stdafx.h"
 #include "Player.h"
 
+#include "Camera.h"
 
-Player::Player()
-{
 
-}
-
-Player::~Player()
-{
-	if (m_Camera != nullptr) delete m_Camera;
-}
-
-void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -23,6 +15,11 @@ void Player::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
 	m_Camera = new Camera();
 	m_Camera->CreateCamera();
+}
+
+Player::~Player()
+{
+	if (m_Camera != nullptr) delete m_Camera;
 }
 
 void Player::Move(int Index, float Distance)

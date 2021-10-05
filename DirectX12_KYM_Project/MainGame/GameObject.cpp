@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "GameObject.h"
 
+#include "Mesh.h"
+#include "Material.h"
+
 
 int ReadIntegerFile(FILE* File)
 {
@@ -25,13 +28,7 @@ GameObject::GameObject()
 
 }
 
-GameObject::~GameObject()
-{
-	if (m_Mesh != nullptr) delete m_Mesh;
-	if (m_Material != nullptr) delete m_Material;
-}
-
-void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+GameObject::GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -47,14 +44,23 @@ void GameObject::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandLis
 	SetMaterial(UsingMaterial);
 }
 
+GameObject::~GameObject()
+{
+	if (m_Mesh != nullptr) delete m_Mesh;
+	if (m_Material != nullptr) delete m_Material;
+}
+
 GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName)
 {
 	FILE *File = nullptr;
 	fopen_s(&File, FileName, "rb");
+	rewind(File);
 
 	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
 
 	fclose(File);
+
+	Model->SetMeshBoneFrame(Model);
 
 	return Model;
 }
@@ -105,23 +111,27 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 		}
 
 		else if (!strcmp(Word, "<Mesh>:")) {
-			LoadedMesh *UsingMesh = new LoadedMesh[2];
+			LoadedMesh *UsingMesh = new LoadedMesh[10];
 			UsingMesh->LoadMeshInfo(Device, CommandList, File);
 			Frame->SetMesh(UsingMesh);
 		}
 
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
-			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File);
+			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File, Frame->m_ShaderType);
 			Frame->SetMaterial(UsingMaterial);
 		}
 
 		else if (!strcmp(Word, "<SkinningInfo>:")) {
-			SkinnedMesh *UsingMesh = new SkinnedMesh[2];
-			UsingMesh->LoadSkinInfo(File);
+			Frame->m_ShaderType = 1;
+			SkinnedMesh *UsingMesh = new SkinnedMesh[10];
+			UsingMesh->CreateShaderBuffer(Device, CommandList);
+
+			UsingMesh->LoadSkinInfo(Device, CommandList, File);
 
 			ReadStringFile(File, Word);
 			UsingMesh->LoadMeshInfo(Device, CommandList, File);
+
 			Frame->SetMesh(UsingMesh);
 		}
 
@@ -130,6 +140,16 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 		}
 	}
 	return Frame;
+}
+
+void GameObject::SetMesh(Mesh* UsingMesh)
+{
+	m_Mesh = UsingMesh;
+}
+
+void GameObject::SetMaterial(Material* UsingMaterial)
+{
+	m_Material = UsingMaterial;
 }
 
 void GameObject::SetRight(DirectX::XMFLOAT3 Right)
@@ -176,6 +196,29 @@ void GameObject::SetChild(GameObject* Child)
 	}
 	else
 		m_Child = Child;
+}
+
+void GameObject::SetMeshBoneFrame(GameObject* RootFrame)
+{
+	if (m_ShaderType == 1) {
+		SkinnedMesh *UsingMesh = (SkinnedMesh*)m_Mesh;
+		for (int i = 0; i < UsingMesh->GetBoneCount(); ++i)
+			UsingMesh->SetBoneFrame(i, RootFrame->FindFrame(UsingMesh->GetBoneName(i)));
+	}
+	if (m_Sibling != nullptr) m_Sibling->SetMeshBoneFrame(RootFrame);
+	if (m_Child != nullptr) m_Child->SetMeshBoneFrame(RootFrame);
+}
+
+GameObject* GameObject::FindFrame(char* FrameName)
+{
+	GameObject* Frame = nullptr;
+
+	if (!strcmp(m_FrameName, FrameName)) return this;
+
+	if (m_Sibling != nullptr) if (Frame = m_Sibling->FindFrame(FrameName)) return Frame;
+	if (m_Child != nullptr) if (Frame = m_Child->FindFrame(FrameName)) return Frame;
+
+	return nullptr;
 }
 
 void GameObject::Rotate(DirectX::XMFLOAT3 Angle)

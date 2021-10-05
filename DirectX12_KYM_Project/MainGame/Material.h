@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Shader.h"
-#include "Texture.h"
+class Shader;
+class Texture;
 
 // Shader & Texture 를 관리 (ex. 생성, 삭제, 값의 변경 등)
 class Material
@@ -27,7 +27,7 @@ public:
 
 	void CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind);
 
-	void LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
+	void LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, int Type);
 	void LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 
 	void SetShader(Shader* ObjectShader) { m_Shader = ObjectShader; }

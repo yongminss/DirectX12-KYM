@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "Material.h"
 
+#include "Shader.h"
+#include "Texture.h"
+
 
 Material::Material()
 {
@@ -62,7 +65,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 }
 
-void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File)
+void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, int Type)
 {
 	fread(&m_MaterialCount, sizeof(int), 1, File);
 
@@ -80,9 +83,16 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 			fread(&MaterialCount, sizeof(int), 1, File);
 
 			// Shader & Texture¸¦ Set
-			LoadedShader *UsingShader = new LoadedShader();
-			UsingShader->CreateShader(Device, RootSignature);
-			SetShader(UsingShader);
+			if (Type == 0) {
+				LoadedShader *UsingShader = new LoadedShader();
+				UsingShader->CreateShader(Device, RootSignature);
+				SetShader(UsingShader);
+			}
+			else {
+				SkinnedShader *UsingShader = new SkinnedShader();
+				UsingShader->CreateShader(Device, RootSignature);
+				SetShader(UsingShader);
+			}
 		}
 
 		else if (!strcmp(Word, "<AlbedoColor>:")) {

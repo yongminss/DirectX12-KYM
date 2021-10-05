@@ -1,19 +1,11 @@
 #include "stdafx.h"
 #include "Skybox.h"
 
+#include "Mesh.h"
+#include "Material.h"
 
-Skybox::Skybox()
-{
 
-}
-
-Skybox::~Skybox()
-{
-	for (int i = 0; i < 6; ++i) if (m_SkyboxMesh[i] != nullptr) delete m_SkyboxMesh[i];
-	if (m_SkyboxMesh != nullptr) delete[] m_SkyboxMesh;
-}
-
-void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+Skybox::Skybox(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -55,6 +47,12 @@ void Skybox::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	Material *UsingMaterial = new Material();
 	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, 1);
 	SetMaterial(UsingMaterial);
+}
+
+Skybox::~Skybox()
+{
+	for (int i = 0; i < 6; ++i) if (m_SkyboxMesh[i] != nullptr) delete m_SkyboxMesh[i];
+	if (m_SkyboxMesh != nullptr) delete[] m_SkyboxMesh;
 }
 
 void Skybox::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)

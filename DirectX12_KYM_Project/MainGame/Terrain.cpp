@@ -1,18 +1,11 @@
 #include "stdafx.h"
 #include "Terrain.h"
 
+#include "Mesh.h"
+#include "Material.h"
 
-Terrain::Terrain()
-{
 
-}
-
-Terrain::~Terrain()
-{
-	if (m_HeightMapPos != nullptr) delete[] m_HeightMapPos;
-}
-
-void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+Terrain::Terrain(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -28,6 +21,11 @@ void Terrain::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 	Material *UsingMaterial = new Material();
 	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, 0);
 	SetMaterial(UsingMaterial);
+}
+
+Terrain::~Terrain()
+{
+	if (m_HeightMapPos != nullptr) delete[] m_HeightMapPos;
 }
 
 void Terrain::LoadHeightMapFile(int Width, int Length)
@@ -47,4 +45,11 @@ void Terrain::LoadHeightMapFile(int Width, int Length)
 		}
 	}
 	delete[] HeightMapPixel;
+}
+
+float Terrain::GetHeightMapYPos(int x, int z)
+{
+	TerrainMesh *UsingMesh = (TerrainMesh*)m_Mesh;
+
+	return UsingMesh->GetHeightMapYPos(x, z);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene.h"
+class Scene;
 
 // DirectX Device 초기화 및 관리
 class GameFramework

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mesh.h"
-#include "Material.h"
+class Mesh;
+class Material;
 
 // 게임 월드에 등장하는 모든 오브젝트
 class GameObject
@@ -18,17 +18,18 @@ protected:
 	GameObject *m_Sibling = nullptr;
 	GameObject *m_Child = nullptr;
 
+	int m_ShaderType = 0;
+
 public:
 	GameObject();
+	GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 	~GameObject();
-
-	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
 	GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName);
 	GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
 
-	void SetMesh(Mesh* UsingMesh) { m_Mesh = UsingMesh; }
-	void SetMaterial(Material* UsingMaterial) { m_Material = UsingMaterial; }
+	void SetMesh(Mesh* UsingMesh);
+	void SetMaterial(Material* UsingMaterial);
 
 	void SetRight(DirectX::XMFLOAT3 Right);
 	void SetUp(DirectX::XMFLOAT3 Up);
@@ -41,12 +42,17 @@ public:
 
 	void SetChild(GameObject* Child);
 
+	void SetMeshBoneFrame(GameObject* RootFrame);
+
 	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_TransformPos._11, m_TransformPos._12, m_TransformPos._13); }
 	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
 	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_TransformPos._31, m_TransformPos._32, m_TransformPos._33); }
 	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_TransformPos._41, m_TransformPos._42, m_TransformPos._43); }
 
+	DirectX::XMFLOAT4X4 GetWorldPos() { return m_WorldPos; }
 	char* GetFrameName() { return m_FrameName; }
+
+	GameObject* FindFrame(char* FrameName);
 
 	void Rotate(DirectX::XMFLOAT3 Angle);
 

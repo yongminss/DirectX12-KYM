@@ -1,10 +1,10 @@
 #pragma once
 
-#include "GameObject.h"
-#include "Player.h"
-#include "UserInterface.h"
-#include "Terrain.h"
-#include "Skybox.h"
+class Player;
+class Terrain;
+class Skybox;
+class UserInterface;
+class GameObject;
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene

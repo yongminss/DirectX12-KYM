@@ -65,7 +65,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
 
-// -
+// bin 파일로 로드한 오브젝트가 사용하는 Shader
 class LoadedShader : public Shader
 {
 public:
@@ -76,4 +76,16 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+};
+
+// bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Shader
+class SkinnedShader : public LoadedShader
+{
+public:
+	SkinnedShader() {}
+	~SkinnedShader() {}
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 };

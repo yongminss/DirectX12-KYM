@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Mesh.h"
 
+#include "Vertex.h"
+#include "GameObject.h"
 
 Mesh::Mesh()
 {
@@ -77,20 +79,20 @@ void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandLi
 	MeshVertex[34] = Vertex(DirectX::XMFLOAT3(+Size, -Size, +Size), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
 	MeshVertex[35] = Vertex(DirectX::XMFLOAT3(+Size, -Size, -Size), DirectX::XMFLOAT4(1.f, 0.f, 1.f, 1.f));
 
-	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	m_VertexBufferView.StrideInBytes = sizeof(Vertex);
 	m_VertexBufferView.SizeInBytes = ByteSize;
 }
 
-ID3D12Resource* Mesh::CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* MeshVertex, unsigned int Size, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer)
+ID3D12Resource* Mesh::CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, unsigned int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer)
 {
 	ID3D12Resource *Buffer = nullptr;
 
 	D3D12_HEAP_PROPERTIES HeapProperties;
 	ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
-	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	HeapProperties.Type = HeapType;
 	HeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 	HeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 	HeapProperties.CreationNodeMask = 1;
@@ -109,29 +111,49 @@ ID3D12Resource* Mesh::CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLi
 	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	ResourceDesc.SampleDesc.Count = 1;
 	ResourceDesc.SampleDesc.Quality = 0;
-	
-	Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)&Buffer);
 
-	// 업로드
-	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)&UploadBuffer);
+	D3D12_RESOURCE_STATES ResourceStates = D3D12_RESOURCE_STATE_COPY_DEST;
+	if (HeapType == D3D12_HEAP_TYPE_UPLOAD) ResourceStates = D3D12_RESOURCE_STATE_GENERIC_READ;
 
-	D3D12_RANGE Range = { 0 };
-	void* BufferDataBegin = nullptr;
-	UploadBuffer->Map(0, &Range, (void**)&BufferDataBegin);
-	memcpy(BufferDataBegin, MeshVertex, Size);
-	UploadBuffer->Unmap(0, nullptr);
+	Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, ResourceStates, nullptr, __uuidof(ID3D12Resource), (void**)&Buffer);
 
-	CommandList->CopyResource(Buffer, UploadBuffer);
+	if (VertexData != nullptr) {
+		switch (HeapType) {
+		case D3D12_HEAP_TYPE_DEFAULT:
+		{
+			HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+			Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)&UploadBuffer);
 
-	D3D12_RESOURCE_BARRIER ResourceBarrier;
-	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // 리소스 사용 변화를 나타내는 전이 장벽
-	ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	ResourceBarrier.Transition.pResource = Buffer;
-	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	ResourceBarrier.Transition.StateAfter = ResourceState;
-	ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	CommandList->ResourceBarrier(1, &ResourceBarrier);
+			D3D12_RANGE Range = { 0 };
+			void* BufferDataBegin = nullptr;
+			UploadBuffer->Map(0, &Range, (void**)&BufferDataBegin);
+			memcpy(BufferDataBegin, VertexData, Size);
+			UploadBuffer->Unmap(0, nullptr);
+
+			CommandList->CopyResource(Buffer, UploadBuffer);
+
+			D3D12_RESOURCE_BARRIER ResourceBarrier;
+			ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // 리소스 사용 변화를 나타내는 전이 장벽
+			ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			ResourceBarrier.Transition.pResource = Buffer;
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+			ResourceBarrier.Transition.StateAfter = ResourceState;
+			ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			CommandList->ResourceBarrier(1, &ResourceBarrier);
+		}
+		break;
+
+		case D3D12_HEAP_TYPE_UPLOAD:
+		{
+			D3D12_RANGE Range = { 0 };
+			void* BufferDataBegin = nullptr;
+			UploadBuffer->Map(0, &Range, (void**)&BufferDataBegin);
+			memcpy(BufferDataBegin, VertexData, Size);
+			UploadBuffer->Unmap(0, nullptr);
+		}
+		break;
+		}
+	}
 
 	return Buffer;
 }
@@ -236,7 +258,7 @@ void TextureMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	}
 	break;
 	}
-	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	m_VertexBufferView.StrideInBytes = sizeof(TextureVertex);
@@ -270,7 +292,7 @@ void TerrainMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 			m_HeightMapYPos[x][z] = Position.y;
 		}
 	}
-	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	m_VertexBufferView.StrideInBytes = sizeof(TerrainVertex);
@@ -297,7 +319,7 @@ void TerrainMesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 			}
 		}
 	}
-	m_IndexBuffer = CreateBuffer(Device, CommandList, MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
+	m_IndexBuffer = CreateBuffer(Device, CommandList, MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
 
 	m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
 	m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
@@ -324,7 +346,11 @@ LoadedMesh::LoadedMesh()
 
 LoadedMesh::~LoadedMesh()
 {
+	if (m_PositionBuffer != nullptr) m_PositionBuffer->Release();
+	if (m_UploadPositionBuffer != nullptr) m_UploadPositionBuffer->Release();
 
+	if (m_UvBuffer != nullptr) m_UvBuffer->Release();
+	if (m_UploadUvBuffer != nullptr) m_UploadUvBuffer->Release();
 }
 
 void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
@@ -357,6 +383,15 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			if (PositionCount > 0) {
 				m_Position = new DirectX::XMFLOAT3[PositionCount];
 				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
+
+				// Position Buffer 생성
+				m_PositionBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadPositionBuffer);
+
+				m_PositionBufferView.BufferLocation = m_PositionBuffer->GetGPUVirtualAddress();
+				m_PositionBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_PositionBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Position;
 			}
 		}
 
@@ -374,6 +409,15 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			if (UvCount > 0) {
 				m_Uv0 = new DirectX::XMFLOAT2[UvCount];
 				fread(m_Uv0, sizeof(DirectX::XMFLOAT2), UvCount, File);
+
+				// Uv Buffer 생성
+				m_UvBuffer = CreateBuffer(Device, CommandList, m_Uv0, sizeof(DirectX::XMFLOAT2) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadUvBuffer);
+
+				m_UvBufferView.BufferLocation = m_UvBuffer->GetGPUVirtualAddress();
+				m_UvBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT2);
+				m_UvBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT2) * m_VertexCount;
+
+				delete[] m_Uv0;
 			}
 		}
 
@@ -427,6 +471,14 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 							// Index Buffer를 생성
 							m_MeshIndex = new UINT[m_IndexCount];
 							fread(m_MeshIndex, sizeof(UINT), m_IndexCount, File);
+
+							m_IndexBuffer = CreateBuffer(Device, CommandList, m_MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
+
+							m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+							m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+							m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
+
+							delete[] m_MeshIndex;
 						}
 					}
 				}
@@ -434,30 +486,6 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		}
 
 		else if (!strcmp(Word, "</Mesh>")) {
-			if (m_Position != nullptr && m_Uv0 != nullptr && m_MeshIndex != 0) {
-				TextureVertex *MeshVertex = new TextureVertex[m_VertexCount];
-
-				unsigned int ByteSize = sizeof(TextureVertex) * m_VertexCount;
-
-				for (int i = 0; i < m_VertexCount; ++i) {
-					MeshVertex[i] = TextureVertex(m_Position[i], m_Uv0[i]);
-				}
-				m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
-
-				m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
-				m_VertexBufferView.StrideInBytes = sizeof(TextureVertex);
-				m_VertexBufferView.SizeInBytes = ByteSize;
-
-				delete[] m_Position, delete[] m_Uv0, delete[] MeshVertex;
-
-				m_IndexBuffer = CreateBuffer(Device, CommandList, m_MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
-
-				m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
-				m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-				m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
-
-				delete[] m_MeshIndex;
-			}
 			break;
 		}
 	}
@@ -465,9 +493,10 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 void LoadedMesh::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[2] = { m_PositionBufferView, m_UvBufferView };
+	CommandList->IASetVertexBuffers(0, 2, VertexBufferView);
 
-	CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
+	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	if (m_IndexBuffer != nullptr) {
 		CommandList->IASetIndexBuffer(&m_IndexBufferView);
@@ -486,14 +515,35 @@ SkinnedMesh::SkinnedMesh()
 
 SkinnedMesh::~SkinnedMesh()
 {
-	if (m_BoneName != nullptr) delete[] m_BoneName;
-
+	if (m_BindPoseBoneOffset != nullptr) delete[] m_BindPoseBoneOffset;
 	if (m_BoneOffset != nullptr) delete[] m_BoneOffset;
-	if (m_BoneIndex != nullptr) delete[] m_BoneIndex;
-	if (m_BoneWeight != nullptr) delete[] m_BoneWeight;
+	if (m_BoneOffsetBuffer != nullptr) m_BoneOffsetBuffer->Release();
+
+	if (m_BoneTransform != nullptr) delete[] m_BoneTransform;
+	if (m_BoneTransformBuffer != nullptr) m_BoneTransformBuffer->Release();
+
+	if (m_BoneIndexBuffer != nullptr) m_BoneIndexBuffer->Release();
+	if (m_UploadBoneIndexBuffer != nullptr) m_UploadBoneIndexBuffer->Release();
+
+	if (m_BoneWeightBuffer != nullptr) m_BoneWeightBuffer->Release();
+	if (m_UploadBoneWeightBuffer != nullptr) m_UploadBoneWeightBuffer->Release();
+
+	if (m_BoneName != nullptr) delete[] m_BoneName;
+	if (m_BoneFrame != nullptr) delete[] m_BoneFrame;
 }
 
-void SkinnedMesh::LoadSkinInfo(FILE *File)
+void SkinnedMesh::CreateShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
+{
+	UINT BufferSize = sizeof(DirectX::XMFLOAT4X4) * 128;
+
+	m_BoneOffsetBuffer = CreateBuffer(Device, CommandList, nullptr, BufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
+	m_BoneOffsetBuffer->Map(0, nullptr, (void**)&m_BoneOffset);
+
+	m_BoneTransformBuffer = CreateBuffer(Device, CommandList, nullptr, BufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
+	m_BoneTransformBuffer->Map(0, nullptr, (void**)&m_BoneTransform);
+}
+
+void SkinnedMesh::LoadSkinInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
 {
 	BYTE WordCount = '\0';
 
@@ -522,11 +572,13 @@ void SkinnedMesh::LoadSkinInfo(FILE *File)
 
 			if (m_BoneCount > 0) {
 				m_BoneName = new char[m_BoneCount][64];
+				m_BoneFrame = new GameObject*[m_BoneCount];
 
 				for (int i = 0; i < m_BoneCount; ++i) {
 					fread(&WordCount, sizeof(BYTE), 1, File);
 					fread(m_BoneName[i], sizeof(char), WordCount, File);
 					m_BoneName[i][WordCount] = '\0';
+					m_BoneFrame[i] = nullptr;
 				}
 			}
 		}
@@ -535,8 +587,8 @@ void SkinnedMesh::LoadSkinInfo(FILE *File)
 			fread(&m_BoneCount, sizeof(int), 1, File);
 
 			if (m_BoneCount > 0) {
-				m_BoneOffset = new DirectX::XMFLOAT4X4[m_BoneCount];
-				fread(&m_BoneOffset, sizeof(float), 16 * m_BoneCount, File);
+				m_BindPoseBoneOffset = new DirectX::XMFLOAT4X4[m_BoneCount];
+				fread(m_BindPoseBoneOffset, sizeof(float), 16 * m_BoneCount, File);
 			}
 		}
 
@@ -547,14 +599,206 @@ void SkinnedMesh::LoadSkinInfo(FILE *File)
 				m_BoneIndex = new DirectX::XMUINT4[m_VertexCount];
 				m_BoneWeight = new DirectX::XMFLOAT4[m_VertexCount];
 
-				fread(&m_BoneIndex, sizeof(DirectX::XMUINT4), m_VertexCount, File);
+				fread(m_BoneIndex, sizeof(DirectX::XMUINT4), m_VertexCount, File);
+				fread(m_BoneWeight, sizeof(DirectX::XMFLOAT4), m_VertexCount, File);
+
 				// Bone Index Buffer 생성
-				fread(&m_BoneWeight, sizeof(DirectX::XMFLOAT4), m_VertexCount, File);
+				m_BoneIndexBuffer = CreateBuffer(Device, CommandList, m_BoneIndex, sizeof(DirectX::XMUINT4) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadBoneIndexBuffer);
+
+				m_BoneIndexBufferView.BufferLocation = m_BoneIndexBuffer->GetGPUVirtualAddress();
+				m_BoneIndexBufferView.StrideInBytes = sizeof(DirectX::XMUINT4);
+				m_BoneIndexBufferView.SizeInBytes = sizeof(DirectX::XMUINT4) * m_VertexCount;
+
+				delete[] m_BoneIndex;
+
 				// Bone Weight Buffer 생성
+				m_BoneWeightBuffer = CreateBuffer(Device, CommandList, m_BoneWeight, sizeof(DirectX::XMFLOAT4) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadBoneWeightBuffer);
+
+				m_BoneWeightBufferView.BufferLocation = m_BoneWeightBuffer->GetGPUVirtualAddress();
+				m_BoneWeightBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT4);
+				m_BoneWeightBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT4) * m_VertexCount;
+
+				delete[] m_BoneWeight;
 			}
 		}
 
 		else if (!strcmp(Word, "</SkinningInfo>")) {
+			break;
+		}
+	}
+}
+
+void SkinnedMesh::SetBoneFrame(int Index, GameObject* Frame)
+{
+	m_BoneFrame[Index] = Frame;
+}
+
+void SkinnedMesh::UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList)
+{
+	if (m_BoneOffsetBuffer != nullptr && m_BoneTransformBuffer != nullptr) {
+		for (int i = 0; i < m_BoneCount; ++i) {
+			DirectX::XMStoreFloat4x4(&m_BoneOffset[i], DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_BindPoseBoneOffset[i])));
+			DirectX::XMStoreFloat4x4(&m_BoneTransform[i], DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_BoneFrame[i]->GetWorldPos())));
+		}
+		D3D12_GPU_VIRTUAL_ADDRESS BoneOffsetGpuVirtualAddress = m_BoneOffsetBuffer->GetGPUVirtualAddress();
+		CommandList->SetGraphicsRootConstantBufferView(5, BoneOffsetGpuVirtualAddress);
+		D3D12_GPU_VIRTUAL_ADDRESS BoneTransformGpuVirtualAddress = m_BoneTransformBuffer->GetGPUVirtualAddress();
+		CommandList->SetGraphicsRootConstantBufferView(6, BoneTransformGpuVirtualAddress);
+	}
+}
+
+void SkinnedMesh::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	UpdateShaderBuffer(CommandList);
+
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[4] = { m_PositionBufferView, m_UvBufferView, m_BoneIndexBufferView, m_BoneWeightBufferView };
+	CommandList->IASetVertexBuffers(0, 4, VertexBufferView);
+
+	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	if (m_IndexBuffer != nullptr) {
+		CommandList->IASetIndexBuffer(&m_IndexBufferView);
+		CommandList->DrawIndexedInstanced(m_IndexCount, 1, 0, 0, 0);
+	}
+	else {
+		CommandList->DrawInstanced(m_VertexCount, 1, 0, 0);
+	}
+}
+
+// --------------------
+void SkinnedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
+{
+	fread(&m_VertexCount, sizeof(int), 1, File);
+
+	BYTE WordCount = '\0';
+
+	fread(&WordCount, sizeof(BYTE), 1, File);
+	fread(m_MeshName, sizeof(char), WordCount, File);
+	m_MeshName[WordCount] = '\0';
+
+	int PositionCount = 0, ColorCount = 0, UvCount = 0, NormalCount = 0, TangentCount = 0, BiTangentCount = 0, SubMeshCount = 0;
+
+	char Word[64] = { '\0' };
+
+	while (true) {
+		fread(&WordCount, sizeof(BYTE), 1, File);
+		fread(Word, sizeof(char), WordCount, File);
+		Word[WordCount] = '\0';
+
+		if (!strcmp(Word, "<Bounds>:")) {
+			fread(&m_AabbCenter, sizeof(float), 3, File);
+			fread(&m_AAbbExtent, sizeof(float), 3, File);
+		}
+
+		else if (!strcmp(Word, "<Positions>:")) {
+			fread(&PositionCount, sizeof(int), 1, File);
+
+			if (PositionCount > 0) {
+				m_Position = new DirectX::XMFLOAT3[PositionCount];
+				fread(m_Position, sizeof(DirectX::XMFLOAT3), PositionCount, File);
+
+				// Position Buffer 생성
+				m_PositionBuffer = CreateBuffer(Device, CommandList, m_Position, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadPositionBuffer);
+
+				m_PositionBufferView.BufferLocation = m_PositionBuffer->GetGPUVirtualAddress();
+				m_PositionBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_PositionBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Position;
+			}
+		}
+
+		else if (!strcmp(Word, "<Colors>:")) {
+			fread(&ColorCount, sizeof(int), 1, File);
+
+			if (ColorCount > 0) {
+				fread(&m_Color, sizeof(DirectX::XMFLOAT4), ColorCount, File);
+			}
+		}
+
+		else if (!strcmp(Word, "<TextureCoords0>:")) {
+			fread(&UvCount, sizeof(int), 1, File);
+
+			if (UvCount > 0) {
+				m_Uv0 = new DirectX::XMFLOAT2[UvCount];
+				fread(m_Uv0, sizeof(DirectX::XMFLOAT2), UvCount, File);
+
+				// Uv Buffer 생성
+				m_UvBuffer = CreateBuffer(Device, CommandList, m_Uv0, sizeof(DirectX::XMFLOAT2) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadUvBuffer);
+
+				m_UvBufferView.BufferLocation = m_UvBuffer->GetGPUVirtualAddress();
+				m_UvBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT2);
+				m_UvBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT2) * m_VertexCount;
+
+				delete[] m_Uv0;
+			}
+		}
+
+		else if (!strcmp(Word, "<TextureCoords1>:")) {
+			fread(&UvCount, sizeof(int), 1, File);
+
+			if (UvCount > 0) {
+				fread(&m_Uv1, sizeof(DirectX::XMFLOAT2), UvCount, File);
+			}
+		}
+
+		else if (!strcmp(Word, "<Normals>:")) {
+			fread(&NormalCount, sizeof(int), 1, File);
+
+			if (NormalCount > 0) {
+				fread(&m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+			}
+		}
+
+		else if (!strcmp(Word, "<Tangents>:")) {
+			fread(&TangentCount, sizeof(int), 1, File);
+
+			if (TangentCount > 0) {
+				fread(&m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+			}
+		}
+
+		else if (!strcmp(Word, "<BiTangents>:")) {
+			fread(&BiTangentCount, sizeof(int), 1, File);
+
+			if (BiTangentCount > 0) {
+				fread(&m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+			}
+		}
+
+		else if (!strcmp(Word, "<SubMeshes>:")) {
+			fread(&SubMeshCount, sizeof(int), 1, File);
+
+			if (SubMeshCount > 0) {
+				for (int i = 0; i < SubMeshCount; ++i) {
+					fread(&WordCount, sizeof(BYTE), 1, File);
+					fread(Word, sizeof(char), WordCount, File);
+					Word[WordCount] = '\0';
+
+					if (!strcmp(Word, "<SubMesh>:")) {
+						int IndexCount = 0;
+						fread(&IndexCount, sizeof(int), 1, File);
+						fread(&m_IndexCount, sizeof(int), 1, File); // -> SubMesh의 Index Count
+
+						if (m_IndexCount > 0) {
+							// Index Buffer를 생성
+							m_MeshIndex = new UINT[m_IndexCount];
+							fread(m_MeshIndex, sizeof(UINT), m_IndexCount, File);
+
+							m_IndexBuffer = CreateBuffer(Device, CommandList, m_MeshIndex, sizeof(UINT) * m_IndexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_UploadIndexBuffer);
+
+							m_IndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+							m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+							m_IndexBufferView.SizeInBytes = sizeof(UINT) * m_IndexCount;
+
+							delete[] m_MeshIndex;
+						}
+					}
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "</Mesh>")) {
 			break;
 		}
 	}

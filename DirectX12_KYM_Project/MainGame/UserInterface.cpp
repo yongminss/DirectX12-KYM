@@ -1,18 +1,11 @@
 #include "stdafx.h"
 #include "UserInterface.h"
 
+#include "Mesh.h"
+#include "Material.h"
 
-UserInterface::UserInterface()
-{
 
-}
-
-UserInterface::~UserInterface()
-{
-
-}
-
-void UserInterface::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
+UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -24,4 +17,9 @@ void UserInterface::CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommand
 	Material *UsingMaterial = new Material();
 	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, 2);
 	SetMaterial(UsingMaterial);
+}
+
+UserInterface::~UserInterface()
+{
+
 }

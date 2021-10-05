@@ -1,7 +1,8 @@
 #pragma once
 
 #include "GameObject.h"
-#include "Camera.h"
+
+class Camera;
 
 // 카메라를 가지고 있고 플레이어가 조종할 수 있는 오브젝트
 class Player : public GameObject
@@ -14,10 +15,8 @@ private:
 	float m_ElapsedTime = 0.f;
 
 public:
-	Player();
+	Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 	~Player();
-
-	void CreateGameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 
 	void ActiveMove(int Index, bool Active) { m_ActiveMove[Index] = Active; }
 

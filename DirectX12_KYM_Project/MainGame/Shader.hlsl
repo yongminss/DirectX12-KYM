@@ -127,11 +127,32 @@ float4 TerrainPS(TerrainVS_Output Input) : SV_TARGET
     return Color;
 }
 
-// -
+// Binary Load Model에 사용 - Skin의 존재 유무로 구분
+#define BONE_PER_VERTEX 4
+#define SKINNED_ANIMATION_BONE 128
+
+cbuffer BoneOffset : register(b2)
+{
+    float4x4 BoneOffsetPos[SKINNED_ANIMATION_BONE];
+};
+
+cbuffer BoneTransform : register(b3)
+{
+    float4x4 BoneTransformPos[SKINNED_ANIMATION_BONE];
+}
+
 struct LoadedVS_Input
 {
     float3 position : POSITION;
     float2 uv : UV;
+};
+
+struct SkinedVS_Input
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+    uint4 boneindex : BONEINDEX;
+    float4 boneweight : BONEWEIGHT;
 };
 
 struct LoadedVS_Output
@@ -155,4 +176,23 @@ float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
     float4 Color = BinTexture.Sample(Sampler, Input.uv);
     
     return Color;
+}
+
+LoadedVS_Output SkinedVS(SkinedVS_Input Input)
+{
+    LoadedVS_Output Output;
+    
+    matrix VertexToBoneWorld;
+    float3 BonePosition = float3(0.f, 0.f, 0.f);
+    
+    for (int i = 0; i < BONE_PER_VERTEX; ++i)
+    {
+        VertexToBoneWorld = mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
+        BonePosition += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
+    }
+    
+    Output.position = mul(mul(float4(BonePosition, 1.f), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
+    
+    return Output;
 }

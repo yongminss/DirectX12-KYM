@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "GameFramework.h"
-#include <chrono>
+
+#include "Scene.h"
 
 
 GameFramework::GameFramework()
