@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Material.h"
+#include "AnimationController.h"
 
 
 int ReadIntegerFile(FILE* File)
@@ -50,7 +51,7 @@ GameObject::~GameObject()
 	if (m_Material != nullptr) delete m_Material;
 }
 
-GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName)
+GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation)
 {
 	FILE *File = nullptr;
 	fopen_s(&File, FileName, "rb");
@@ -58,9 +59,14 @@ GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12Graphics
 
 	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
 
-	fclose(File);
-
 	Model->SetMeshBoneFrame(Model);
+
+	if (ActiveAnimation == true) {
+		Model->m_AnimationController = new AnimationController();
+		Model->LoadAnimationInfo(File);
+		Model->m_AnimationController->AssignAniSetToAniTrack();
+	}
+	fclose(File);
 
 	return Model;
 }
@@ -140,6 +146,70 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 		}
 	}
 	return Frame;
+}
+
+void GameObject::LoadAnimationInfo(FILE *File)
+{
+	char Word[64] = { '\0' };
+
+	while (true) {
+		ReadStringFile(File, Word);
+
+		if (!strcmp(Word, "<AnimationSets>:")) {
+			m_AnimationController->CreateAnimation(ReadIntegerFile(File));
+		}
+
+		else if (!strcmp(Word, "<FrameNames>:")) {
+			m_AnimationController->CreateBoneFrame(ReadIntegerFile(File));
+
+			for (int i = 0; i < m_AnimationController->GetBoneFrameCount(); ++i) {
+				ReadStringFile(File, Word);
+				m_AnimationController->SetBoneFrame(i, FindFrame(Word));
+			}
+		}
+
+		else if (!strcmp(Word, "<AnimationSet>:")) {
+			int AnimationIndex = ReadIntegerFile(File);
+
+			AnimationSet *UsingAnimationSet = m_AnimationController->GetAnimationSet(AnimationIndex);
+
+			ReadStringFile(File, Word);
+			UsingAnimationSet->SetAnimationName(Word);
+
+			float Length = 0.f;
+			fread(&Length, sizeof(float), 1, File);
+			UsingAnimationSet->SetLength(Length);
+
+			int FramePerSecondCount = ReadIntegerFile(File);
+			UsingAnimationSet->SetFramePerSecondCount(FramePerSecondCount);
+
+			int KeyFrameTransformCount = ReadIntegerFile(File);
+			UsingAnimationSet->SetKeyFrameTransformCount(KeyFrameTransformCount);
+
+			// KeyFrame Transform Time & KeyFrame Transform 동적 할당
+			UsingAnimationSet->CreateKeyFrameTransform();
+
+			for (int i = 0; i < UsingAnimationSet->GetKeyFrameTransformCount(); ++i) {
+				ReadStringFile(File, Word);
+
+				if (!strcmp(Word, "<Transforms>:")) {
+					int KeyFrameIndex = ReadIntegerFile(File);
+
+					float KeyFrameTransformTime = 0.f;
+					fread(&KeyFrameTransformTime, sizeof(float), 1, File);
+					UsingAnimationSet->SetKeyFrameTransformTime(i, KeyFrameTransformTime);
+
+					DirectX::XMFLOAT4X4 *KeyFrameTransform = new DirectX::XMFLOAT4X4[m_AnimationController->GetBoneFrameCount()];
+					fread(KeyFrameTransform, sizeof(DirectX::XMFLOAT4X4), m_AnimationController->GetBoneFrameCount(), File);
+					UsingAnimationSet->SetKeyFrameTransformPos(i, KeyFrameTransform);
+				}
+			}
+		}
+
+		else if (!strcmp(Word, "</AnimationSets>")) {
+			break;
+		}
+	}
 }
 
 void GameObject::SetMesh(Mesh* UsingMesh)
@@ -244,7 +314,10 @@ void GameObject::UpdateTransform(DirectX::XMFLOAT4X4* Parents)
 
 void GameObject::Animate(float ElapsedTime)
 {
+	if (m_AnimationController != nullptr) m_AnimationController->UpdateAnimationPos(ElapsedTime);
 
+	if (m_Sibling != nullptr) m_Sibling->Animate(ElapsedTime);
+	if (m_Child != nullptr) m_Child->Animate(ElapsedTime);
 }
 
 void GameObject::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)

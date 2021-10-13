@@ -9,7 +9,7 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
-	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin");
+	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin", true);
 	SetChild(Model);
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
@@ -48,6 +48,8 @@ void Player::Move(int Index, float Distance)
 
 void Player::Animate(float ElapsedTime)
 {
+	GameObject::Animate(ElapsedTime);
+
 	m_ElapsedTime = ElapsedTime;
 
 	if (m_ActiveMove[0] == true) Move(0, +100.f * ElapsedTime);

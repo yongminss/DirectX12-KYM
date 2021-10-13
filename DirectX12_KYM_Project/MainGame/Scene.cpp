@@ -158,12 +158,15 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 
 void Scene::Animate(float ElapsedTime)
 {
-	// 임시 --------------------
-	float x = (m_Player->GetPosition().x + 1250.f) / 20, z = (m_Player->GetPosition().z + 1250.f) / 20;
-	float y = m_Terrain->GetHeightMapYPos(static_cast<int>(x), static_cast<int>(z)) - 300.f;
-	m_Player->SetPosition(DirectX::XMFLOAT3(m_Player->GetPosition().x, y, m_Player->GetPosition().z));
-	// -------------------------
-	if (m_Player != nullptr) m_Player->Animate(ElapsedTime);
+	if (m_Player != nullptr) {
+		// 임시 --------------------
+		float x = (m_Player->GetPosition().x + 1250.f) / 20, z = (m_Player->GetPosition().z + 1250.f) / 20;
+		float y = m_Terrain->GetHeightMapYPos(static_cast<int>(x), static_cast<int>(z)) - 300.f;
+		m_Player->SetPosition(DirectX::XMFLOAT3(m_Player->GetPosition().x, y, m_Player->GetPosition().z));
+		// -------------------------
+		m_Player->Animate(ElapsedTime);
+		m_Player->UpdateTransform(nullptr);
+	}
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 }
 

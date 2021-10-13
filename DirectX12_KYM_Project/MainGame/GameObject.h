@@ -2,6 +2,7 @@
 
 class Mesh;
 class Material;
+class AnimationController;
 
 // 게임 월드에 등장하는 모든 오브젝트
 class GameObject
@@ -9,6 +10,7 @@ class GameObject
 protected:
 	Mesh *m_Mesh = nullptr;
 	Material *m_Material = nullptr;
+	AnimationController *m_AnimationController = nullptr;
 
 	DirectX::XMFLOAT4X4 m_WorldPos{};
 	DirectX::XMFLOAT4X4 m_TransformPos{};
@@ -25,8 +27,9 @@ public:
 	GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 	~GameObject();
 
-	GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName);
+	GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation);
 	GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
+	void LoadAnimationInfo(FILE* File);
 
 	void SetMesh(Mesh* UsingMesh);
 	void SetMaterial(Material* UsingMaterial);
