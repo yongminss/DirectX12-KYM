@@ -6,6 +6,9 @@
 #include "Skybox.h"
 #include "UserInterface.h"
 
+#define MAP_HALF_SIZE 1250
+#define MAP_Y 300
+
 
 Scene::Scene()
 {
@@ -126,12 +129,11 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player(Device, CommandList, m_RootSignature);
-	m_Player->UpdateTransform(nullptr);
+	m_Player->SetScale(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f));
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
-	float MapHalfSize = 1250.f;
-	m_Terrain->SetPosition(DirectX::XMFLOAT3(0.f - MapHalfSize, -300.f, 0.f - MapHalfSize));
+	m_Terrain->SetPosition(DirectX::XMFLOAT3(-MAP_HALF_SIZE, -MAP_Y, -MAP_HALF_SIZE));
 	m_Terrain->UpdateTransform(nullptr);
 
 	// 게임의 배경 역할을 하는 Skybox 생성
@@ -148,24 +150,20 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 10; ++j) {
 			m_GameObjects.emplace_back(new GameObject(Device, CommandList, m_RootSignature));
-			float x = -MapHalfSize + (i * 500.f), z = -MapHalfSize + (j * 500.f);
-			float y = m_Terrain->GetHeightMapYPos((x + MapHalfSize) / 20, (z + MapHalfSize) / 20) - 300.f;
+			float x = -MAP_HALF_SIZE + (i * 500.f), z = -MAP_HALF_SIZE + (j * 500.f);
+			float y = m_Terrain->GetHeightMapYPos((x + MAP_HALF_SIZE) / 20, (z + MAP_HALF_SIZE) / 20) - MAP_Y;
 			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(x, y, z));
 			m_GameObjects.back()->UpdateTransform(nullptr);
 		}
 	}
 }
 
-void Scene::Animate(float ElapsedTime)
+void Scene::Animate(float ElapsedTime, HWND Hwnd)
 {
 	if (m_Player != nullptr) {
-		// 임시 --------------------
-		float x = (m_Player->GetPosition().x + 1250.f) / 20, z = (m_Player->GetPosition().z + 1250.f) / 20;
-		float y = m_Terrain->GetHeightMapYPos(static_cast<int>(x), static_cast<int>(z)) - 300.f;
-		m_Player->SetPosition(DirectX::XMFLOAT3(m_Player->GetPosition().x, y, m_Player->GetPosition().z));
-		// -------------------------
-		m_Player->Animate(ElapsedTime);
-		m_Player->UpdateTransform(nullptr);
+		float x = (m_Player->GetPosition().x + MAP_HALF_SIZE) / 20, z = (m_Player->GetPosition().z + MAP_HALF_SIZE) / 20;
+		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y;
+		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
 	}
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 }
@@ -241,30 +239,12 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 {
 	switch (MessageIndex)
 	{
-	case WM_MOUSEMOVE:
+	case WM_LBUTTONDOWN:
 	{
+		SetCapture(Hwnd);
 		SetCursor(NULL);
-		POINT MousePos{};
-		MousePos.x = LOWORD(Lparam);
-		MousePos.y = HIWORD(Lparam);
-
-		// 플레이어가 움직이는 마우스 좌표에 따라 플레이어 오브젝트가 회전
-		if (MousePos.x > m_PreviousPos.x) {
-			m_Player->Rotate(DirectX::XMFLOAT3(0.f, +1.5f, 0.f));
-		}
-		else {
-			m_Player->Rotate(DirectX::XMFLOAT3(0.f, -1.5f, 0.f));
-		}
-		m_PreviousPos.x = MousePos.x;
-
-		// 마우스 커서가 클라이언트 밖으로 벗어나지 않게 설정
-		POINT NewMousePos = { Window_Width / 2, Window_Height / 2 };
-		ClientToScreen(Hwnd, &NewMousePos);
-		if (MousePos.x <= Window_Width / 3) SetCursorPos(NewMousePos.x, NewMousePos.y);
-		if (MousePos.x >= Window_Width / 1.5) SetCursorPos(NewMousePos.x, NewMousePos.y);
+		GetCursorPos(&m_PreviousPos);
 	}
-	break;
-
 	break;
 	}
 }

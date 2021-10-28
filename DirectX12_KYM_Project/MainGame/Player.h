@@ -10,6 +10,7 @@ class Player : public GameObject
 private:
 	Camera *m_Camera = nullptr;
 
+	float m_Speed = 0.f;
 	bool m_ActiveMove[4]{};
 
 	float m_ElapsedTime = 0.f;
@@ -20,8 +21,8 @@ public:
 
 	void ActiveMove(int Index, bool Active) { m_ActiveMove[Index] = Active; }
 
-	void Move(int Index, float Distance);
+	void Move(HWND Hwnd, POINT PreviousPos, float MapY);
 
-	void Animate(float ElapsedTime);
+	void Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY);
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };

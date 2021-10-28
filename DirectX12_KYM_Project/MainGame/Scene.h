@@ -27,7 +27,7 @@ public:
 	void CreateRootSignature(ID3D12Device* Device);
 	void CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
-	void Animate(float ElapsedTime);
+	void Animate(float ElapsedTime, HWND Hwnd);
 	void Render(ID3D12GraphicsCommandList* CommandList);
 
 	void KeyboardMessage(UINT MessageIndex, WPARAM Wparam);

@@ -38,14 +38,18 @@ public:
 	void SetUp(DirectX::XMFLOAT3 Up);
 	void SetLook(DirectX::XMFLOAT3 Look);
 	void SetPosition(DirectX::XMFLOAT3 Position);
-
 	void SetTransformPos(DirectX::XMFLOAT4X4 TransformPos);
+
+	void SetScale(DirectX::XMFLOAT3 Size);
+	void SetRotate(DirectX::XMFLOAT3 Angle);
 
 	void SetFrameName(char* FrameName) { memcpy(m_FrameName, FrameName, sizeof(m_FrameName)); }
 
 	void SetChild(GameObject* Child);
 
 	void SetMeshBoneFrame(GameObject* RootFrame);
+
+	void SetAnimationTrackIndex(int Index);
 
 	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_TransformPos._11, m_TransformPos._12, m_TransformPos._13); }
 	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
@@ -57,9 +61,8 @@ public:
 
 	GameObject* FindFrame(char* FrameName);
 
-	void Rotate(DirectX::XMFLOAT3 Angle);
-
 	void UpdateTransform(DirectX::XMFLOAT4X4* Parents);
+
 	void Animate(float ElapsedTime);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	void Render(ID3D12GraphicsCommandList* CommandList);

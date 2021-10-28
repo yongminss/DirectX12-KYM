@@ -258,6 +258,22 @@ void GameObject::SetTransformPos(DirectX::XMFLOAT4X4 TransformPos)
 	m_TransformPos._41 = TransformPos._41, m_TransformPos._42 = TransformPos._42, m_TransformPos._43 = TransformPos._43, m_TransformPos._44 = TransformPos._44;
 }
 
+void GameObject::SetScale(DirectX::XMFLOAT3 Size)
+{
+	DirectX::XMMATRIX Scale = DirectX::XMMatrixScaling(Size.x, Size.y, Size.z);
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixMultiply(Scale, DirectX::XMLoadFloat4x4(&m_TransformPos)));
+
+	UpdateTransform(nullptr);
+}
+
+void GameObject::SetRotate(DirectX::XMFLOAT3 Angle)
+{
+	DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(Angle.x), DirectX::XMConvertToRadians(Angle.y), DirectX::XMConvertToRadians(Angle.z));
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_TransformPos)));
+
+	UpdateTransform(nullptr);
+}
+
 void GameObject::SetChild(GameObject* Child)
 {
 	if (m_Child != nullptr) {
@@ -279,6 +295,14 @@ void GameObject::SetMeshBoneFrame(GameObject* RootFrame)
 	if (m_Child != nullptr) m_Child->SetMeshBoneFrame(RootFrame);
 }
 
+void GameObject::SetAnimationTrackIndex(int Index)
+{
+	if (m_AnimationController != nullptr) m_AnimationController->ActiveAnimation(Index);
+
+	if (m_Sibling != nullptr) m_Sibling->SetAnimationTrackIndex(Index);
+	if (m_Child != nullptr) m_Child->SetAnimationTrackIndex(Index);
+}
+
 GameObject* GameObject::FindFrame(char* FrameName)
 {
 	GameObject* Frame = nullptr;
@@ -289,14 +313,6 @@ GameObject* GameObject::FindFrame(char* FrameName)
 	if (m_Child != nullptr) if (Frame = m_Child->FindFrame(FrameName)) return Frame;
 
 	return nullptr;
-}
-
-void GameObject::Rotate(DirectX::XMFLOAT3 Angle)
-{
-	DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(Angle.x), DirectX::XMConvertToRadians(Angle.y), DirectX::XMConvertToRadians(Angle.z));
-	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_TransformPos)));
-
-	UpdateTransform(nullptr);
 }
 
 void GameObject::UpdateTransform(DirectX::XMFLOAT4X4* Parents)

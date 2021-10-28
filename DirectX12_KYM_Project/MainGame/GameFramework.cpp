@@ -256,7 +256,7 @@ void GameFramework::GameFrameworkLoop()
 
 	// Animation & Rendering
 	if (m_Scene) {
-		m_Scene->Animate(m_ElapsedTime);
+		m_Scene->Animate(m_ElapsedTime, m_Hwnd);
 		m_Scene->Render(m_CommandList);
 	}
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경

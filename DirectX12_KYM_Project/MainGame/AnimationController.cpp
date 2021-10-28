@@ -47,8 +47,8 @@ DirectX::XMFLOAT4X4 AnimationSet::GetSRT(int FrameIndex, float PositionTime)
 			DirectX::XMMatrixDecompose(&S1, &R1, &T1, DirectX::XMLoadFloat4x4(&m_KeyFrameTransformPos[i + 1][FrameIndex]));
 
 			DirectX::XMVECTOR S = DirectX::XMVectorLerp(S0, S1, t);
-			DirectX::XMVECTOR R = DirectX::XMVectorLerp(R0, R1, t);
 			DirectX::XMVECTOR T = DirectX::XMVectorLerp(T0, T1, t);
+			DirectX::XMVECTOR R = DirectX::XMQuaternionSlerp(R0, R1, t);
 			DirectX::XMStoreFloat4x4(&TransformPos, DirectX::XMMatrixAffineTransformation(S, DirectX::XMVectorZero(), R, T));
 			break;
 		}
@@ -124,6 +124,7 @@ void AnimationController::UpdateAnimationPos(float ElapsedTime)
 			if (m_AnimationTrack[i].GetActive() == true) {
 				AnimationSet* UsingAniSet = m_AnimationTrack[i].GetAnimationSet();
 				m_CumulativeTime += ElapsedTime;
+
 				float PositionTime = UsingAniSet->ResetPositionTime(m_CumulativeTime);
 
 				for (int i = 0; i < m_BoneFrameCount; ++i) {
