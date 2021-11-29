@@ -1,5 +1,13 @@
 #pragma once
 
+// 카메라 버퍼(HLSL)에서 사용할 정보
+struct MAPPING_CAMERA
+{
+	DirectX::XMFLOAT4X4 m_CameraPos;
+	DirectX::XMFLOAT4X4 m_ProjectionPos;
+	DirectX::XMFLOAT3 m_Position;
+};
+
 class Player;
 
 // 플레이어가 보고 있는 화면을 렌더링하기 위한 좌표 등을 계산
@@ -21,11 +29,14 @@ private:
 
 	float m_TimeLag = 0.f;
 
+	MAPPING_CAMERA *m_MappingCamera = nullptr;
+	ID3D12Resource *m_CameraBuffer = nullptr;
+
 public:
 	Camera();
 	~Camera();
 
-	void CreateCamera();
+	void CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
 	void SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);

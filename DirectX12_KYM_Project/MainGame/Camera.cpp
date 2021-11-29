@@ -10,10 +10,10 @@ Camera::Camera()
 
 Camera::~Camera()
 {
-
+	if (m_CameraBuffer != nullptr) m_CameraBuffer->Release();
 }
 
-void Camera::CreateCamera()
+void Camera::CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
 	DirectX::XMStoreFloat4x4(&m_CameraPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixIdentity());
@@ -23,6 +23,11 @@ void Camera::CreateCamera()
 	DirectX::XMStoreFloat4x4(&m_ProjectionPos, DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(60.f), AspectRatio, 1.01f, 5000.f));
 
 	m_TimeLag = 0.25f;
+
+	UINT BufferSize = ((sizeof(MAPPING_CAMERA) + 255) & ~255);
+	m_CameraBuffer = CreateBuffer(Device, CommandList, nullptr, BufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
+
+	m_CameraBuffer->Map(0, nullptr, (void**)&m_MappingCamera);
 }
 
 void Camera::SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList)
@@ -36,12 +41,17 @@ void Camera::UpdateShaderCode(ID3D12GraphicsCommandList* CommandList)
 	DirectX::XMFLOAT4X4 CameraPos{};
 	DirectX::XMStoreFloat4x4(&CameraPos, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_CameraPos)));
 
-	CommandList->SetGraphicsRoot32BitConstants(0, 16, &CameraPos, 0);
+	memcpy(&m_MappingCamera->m_CameraPos, &CameraPos, sizeof(DirectX::XMFLOAT4X4));
 
 	DirectX::XMFLOAT4X4 ProjectionPos{};
 	DirectX::XMStoreFloat4x4(&ProjectionPos, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_ProjectionPos)));
 
-	CommandList->SetGraphicsRoot32BitConstants(0, 16, &ProjectionPos, 16);
+	memcpy(&m_MappingCamera->m_ProjectionPos, &ProjectionPos, sizeof(DirectX::XMFLOAT4X4));
+
+	memcpy(&m_MappingCamera->m_Position, &m_Position, sizeof(DirectX::XMFLOAT3));
+
+	D3D12_GPU_VIRTUAL_ADDRESS CameraGpuVirtualAddress = m_CameraBuffer->GetGPUVirtualAddress();
+	CommandList->SetGraphicsRootConstantBufferView(0, CameraGpuVirtualAddress);
 }
 
 void Camera::Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, Player *Target)

@@ -96,7 +96,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 		}
 
 		else if (!strcmp(Word, "<AlbedoColor>:")) {
-			fread(&m_Albedo, sizeof(float), 4, File);
+			fread(&m_Diffuse, sizeof(float), 4, File);
 		}
 
 		else if (!strcmp(Word, "<EmissiveColor>:")) {
@@ -203,5 +203,10 @@ void Material::SetPipeline(ID3D12GraphicsCommandList* CommandList)
 
 void Material::MappingTexture(ID3D12GraphicsCommandList* CommandList, int Index)
 {
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Ambient, 16);
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Diffuse, 20);
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Specular, 24);
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Emissive, 28);
+
 	if (m_Texture != nullptr) m_Texture->Render(CommandList, Index);
 }

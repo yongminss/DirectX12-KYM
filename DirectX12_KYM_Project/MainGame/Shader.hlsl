@@ -11,12 +11,78 @@ cbuffer Camera : register(b0)
 {
     matrix CameraPos : packoffset(c0);
     matrix ProjectionPos : packoffset(c4);
+    float3 CamwPos : packoffset(c8);
 };
-// 월드 변환에 사용할 버퍼
+
+// 조명의 영향을 받는 오브젝트 재질
+struct MATERIAL
+{
+    float4 m_Ambient;
+    float4 m_Diffuse;
+    float4 m_Specular;
+    float4 m_Emissive;
+};
+
+// 오브젝트의 월드 변환 및 재질에 사용할 버퍼
 cbuffer GameObject : register(b1)
 {
     matrix WorldPos : packoffset(c0);
+    MATERIAL Material : packoffset(c4);
 };
+
+// 게임 내에서 사용할 조명 설정 - 구조체, 버퍼, 여러 개의 조명을 생성
+#define LIGHT_COUNT 16
+
+#define DIRECTIONAL_LIGHT 0
+#define SPOT_LIGHT 1
+#define POINT_LIGHT 2
+
+struct LIGHT
+{
+    float4 m_Ambient;
+    float4 m_Diffuse;
+    float4 m_Specular;
+    float4 m_Emissive;
+    float3 m_Direction;
+    bool m_Active;
+    int m_Type;
+};
+
+// 조명 계산에 사용되는 버퍼
+cbuffer Lighting : register(b4)
+{    
+    LIGHT Lights : packoffset(c0);
+};
+
+// 방향성 조명 - 게임 내에서 태양 빛으로 사용
+float4 DirectionalLight(float3 oNormal)
+{
+    float3 ToLight = Lights.m_Direction;
+    float DiffuseFactor = dot(ToLight, oNormal);
+    
+    // 색 결정을 위해 조명의 재질과 오브젝트의 재질을 곱함
+    float4 Color = (Lights.m_Ambient * Material.m_Ambient) + (Lights.m_Diffuse * DiffuseFactor * Material.m_Diffuse) + (Lights.m_Specular * Material.m_Specular) + (Lights.m_Emissive * Material.m_Emissive);
+    
+    return Color;
+}
+
+// 조명의 종류에 맞추어 오브젝트 재질과 계산
+float4 CalLighting(float3 oPosition, float3 oNormal)
+{
+    float3 CamerawPosition = float3(CamwPos.x, CamwPos.y, CamwPos.z);
+    
+    float4 Color = float4(0.f, 0.f, 0.f, 0.f);
+    
+    if (Lights.m_Active == true)
+    {
+        if (Lights.m_Type == DIRECTIONAL_LIGHT)
+        {
+            Color += DirectionalLight(oNormal);
+        }
+    }
+    
+    return Color;
+}
 
 // 텍스처의 색상 결정에 사용할 샘플러
 SamplerState Sampler : register(s0);
@@ -145,12 +211,18 @@ struct LoadedVS_Input
 {
     float3 position : POSITION;
     float2 uv : UV;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
 };
 
 struct SkinedVS_Input
 {
     float3 position : POSITION;
     float2 uv : UV;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
     uint4 boneindex : BONEINDEX;
     float4 boneweight : BONEWEIGHT;
 };
@@ -158,40 +230,68 @@ struct SkinedVS_Input
 struct LoadedVS_Output
 {
     float4 position : SV_Position;
+    float3 positionw : POSITION;
     float2 uv : UV;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
 };
 
 LoadedVS_Output LoadedVS(LoadedVS_Input Input)
 {
     LoadedVS_Output Output;
-            
-    Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    
+    Output.positionw = mul(float4(Input.position, 1.f), WorldPos).xyz;
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
     Output.uv = Input.uv;
+    Output.normal = mul(Input.normal, (float3x3) WorldPos);
+    Output.tangent = mul(Input.tangent, (float3x3) WorldPos);
+    Output.bitangent = mul(Input.bitangent, (float3x3) WorldPos);
     
     return Output;
 }
 
 float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
 {
-    float4 Color = BinTexture.Sample(Sampler, Input.uv);
+    // 1. Bin파일 모델의 텍스처를 읽음
+    float4 AlbedoTexture = BinTexture.Sample(Sampler, Input.uv);
     
-    return Color;
+    // 2. Bin 파일 모델이 Normal Map을 가지고 있으면 읽음
+    // *아직까진 사용하는 모델은 없으므로 잠시 생략
+    
+    // 3-1. Normal Map이 있으면 모델의 tangent, bitangent, normal 정보로 노말 값을 설정
+    // *아직까진 사용하는 모델은 없으므로 잠시 생략
+    
+    // 3-2. Normal Map이 없으면 VS에서 읽어온 normal 값으로 설정
+    float3 Normalw = normalize(Input.normal);
+    
+    // 4. Scene의 방향성 조명과 모델의 재질 정보를 사용하여 조명 값을 계산
+    float4 Illumination = CalLighting(Input.positionw, Normalw);
+    
+    // 5. 모델의 텍스처와 조명 값을 적용해서 모델의 색상을 결정
+    return lerp(AlbedoTexture, Illumination, 0.5f);
 }
 
 LoadedVS_Output SkinedVS(SkinedVS_Input Input)
 {
     LoadedVS_Output Output;
     
+    Output.positionw = float3(0.f, 0.f, 0.f);
+    Output.normal = float3(0.f, 0.f, 0.f);
+    Output.tangent = float3(0.f, 0.f, 0.f);
+    Output.bitangent = float3(0.f, 0.f, 0.f);
     matrix VertexToBoneWorld;
-    float3 BonePosition = float3(0.f, 0.f, 0.f);
     
     for (int i = 0; i < BONE_PER_VERTEX; ++i)
     {
         VertexToBoneWorld = mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
-        BonePosition += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
+        Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
+        Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
+        Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);
+        Output.bitangent += Input.boneweight[i] * mul(Input.bitangent, (float3x3) VertexToBoneWorld);
     }
     
-    Output.position = mul(mul(float4(BonePosition, 1.f), CameraPos), ProjectionPos);
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
     Output.uv = Input.uv;
     
     return Output;

@@ -12,9 +12,11 @@ private:
 
 	unsigned int m_MaterialCount = 0;
 
-	DirectX::XMFLOAT4 m_Albedo{};
-	DirectX::XMFLOAT4 m_Emissive{};
-	DirectX::XMFLOAT4 m_Specular{};
+	DirectX::XMFLOAT4 m_Ambient = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.f);
+	DirectX::XMFLOAT4 m_Diffuse = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	DirectX::XMFLOAT4 m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	DirectX::XMFLOAT4 m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+
 	float m_Glossiness = 0.f;
 	float m_Smoothness = 0.f;
 	float m_Metallic = 0.f;

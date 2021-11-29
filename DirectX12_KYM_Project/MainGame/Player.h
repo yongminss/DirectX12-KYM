@@ -24,5 +24,5 @@ public:
 	void Move(HWND Hwnd, POINT PreviousPos, float MapY);
 
 	void Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY);
-	void Render(ID3D12GraphicsCommandList* CommandList);
+	void UpdateCamera(ID3D12GraphicsCommandList* CommandList);
 };

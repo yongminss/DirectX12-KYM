@@ -86,78 +86,6 @@ void Mesh::CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandLi
 	m_VertexBufferView.SizeInBytes = ByteSize;
 }
 
-ID3D12Resource* Mesh::CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, unsigned int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer)
-{
-	ID3D12Resource *Buffer = nullptr;
-
-	D3D12_HEAP_PROPERTIES HeapProperties;
-	ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
-	HeapProperties.Type = HeapType;
-	HeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	HeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	HeapProperties.CreationNodeMask = 1;
-	HeapProperties.VisibleNodeMask = 1;
-
-	D3D12_RESOURCE_DESC ResourceDesc;
-	ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
-	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	ResourceDesc.Alignment = 0;
-	ResourceDesc.Width = Size;
-	ResourceDesc.Height = 1;
-	ResourceDesc.DepthOrArraySize = 1;
-	ResourceDesc.MipLevels = 1;
-	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-	ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
-	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	ResourceDesc.SampleDesc.Count = 1;
-	ResourceDesc.SampleDesc.Quality = 0;
-
-	D3D12_RESOURCE_STATES ResourceStates = D3D12_RESOURCE_STATE_COPY_DEST;
-	if (HeapType == D3D12_HEAP_TYPE_UPLOAD) ResourceStates = D3D12_RESOURCE_STATE_GENERIC_READ;
-
-	Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, ResourceStates, nullptr, __uuidof(ID3D12Resource), (void**)&Buffer);
-
-	if (VertexData != nullptr) {
-		switch (HeapType) {
-		case D3D12_HEAP_TYPE_DEFAULT:
-		{
-			HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-			Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)&UploadBuffer);
-
-			D3D12_RANGE Range = { 0 };
-			void* BufferDataBegin = nullptr;
-			UploadBuffer->Map(0, &Range, (void**)&BufferDataBegin);
-			memcpy(BufferDataBegin, VertexData, Size);
-			UploadBuffer->Unmap(0, nullptr);
-
-			CommandList->CopyResource(Buffer, UploadBuffer);
-
-			D3D12_RESOURCE_BARRIER ResourceBarrier;
-			ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // 府家胶 荤侩 函拳甫 唱鸥郴绰 傈捞 厘寒
-			ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			ResourceBarrier.Transition.pResource = Buffer;
-			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-			ResourceBarrier.Transition.StateAfter = ResourceState;
-			ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			CommandList->ResourceBarrier(1, &ResourceBarrier);
-		}
-		break;
-
-		case D3D12_HEAP_TYPE_UPLOAD:
-		{
-			D3D12_RANGE Range = { 0 };
-			void* BufferDataBegin = nullptr;
-			UploadBuffer->Map(0, &Range, (void**)&BufferDataBegin);
-			memcpy(BufferDataBegin, VertexData, Size);
-			UploadBuffer->Unmap(0, nullptr);
-		}
-		break;
-		}
-	}
-
-	return Buffer;
-}
-
 void Mesh::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -351,6 +279,15 @@ LoadedMesh::~LoadedMesh()
 
 	if (m_UvBuffer != nullptr) m_UvBuffer->Release();
 	if (m_UploadUvBuffer != nullptr) m_UploadUvBuffer->Release();
+
+	if (m_NormalBuffer != nullptr) m_NormalBuffer->Release();
+	if (m_UploadNormalBuffer != nullptr) m_UploadNormalBuffer->Release();
+
+	if (m_TangentBuffer != nullptr) m_TangentBuffer->Release();
+	if (m_UploadTangentBuffer != nullptr) m_UploadTangentBuffer->Release();
+
+	if (m_BiTangentBuffer != nullptr) m_BiTangentBuffer->Release();
+	if (m_UploadBiTangentBuffer != nullptr) m_UploadBiTangentBuffer->Release();
 }
 
 void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
@@ -433,7 +370,17 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			fread(&NormalCount, sizeof(int), 1, File);
 
 			if (NormalCount > 0) {
-				fread(&m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+				m_Normal = new DirectX::XMFLOAT3[NormalCount];
+				fread(m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+
+				// Normal Buffer 积己
+				m_NormalBuffer = CreateBuffer(Device, CommandList, m_Normal, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadNormalBuffer);
+
+				m_NormalBufferView.BufferLocation = m_NormalBuffer->GetGPUVirtualAddress();
+				m_NormalBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_NormalBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Normal;
 			}
 		}
 
@@ -441,7 +388,17 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			fread(&TangentCount, sizeof(int), 1, File);
 
 			if (TangentCount > 0) {
-				fread(&m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+				m_Tangent = new DirectX::XMFLOAT3[TangentCount];
+				fread(m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+
+				// Tangent Buffer 积己
+				m_TangentBuffer = CreateBuffer(Device, CommandList, m_Tangent, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadTangentBuffer);
+
+				m_TangentBufferView.BufferLocation = m_TangentBuffer->GetGPUVirtualAddress();
+				m_TangentBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_TangentBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Tangent;
 			}
 		}
 
@@ -449,7 +406,17 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			fread(&BiTangentCount, sizeof(int), 1, File);
 
 			if (BiTangentCount > 0) {
-				fread(&m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+				m_BiTangent = new DirectX::XMFLOAT3[BiTangentCount];
+				fread(m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+
+				// BiTangent Buffer 积己
+				m_BiTangentBuffer = CreateBuffer(Device, CommandList, m_BiTangent, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadBiTangentBuffer);
+
+				m_BiTangentBufferView.BufferLocation = m_BiTangentBuffer->GetGPUVirtualAddress();
+				m_BiTangentBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_BiTangentBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_BiTangent;
 			}
 		}
 
@@ -493,8 +460,8 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 void LoadedMesh::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[2] = { m_PositionBufferView, m_UvBufferView };
-	CommandList->IASetVertexBuffers(0, 2, VertexBufferView);
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[5] = { m_PositionBufferView, m_UvBufferView, m_NormalBufferView, m_TangentBufferView, m_BiTangentBufferView };
+	CommandList->IASetVertexBuffers(0, 5, VertexBufferView);
 
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -515,6 +482,23 @@ SkinnedMesh::SkinnedMesh()
 
 SkinnedMesh::~SkinnedMesh()
 {
+	// --------------------
+	if (m_PositionBuffer != nullptr) m_PositionBuffer->Release();
+	if (m_UploadPositionBuffer != nullptr) m_UploadPositionBuffer->Release();
+
+	if (m_UvBuffer != nullptr) m_UvBuffer->Release();
+	if (m_UploadUvBuffer != nullptr) m_UploadUvBuffer->Release();
+
+	if (m_NormalBuffer != nullptr) m_NormalBuffer->Release();
+	if (m_UploadNormalBuffer != nullptr) m_UploadNormalBuffer->Release();
+
+	if (m_TangentBuffer != nullptr) m_TangentBuffer->Release();
+	if (m_UploadTangentBuffer != nullptr) m_UploadTangentBuffer->Release();
+
+	if (m_BiTangentBuffer != nullptr) m_BiTangentBuffer->Release();
+	if (m_UploadBiTangentBuffer != nullptr) m_UploadBiTangentBuffer->Release();
+	// --------------------
+
 	if (m_BindPoseBoneOffset != nullptr) delete[] m_BindPoseBoneOffset;
 	if (m_BoneOffset != nullptr) delete[] m_BoneOffset;
 	if (m_BoneOffsetBuffer != nullptr) m_BoneOffsetBuffer->Release();
@@ -651,8 +635,8 @@ void SkinnedMesh::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	UpdateShaderBuffer(CommandList);
 
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[4] = { m_PositionBufferView, m_UvBufferView, m_BoneIndexBufferView, m_BoneWeightBufferView };
-	CommandList->IASetVertexBuffers(0, 4, VertexBufferView);
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[7] = { m_PositionBufferView, m_UvBufferView, m_NormalBufferView, m_TangentBufferView, m_BiTangentBufferView, m_BoneIndexBufferView, m_BoneWeightBufferView };
+	CommandList->IASetVertexBuffers(0, 7, VertexBufferView);
 
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -746,7 +730,17 @@ void SkinnedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 			fread(&NormalCount, sizeof(int), 1, File);
 
 			if (NormalCount > 0) {
-				fread(&m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+				m_Normal = new DirectX::XMFLOAT3[NormalCount];
+				fread(m_Normal, sizeof(DirectX::XMFLOAT3), NormalCount, File);
+
+				// Normal Buffer 积己
+				m_NormalBuffer = CreateBuffer(Device, CommandList, m_Normal, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadNormalBuffer);
+
+				m_NormalBufferView.BufferLocation = m_NormalBuffer->GetGPUVirtualAddress();
+				m_NormalBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_NormalBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Normal;
 			}
 		}
 
@@ -754,7 +748,17 @@ void SkinnedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 			fread(&TangentCount, sizeof(int), 1, File);
 
 			if (TangentCount > 0) {
-				fread(&m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+				m_Tangent = new DirectX::XMFLOAT3[TangentCount];
+				fread(m_Tangent, sizeof(DirectX::XMFLOAT3), TangentCount, File);
+
+				// Tangent Buffer 积己
+				m_TangentBuffer = CreateBuffer(Device, CommandList, m_Tangent, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadTangentBuffer);
+
+				m_TangentBufferView.BufferLocation = m_TangentBuffer->GetGPUVirtualAddress();
+				m_TangentBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_TangentBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_Tangent;
 			}
 		}
 
@@ -762,7 +766,17 @@ void SkinnedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 			fread(&BiTangentCount, sizeof(int), 1, File);
 
 			if (BiTangentCount > 0) {
-				fread(&m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+				m_BiTangent = new DirectX::XMFLOAT3[BiTangentCount];
+				fread(m_BiTangent, sizeof(DirectX::XMFLOAT3), BiTangentCount, File);
+
+				// BiTangent Buffer 积己
+				m_BiTangentBuffer = CreateBuffer(Device, CommandList, m_BiTangent, sizeof(DirectX::XMFLOAT3) * m_VertexCount, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadBiTangentBuffer);
+
+				m_BiTangentBufferView.BufferLocation = m_BiTangentBuffer->GetGPUVirtualAddress();
+				m_BiTangentBufferView.StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_BiTangentBufferView.SizeInBytes = sizeof(DirectX::XMFLOAT3) * m_VertexCount;
+
+				delete[] m_BiTangent;
 			}
 		}
 

@@ -9,6 +9,10 @@
 #define MAP_HALF_SIZE 1250
 #define MAP_Y 300
 
+#define DIRECTIONAL_LIGHT 0
+#define SPOT_LIGHT 1
+#define POINT_LIGHT 2
+
 
 Scene::Scene()
 {
@@ -18,6 +22,9 @@ Scene::Scene()
 Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
+
+	//if (m_MappingLight != nullptr) delete[] m_MappingLight; // --> 2개 이상의 조명이 있을 때 배열로 사용
+	if (m_LightBuffer != nullptr) m_LightBuffer->Release();
 
 	if (m_Player != nullptr) delete m_Player;
 	if (m_Terrain != nullptr) delete m_Terrain;
@@ -49,19 +56,18 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	DescriptorRange[2].NumDescriptors = 1;
 	DescriptorRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER RootParameter[7];
-	ZeroMemory(&RootParameter, sizeof(RootParameter));
+	D3D12_ROOT_PARAMETER RootParameter[8];
+	ZeroMemory(RootParameter, sizeof(RootParameter));
 	// Camera
-	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	RootParameter[0].Constants.ShaderRegister = 0;
 	RootParameter[0].Constants.RegisterSpace = 0;
-	RootParameter[0].Constants.Num32BitValues = 32;
 	RootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// GameObject World Pos
 	RootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	RootParameter[1].Constants.ShaderRegister = 1;
 	RootParameter[1].Constants.RegisterSpace = 0;
-	RootParameter[1].Constants.Num32BitValues = 16;
+	RootParameter[1].Constants.Num32BitValues = 32;
 	RootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Texture
 	RootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -88,6 +94,11 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[6].Descriptor.ShaderRegister = 3;
 	RootParameter[6].Descriptor.RegisterSpace = 0;
 	RootParameter[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	// Lighting
+	RootParameter[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	RootParameter[7].Descriptor.ShaderRegister = 4;
+	RootParameter[7].Descriptor.RegisterSpace = 0;
+	RootParameter[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSamplerDesc;
 	ZeroMemory(&StaticSamplerDesc, sizeof(StaticSamplerDesc));
@@ -122,10 +133,29 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	if (ErrorBlob != nullptr) ErrorBlob->Release();
 }
 
+void Scene::CreateLightShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
+{
+	m_Light.m_Ambient = DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.f);
+	m_Light.m_Diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.f);
+	m_Light.m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	m_Light.m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	m_Light.m_Direction = DirectX::XMFLOAT3(-0.24f, 0.f, -0.43f);
+	m_Light.m_Active = true;
+	m_Light.m_Type = DIRECTIONAL_LIGHT;
+
+	UINT BufferSize = ((sizeof(MAPPING_LIGHT) + 255) & ~255);
+
+	m_LightBuffer = CreateBuffer(Device, CommandList, nullptr, BufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
+	m_LightBuffer->Map(0, nullptr, (void**)&m_MappingLight);
+}
+
 void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
 	// 리소스를 그래픽스 파이프라인에 연결하는 역할을 하는 RootSignature 생성
 	CreateRootSignature(Device);
+
+	// Scene에서 사용할 조명을 설정 & Light Buffer 생성
+	CreateLightShaderBuffer(Device, CommandList);
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player(Device, CommandList, m_RootSignature);
@@ -158,6 +188,14 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	}
 }
 
+void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
+{
+	memcpy(&(m_MappingLight->m_Light), &m_Light, sizeof(LIGHT));
+
+	D3D12_GPU_VIRTUAL_ADDRESS LightGpuVirtualAddress = m_LightBuffer->GetGPUVirtualAddress();
+	CommandList->SetGraphicsRootConstantBufferView(7, LightGpuVirtualAddress);
+}
+
 void Scene::Animate(float ElapsedTime, HWND Hwnd)
 {
 	if (m_Player != nullptr) {
@@ -171,6 +209,10 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+	if (m_Player != nullptr) m_Player->UpdateCamera(CommandList);
+
+	UpdateLightShaderBuffer(CommandList);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
 	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);

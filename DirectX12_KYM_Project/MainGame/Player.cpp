@@ -14,7 +14,7 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
 	m_Camera = new Camera();
-	m_Camera->CreateCamera();
+	m_Camera->CreateCamera(Device, CommandList);
 }
 
 Player::~Player()
@@ -103,9 +103,7 @@ void Player::Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY
 	GameObject::Animate(ElapsedTime);
 }
 
-void Player::Render(ID3D12GraphicsCommandList* CommandList)
+void Player::UpdateCamera(ID3D12GraphicsCommandList* CommandList)
 {
 	m_Camera->Update(CommandList, m_ElapsedTime, this);
-
-	GameObject::Render(CommandList);
 }

@@ -22,7 +22,6 @@ public:
 	~Mesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
-	ID3D12Resource *CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, unsigned int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);
 
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };
@@ -58,13 +57,28 @@ public:
 class LoadedMesh : public Mesh
 {
 protected:
+	// 각 프레임의 모델 좌표
 	ID3D12Resource *m_PositionBuffer = nullptr;
 	ID3D12Resource *m_UploadPositionBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_PositionBufferView{};
 
+	// 텍스처 매핑이 될 UV 좌표
 	ID3D12Resource *m_UvBuffer = nullptr;
 	ID3D12Resource *m_UploadUvBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_UvBufferView{};
+
+	// 노멀 매핑에 사용될 Normal, Tangent, BiTangent - 3x3 행렬 (Normal Map이 있는 모델은 Tangent, BiTangent까지 사용)
+	ID3D12Resource *m_NormalBuffer = nullptr;
+	ID3D12Resource *m_UploadNormalBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_NormalBufferView{};
+
+	ID3D12Resource *m_TangentBuffer = nullptr;
+	ID3D12Resource *m_UploadTangentBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_TangentBufferView{};
+
+	ID3D12Resource *m_BiTangentBuffer = nullptr;
+	ID3D12Resource *m_UploadBiTangentBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_BiTangentBufferView{};
 
 	char m_MeshName[64]{};
 
@@ -75,9 +89,9 @@ protected:
 	DirectX::XMFLOAT4 m_Color{};
 	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
 	DirectX::XMFLOAT2 m_Uv1{};
-	DirectX::XMFLOAT3 m_Normal{};
-	DirectX::XMFLOAT3 m_Tangent{};
-	DirectX::XMFLOAT3 m_BiTangent{};
+	DirectX::XMFLOAT3 *m_Normal = nullptr;
+	DirectX::XMFLOAT3 *m_Tangent = nullptr;
+	DirectX::XMFLOAT3 *m_BiTangent = nullptr;
 	UINT *m_MeshIndex = nullptr;
 
 	UINT m_SubMeshIndex = 0;
@@ -119,13 +133,28 @@ private:
 	GameObject **m_BoneFrame = nullptr;
 
 	// --------------------
+	// 각 프레임의 모델 좌표
 	ID3D12Resource *m_PositionBuffer = nullptr;
 	ID3D12Resource *m_UploadPositionBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_PositionBufferView{};
 
+	// 텍스처 매핑이 될 UV 좌표
 	ID3D12Resource *m_UvBuffer = nullptr;
 	ID3D12Resource *m_UploadUvBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_UvBufferView{};
+
+	// 노멀 매핑에 사용될 Normal, Tangent, BiTangent - 3x3 행렬 (Normal Map이 있는 모델은 Tangent, BiTangent까지 사용)
+	ID3D12Resource *m_NormalBuffer = nullptr;
+	ID3D12Resource *m_UploadNormalBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_NormalBufferView{};
+
+	ID3D12Resource *m_TangentBuffer = nullptr;
+	ID3D12Resource *m_UploadTangentBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_TangentBufferView{};
+
+	ID3D12Resource *m_BiTangentBuffer = nullptr;
+	ID3D12Resource *m_UploadBiTangentBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW m_BiTangentBufferView{};
 
 	char m_MeshName[64]{};
 
@@ -136,9 +165,9 @@ private:
 	DirectX::XMFLOAT4 m_Color{};
 	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
 	DirectX::XMFLOAT2 m_Uv1{};
-	DirectX::XMFLOAT3 m_Normal{};
-	DirectX::XMFLOAT3 m_Tangent{};
-	DirectX::XMFLOAT3 m_BiTangent{};
+	DirectX::XMFLOAT3 *m_Normal = nullptr;
+	DirectX::XMFLOAT3 *m_Tangent = nullptr;
+	DirectX::XMFLOAT3 *m_BiTangent = nullptr;
 	UINT *m_MeshIndex = nullptr;
 
 	UINT m_SubMeshIndex = 0;
