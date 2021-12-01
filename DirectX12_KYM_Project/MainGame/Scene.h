@@ -37,7 +37,8 @@ private:
 	Player *m_Player = nullptr;
 	Terrain *m_Terrain = nullptr;
 	Skybox *m_Skybox = nullptr;
-	UserInterface *m_UserInterface = nullptr;
+	UserInterface *m_HpBar = nullptr;
+	UserInterface *m_HpGauge = nullptr;
 	std::vector<GameObject*> m_GameObjects{};
 
 	POINT m_PreviousPos{};

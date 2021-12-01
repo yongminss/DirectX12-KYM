@@ -108,6 +108,12 @@ void AnimationController::AssignAniSetToAniTrack()
 	ActiveAnimation(0);
 }
 
+int AnimationController::GetActiveTrackIndex()
+{
+	for (int i = 0; i < m_AnimationCount; ++i)
+		if (m_AnimationTrack[i].GetActive() == true) return i;
+}
+
 void AnimationController::ActiveAnimation(int AnimationIndex)
 {
 	if (m_AnimationTrack != nullptr) {

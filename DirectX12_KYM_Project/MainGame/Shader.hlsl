@@ -152,6 +152,8 @@ float4 TexturePS(TextureVS_Output Input) : SV_TARGET
 {
     float4 Color = Texture.Sample(Sampler, Input.uv);
     
+    clip(Color.a - 0.1f);
+    
     return Color;
 }
 

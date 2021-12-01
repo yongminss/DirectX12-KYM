@@ -303,6 +303,14 @@ void GameObject::SetAnimationTrackIndex(int Index)
 	if (m_Child != nullptr) m_Child->SetAnimationTrackIndex(Index);
 }
 
+int GameObject::GetActiveAniTrackIndex()
+{
+	if (m_AnimationController != nullptr) return m_AnimationController->GetActiveTrackIndex();
+
+	if (m_Sibling != nullptr) m_Sibling->GetActiveAniTrackIndex();
+	if (m_Child != nullptr) m_Child->GetActiveAniTrackIndex();
+}
+
 GameObject* GameObject::FindFrame(char* FrameName)
 {
 	GameObject* Frame = nullptr;

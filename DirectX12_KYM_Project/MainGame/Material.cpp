@@ -43,14 +43,27 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
-	case 2: // UserInterface
+	// 여기부터 UI로 사용하는 Texture
+	case 2: // Bar
 	{
 		UserInterfaceShader *UsingShader = new UserInterfaceShader();
 		UsingShader->CreateShader(Device, RootSignature);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, L"Texture/SkyBox_Bottom.dds", Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, L"Texture/UI_Bar.dds", Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case 2 + 1: // Hp Gauge
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, L"Texture/UI_HpGauge.dds", Kind, 1, 2);
 		SetTexture(UsingTexture);
 	}
 	break;

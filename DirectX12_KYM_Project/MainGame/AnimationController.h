@@ -77,6 +77,7 @@ public:
 	int GetAnimationCount() { return m_AnimationCount; }
 	AnimationSet* GetAnimationSet(int Index) { return &m_AnimationSet[Index]; }
 	int GetBoneFrameCount() { return m_BoneFrameCount; }
+	int GetActiveTrackIndex();
 
 	void ActiveAnimation(int AnimationIndex);
 

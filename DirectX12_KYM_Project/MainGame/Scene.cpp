@@ -29,7 +29,8 @@ Scene::~Scene()
 	if (m_Player != nullptr) delete m_Player;
 	if (m_Terrain != nullptr) delete m_Terrain;
 	if (m_Skybox != nullptr) delete m_Skybox;
-	if (m_UserInterface != nullptr) delete m_UserInterface;
+	if (m_HpBar != nullptr) delete m_HpBar;
+	if (m_HpGauge != nullptr) delete m_HpGauge;
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) delete m_GameObjects[i];
 }
 
@@ -171,9 +172,13 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Skybox->UpdateTransform(nullptr);
 
 	// 게임에 필요한 UI 생성
-	m_UserInterface = new UserInterface(Device, CommandList, m_RootSignature);
-	m_UserInterface->SetPosition(DirectX::XMFLOAT3(-0.75f, -0.75f, 0.f));
-	m_UserInterface->UpdateTransform(nullptr);
+	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, 2);
+	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
+	m_HpBar->SetScale(DirectX::XMFLOAT3(1.03f, 1.02f, 0.f));
+
+	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, 3);
+	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
+	m_HpGauge->UpdateTransform(nullptr);
 
 	// 게임 월드에 등장하는 Game Object 생성
 	m_GameObjects.reserve(100);
@@ -204,6 +209,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
 	}
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
+	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -215,7 +221,8 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateLightShaderBuffer(CommandList);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
-	if (m_UserInterface != nullptr) m_UserInterface->Render(CommandList);
+	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
+	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
 	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -246,6 +253,10 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 		case 'd':
 		case 'D':
 			m_Player->ActiveMove(3, true);
+			break;
+
+		case '1':
+			m_Player->SetAnimationTrackIndex(3);
 			break;
 		}
 		break;
@@ -286,6 +297,8 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		SetCapture(Hwnd);
 		SetCursor(NULL);
 		GetCursorPos(&m_PreviousPos);
+
+		m_Player->SetAnimationTrackIndex(4);
 	}
 	break;
 	}

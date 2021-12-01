@@ -55,15 +55,16 @@ public:
 	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
 	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_TransformPos._31, m_TransformPos._32, m_TransformPos._33); }
 	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_TransformPos._41, m_TransformPos._42, m_TransformPos._43); }
-
 	DirectX::XMFLOAT4X4 GetWorldPos() { return m_WorldPos; }
 	char* GetFrameName() { return m_FrameName; }
+
+	int GetActiveAniTrackIndex();
 
 	GameObject* FindFrame(char* FrameName);
 
 	void UpdateTransform(DirectX::XMFLOAT4X4* Parents);
 
-	void Animate(float ElapsedTime);
+	virtual void Animate(float ElapsedTime);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
-	void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };

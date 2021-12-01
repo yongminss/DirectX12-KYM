@@ -89,7 +89,11 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		}
 	}
 	// m_Speed가 0이면 움직임이 없으므로 IDLE 상태로 설정
-	else SetAnimationTrackIndex(0);
+	else {
+		// Walk or Run 애니메이션일 경우에만 IDEL로 변경
+		if (GetActiveAniTrackIndex() == 1 || GetActiveAniTrackIndex() == 2)
+			SetAnimationTrackIndex(0);
+	}
 
 	UpdateTransform(nullptr);
 }
