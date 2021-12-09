@@ -295,20 +295,20 @@ void GameObject::SetMeshBoneFrame(GameObject* RootFrame)
 	if (m_Child != nullptr) m_Child->SetMeshBoneFrame(RootFrame);
 }
 
-void GameObject::SetAnimationTrackIndex(int Index)
+void GameObject::SetAnimationTrack(int Index, int Type)
 {
-	if (m_AnimationController != nullptr) m_AnimationController->ActiveAnimation(Index);
+	if (m_AnimationController != nullptr) m_AnimationController->SetAnimationTrack(Index, Type);
 
-	if (m_Sibling != nullptr) m_Sibling->SetAnimationTrackIndex(Index);
-	if (m_Child != nullptr) m_Child->SetAnimationTrackIndex(Index);
+	if (m_Sibling != nullptr) m_Sibling->SetAnimationTrack(Index, Type);
+	if (m_Child != nullptr) m_Child->SetAnimationTrack(Index, Type);
 }
 
-int GameObject::GetActiveAniTrackIndex()
+int GameObject::GetCurrentAnimationTrackIndex()
 {
-	if (m_AnimationController != nullptr) return m_AnimationController->GetActiveTrackIndex();
+	if (m_AnimationController != nullptr) return m_AnimationController->GetCurrentAnimationTrackIndex();
 
-	if (m_Sibling != nullptr) m_Sibling->GetActiveAniTrackIndex();
-	if (m_Child != nullptr) m_Child->GetActiveAniTrackIndex();
+	if (m_Sibling != nullptr) m_Sibling->GetCurrentAnimationTrackIndex();
+	if (m_Child != nullptr) m_Child->GetCurrentAnimationTrackIndex();
 }
 
 GameObject* GameObject::FindFrame(char* FrameName)

@@ -67,8 +67,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		float Speed = m_Speed * m_ElapsedTime;
 
 		// 속도에 따른 애니메이션 설정
-		if (m_Speed >= 80.f) SetAnimationTrackIndex(2);
-		else SetAnimationTrackIndex(1);
+		if (m_Speed >= 80.f) SetAnimationTrack(P_RUN, ANIMATION_TYPE_LOOP);
+		else SetAnimationTrack(P_WALK, ANIMATION_TYPE_LOOP);
 
 		// Set Position - ActiveMove : 0(앞), 1(뒤), 2(좌), 3(우)
 		if (m_ActiveMove[0] == true) {
@@ -91,8 +91,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	// m_Speed가 0이면 움직임이 없으므로 IDLE 상태로 설정
 	else {
 		// Walk or Run 애니메이션일 경우에만 IDEL로 변경
-		if (GetActiveAniTrackIndex() == 1 || GetActiveAniTrackIndex() == 2)
-			SetAnimationTrackIndex(0);
+		if (GetCurrentAnimationTrackIndex() == P_WALK || GetCurrentAnimationTrackIndex() == P_RUN)
+			SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
 	}
 
 	UpdateTransform(nullptr);

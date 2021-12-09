@@ -22,12 +22,38 @@ void AnimationSet::CreateKeyFrameTransform()
 	m_KeyFrameTransformPos = new DirectX::XMFLOAT4X4*[m_KeyFrameTransformCount];
 }
 
+void AnimationSet::InitAnimationSet()
+{
+	m_Type = ANIMATION_TYPE_LOOP;
+	m_StartPositionTime = 0.f;
+	m_ChangeAnimationTrack = false;
+}
+
 float AnimationSet::ResetPositionTime(float PositionTime)
 {
 	float ResetTime = 0.f;
 
-	// Loop Animation
-	ResetTime = PositionTime - int(PositionTime / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1]) * m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1];
+	switch (m_Type) {
+	case ANIMATION_TYPE_LOOP:
+	{
+		ResetTime = PositionTime - int(PositionTime / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1]) * m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1];
+	}
+	break;
+
+	case ANIMATION_TYPE_ONCE:
+	{
+		// 애니메이션을 처음부터 시작하기 위해 PositionTime을 저장
+		if (m_StartPositionTime == 0.f) m_StartPositionTime = PositionTime;
+
+		ResetTime = (PositionTime - m_StartPositionTime) - int((PositionTime - m_StartPositionTime) / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1]) * m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1];
+
+		// 애니메이션이 종료되었으므로 끝을 알림
+		if ((PositionTime - m_StartPositionTime) / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1] >= 1.f) {
+			m_ChangeAnimationTrack = true;
+		}
+	}
+	break;
+	}
 
 	return ResetTime;
 }
@@ -105,37 +131,47 @@ void AnimationController::AssignAniSetToAniTrack()
 		}
 	}
 	// 0번 애니메이션(IDLE)을 기본 상태로 설정
-	ActiveAnimation(0);
+	SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
 }
 
-int AnimationController::GetActiveTrackIndex()
-{
-	for (int i = 0; i < m_AnimationCount; ++i)
-		if (m_AnimationTrack[i].GetActive() == true) return i;
-}
-
-void AnimationController::ActiveAnimation(int AnimationIndex)
+void AnimationController::SetAnimationTrack(int Index, int Type)
 {
 	if (m_AnimationTrack != nullptr) {
-		for (int i = 0; i < m_AnimationCount; ++i)
+		// 기존에 하던 애니메이션 초기화
+		for (int i = 0; i < m_AnimationCount; ++i) {
 			m_AnimationTrack[i].SetActive(false);
-		m_AnimationTrack[AnimationIndex].SetActive(true);
+			m_AnimationTrack[i].GetAnimationSet()->InitAnimationSet();
+		}
+		// 재설정
+		m_AnimationTrack[Index].SetActive(true);
+		m_AnimationTrack[Index].GetAnimationSet()->SetType(Type);
 	}
+	m_CurrentAnimationTrackIndex = Index;
 }
 
 void AnimationController::UpdateAnimationPos(float ElapsedTime)
 {
-	if (m_AnimationSet != nullptr) {
-		for (int i = 0; i < m_AnimationCount; ++i) {
-			if (m_AnimationTrack[i].GetActive() == true) {
-				AnimationSet* UsingAniSet = m_AnimationTrack[i].GetAnimationSet();
-				m_CumulativeTime += ElapsedTime;
+	// 1. 이전 프레임에서 애니메이션 트랙을 바꾸라는 명령이 있었는지에 따라 수행
+	if (m_NextAnimationTrackIndex != -1) {
+		m_CurrentAnimationTrackIndex = m_NextAnimationTrackIndex;
+		m_NextAnimationTrackIndex = -1;
+		SetAnimationTrack(m_CurrentAnimationTrackIndex, ANIMATION_TYPE_LOOP);
+	}
+	// 2. 현재 활성화된 애니메이션 트랙의 애니메이션 수행
+	if (m_AnimationTrack != nullptr) {
+		if (m_AnimationTrack[m_CurrentAnimationTrackIndex].GetActive() == true) {
+			AnimationSet* UsingAniSet = m_AnimationTrack[m_CurrentAnimationTrackIndex].GetAnimationSet();
+			m_CumulativeTime += ElapsedTime;
 
-				float PositionTime = UsingAniSet->ResetPositionTime(m_CumulativeTime);
+			float PositionTime = UsingAniSet->ResetPositionTime(m_CumulativeTime);
 
-				for (int i = 0; i < m_BoneFrameCount; ++i) {
-					m_BoneFrame[i]->SetTransformPos(UsingAniSet->GetSRT(i, PositionTime));
-				}
+			for (int i = 0; i < m_BoneFrameCount; ++i) {
+				m_BoneFrame[i]->SetTransformPos(UsingAniSet->GetSRT(i, PositionTime));
+			}
+			// 3. 애니메이션 트랙의 변경 명령이 있으면 다음 프레임에 바꾸기 위해 값을 설정
+			if (UsingAniSet->GetChangeAnimationTrack() == true) {
+				m_NextAnimationTrackIndex = P_IDLE;
+				UsingAniSet->InitAnimationSet();
 			}
 		}
 	}

@@ -2,7 +2,7 @@
 
 class GameObject;
 
-// -
+// 애니메이션의 이름, 걸리는 시간, 변환 값 등의 정보를 가지고 있음
 class AnimationSet
 {
 private:
@@ -12,6 +12,10 @@ private:
 	int m_KeyFrameTransformCount = 0;
 	float *m_KeyFrameTransformTime = nullptr;
 	DirectX::XMFLOAT4X4 **m_KeyFrameTransformPos = nullptr;
+
+	int m_Type = 0;
+	float m_StartPositionTime = 0.f;
+	bool m_ChangeAnimationTrack = false;
 
 public:
 	AnimationSet();
@@ -25,14 +29,18 @@ public:
 	void SetKeyFrameTransformCount(int KeyFrameTransformCount) { m_KeyFrameTransformCount = KeyFrameTransformCount; }
 	void SetKeyFrameTransformTime(int Index, float KeyFrameTransformTime) { m_KeyFrameTransformTime[Index] = KeyFrameTransformTime; }
 	void SetKeyFrameTransformPos(int Index, DirectX::XMFLOAT4X4* KeyFrameTransformPos) { m_KeyFrameTransformPos[Index] = KeyFrameTransformPos; }
+	void SetType(int Type) { m_Type = Type; }
 
 	int GetKeyFrameTransformCount() { return m_KeyFrameTransformCount; }
+	bool GetChangeAnimationTrack() { return m_ChangeAnimationTrack; }
+
+	void InitAnimationSet();
 
 	float ResetPositionTime(float PositionTime);
 	DirectX::XMFLOAT4X4 GetSRT(int FrameIndex, float PositionTime);
 };
 
-// -
+// AnimationSet을 저장 (ex. 1번 AnimationTrack은 어떤 오브젝트의 1번 애니메이션(ex. walk)을 가짐
 class AnimationTrack
 {
 private:
@@ -51,7 +59,7 @@ public:
 	AnimationSet* GetAnimationSet() { return m_AnimationSet; }
 };
 
-// -
+// 애니메이션을 직접적으로 관리 (ex. 경과 시간에 맞추어 애니메이션 변환 or 타입에 맞추어 애니메이션 반복 등)
 class AnimationController
 {
 private:
@@ -64,6 +72,9 @@ private:
 
 	float m_CumulativeTime = 0.f;
 
+	int m_CurrentAnimationTrackIndex = 0;
+	int m_NextAnimationTrackIndex = -1;
+
 public:
 	AnimationController();
 	~AnimationController();
@@ -74,12 +85,12 @@ public:
 
 	void SetBoneFrame(int Index, GameObject *Frame) { m_BoneFrame[Index] = Frame; }
 
+	void SetAnimationTrack(int Index, int Type);
+
 	int GetAnimationCount() { return m_AnimationCount; }
 	AnimationSet* GetAnimationSet(int Index) { return &m_AnimationSet[Index]; }
 	int GetBoneFrameCount() { return m_BoneFrameCount; }
-	int GetActiveTrackIndex();
-
-	void ActiveAnimation(int AnimationIndex);
+	int GetCurrentAnimationTrackIndex() { return m_CurrentAnimationTrackIndex; }
 
 	void UpdateAnimationPos(float ElapsedTime);
 };

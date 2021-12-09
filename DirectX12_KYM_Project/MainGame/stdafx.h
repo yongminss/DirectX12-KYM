@@ -32,7 +32,25 @@
 
 #pragma comment(linker, "/entry:wWinMainCRTStartup /subsystem:console")
 
+// Window Size
 #define Window_Width 800
 #define Window_Height 600
+
+// Animation Type
+#define ANIMATION_TYPE_LOOP 0
+#define ANIMATION_TYPE_ONCE 1
+
+// Player Animation Kinds
+enum P_ANIMATION
+{
+	P_IDLE,
+	P_WALK,
+	P_RUN,
+	P_ATTACK_A,
+	P_ATTACK_B,
+	P_DAMAGED,
+	P_DEATH_A,
+	P_DEATH_B
+};
 
 extern ID3D12Resource* CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, unsigned int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);

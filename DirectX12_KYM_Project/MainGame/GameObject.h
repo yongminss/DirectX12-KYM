@@ -49,7 +49,7 @@ public:
 
 	void SetMeshBoneFrame(GameObject* RootFrame);
 
-	void SetAnimationTrackIndex(int Index);
+	void SetAnimationTrack(int Index, int Type);
 
 	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_TransformPos._11, m_TransformPos._12, m_TransformPos._13); }
 	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
@@ -58,7 +58,7 @@ public:
 	DirectX::XMFLOAT4X4 GetWorldPos() { return m_WorldPos; }
 	char* GetFrameName() { return m_FrameName; }
 
-	int GetActiveAniTrackIndex();
+	int GetCurrentAnimationTrackIndex();
 
 	GameObject* FindFrame(char* FrameName);
 

@@ -254,10 +254,6 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 		case 'D':
 			m_Player->ActiveMove(3, true);
 			break;
-
-		case '1':
-			m_Player->SetAnimationTrackIndex(3);
-			break;
 		}
 		break;
 
@@ -298,7 +294,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		SetCursor(NULL);
 		GetCursorPos(&m_PreviousPos);
 
-		m_Player->SetAnimationTrackIndex(4);
+		m_Player->SetAnimationTrack(P_ATTACK_A, ANIMATION_TYPE_ONCE);
 	}
 	break;
 	}
