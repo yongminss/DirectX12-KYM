@@ -312,6 +312,10 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		if (!strcmp(Word, "<Bounds>:")) {
 			fread(&m_AabbCenter, sizeof(float), 3, File);
 			fread(&m_AAbbExtent, sizeof(float), 3, File);
+
+			// 충돌 처리를 위한 바운딩 박스 설정
+			m_BoundingBox.Center = m_AabbCenter;
+			m_BoundingBox.Extents = m_AAbbExtent;
 		}
 
 		else if (!strcmp(Word, "<Positions>:")) {

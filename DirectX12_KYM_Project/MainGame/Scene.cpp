@@ -181,15 +181,15 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_HpGauge->UpdateTransform(nullptr);
 
 	// 게임 월드에 등장하는 Game Object 생성
-	m_GameObjects.reserve(100);
-	for (int i = 0; i < 10; ++i) {
-		for (int j = 0; j < 10; ++j) {
-			m_GameObjects.emplace_back(new GameObject(Device, CommandList, m_RootSignature));
-			float x = -MAP_HALF_SIZE + (i * 500.f), z = -MAP_HALF_SIZE + (j * 500.f);
-			float y = m_Terrain->GetHeightMapYPos((x + MAP_HALF_SIZE) / 20, (z + MAP_HALF_SIZE) / 20) - MAP_Y;
-			m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(x, y, z));
-			m_GameObjects.back()->UpdateTransform(nullptr);
-		}
+	m_GameObjects.reserve(10);
+
+	for (int i = 0; i < 9; ++i) {
+		GameObject *Monster = nullptr;
+		Monster = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_WeakOrc.bin", true);
+		m_GameObjects.emplace_back(new GameObject());
+		m_GameObjects.back()->SetChild(Monster);
+		float y = m_Terrain->GetHeightMapYPos(((100.f * i) + MAP_HALF_SIZE) / 20, (0 + MAP_HALF_SIZE) / 20) - MAP_Y;
+		m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(0.f + (100.f * i), y, 0.f));
 	}
 }
 
@@ -208,6 +208,11 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y;
 		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
 	}
+	for (int i = 0; i < m_GameObjects.size(); ++i)
+		if (m_GameObjects[i] != nullptr) {
+			m_GameObjects[i]->Animate(ElapsedTime);
+			m_GameObjects[i]->UpdateTransform(nullptr);
+		}
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
 }
@@ -294,7 +299,25 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		SetCursor(NULL);
 		GetCursorPos(&m_PreviousPos);
 
-		m_Player->SetAnimationTrack(P_ATTACK_A, ANIMATION_TYPE_ONCE);
+		// 플레이어가 다른 행동을 하지 않은 상태 (IDLE) 일때만 공격하도록 설정
+		if (m_Player->GetCurrentAnimationTrackIndex() == P_IDLE) {
+			m_Player->SetAnimationTrack(P_ATTACK_A, ANIMATION_TYPE_ONCE);
+
+			// 카메라의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
+			DirectX::XMFLOAT3 StartPosition = m_Player->GetCameraWorldPosition();
+			DirectX::XMFLOAT3 EndPosition{};
+			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_Player->GetCameraWorldLook())));
+
+			GameObject *CollisionMonster = new GameObject();
+
+			for (int i = 0; i < m_GameObjects.size(); ++i) {
+				CollisionMonster = m_GameObjects[i]->CheckCollision(StartPosition, EndPosition);
+
+				if (CollisionMonster != nullptr) {
+					std::cout << i << "번째 오브젝트와 충돌거리 : " << CollisionMonster->GetCollisionMeshDistance() << std::endl;
+				}
+			}
+		}
 	}
 	break;
 	}

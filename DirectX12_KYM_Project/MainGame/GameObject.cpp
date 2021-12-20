@@ -26,11 +26,13 @@ void ReadStringFile(FILE* File, char* Word)
 
 GameObject::GameObject()
 {
-
+	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
+	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 }
 
 GameObject::GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature)
 {
+	// 정육면체로 된 오브젝트를 생성
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
@@ -227,6 +229,8 @@ void GameObject::SetRight(DirectX::XMFLOAT3 Right)
 	m_TransformPos._11 = Right.x;
 	m_TransformPos._12 = Right.y;
 	m_TransformPos._13 = Right.z;
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::SetUp(DirectX::XMFLOAT3 Up)
@@ -234,6 +238,8 @@ void GameObject::SetUp(DirectX::XMFLOAT3 Up)
 	m_TransformPos._21 = Up.x;
 	m_TransformPos._22 = Up.y;
 	m_TransformPos._23 = Up.z;
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::SetLook(DirectX::XMFLOAT3 Look)
@@ -241,6 +247,8 @@ void GameObject::SetLook(DirectX::XMFLOAT3 Look)
 	m_TransformPos._31 = Look.x;
 	m_TransformPos._32 = Look.y;
 	m_TransformPos._33 = Look.z;
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
@@ -248,6 +256,8 @@ void GameObject::SetPosition(DirectX::XMFLOAT3 Position)
 	m_TransformPos._41 = Position.x;
 	m_TransformPos._42 = Position.y;
 	m_TransformPos._43 = Position.z;
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::SetTransformPos(DirectX::XMFLOAT4X4 TransformPos)
@@ -303,12 +313,37 @@ void GameObject::SetAnimationTrack(int Index, int Type)
 	if (m_Child != nullptr) m_Child->SetAnimationTrack(Index, Type);
 }
 
+float GameObject::GetCollisionMeshDistance()
+{
+	if (m_Mesh != nullptr) return m_Mesh->GetDistance();
+}
+
 int GameObject::GetCurrentAnimationTrackIndex()
 {
 	if (m_AnimationController != nullptr) return m_AnimationController->GetCurrentAnimationTrackIndex();
 
 	if (m_Sibling != nullptr) m_Sibling->GetCurrentAnimationTrackIndex();
 	if (m_Child != nullptr) m_Child->GetCurrentAnimationTrackIndex();
+}
+
+GameObject* GameObject::CheckCollision(DirectX::XMFLOAT3 ObjectA, DirectX::XMFLOAT3 ObjectB)
+{
+	if (m_Mesh != nullptr) {
+		DirectX::BoundingBox CheckingBoundingBox = m_Mesh->GetBoundingBox();
+		CheckingBoundingBox.Transform(CheckingBoundingBox, DirectX::XMLoadFloat4x4(&m_WorldPos));
+
+		float Distance = 0.f;
+
+		if (CheckingBoundingBox.Intersects(DirectX::XMLoadFloat3(&ObjectA), DirectX::XMLoadFloat3(&ObjectB), Distance) == true) {
+			m_Mesh->SetDistance(Distance);
+			return this;
+		}
+	}
+
+	if (m_Sibling != nullptr) return m_Sibling->CheckCollision(ObjectA, ObjectB);
+	if (m_Child != nullptr) return m_Child->CheckCollision(ObjectA, ObjectB);
+
+	return nullptr;
 }
 
 GameObject* GameObject::FindFrame(char* FrameName)

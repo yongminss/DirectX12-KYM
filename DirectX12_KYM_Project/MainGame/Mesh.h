@@ -17,11 +17,19 @@ protected:
 	unsigned int m_VertexCount = 0;
 	unsigned int m_IndexCount = 0;
 
+	DirectX::BoundingBox m_BoundingBox{};
+	float m_Distance = 0.f;
+
 public:
 	Mesh();
 	~Mesh();
 
 	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
+
+	void SetDistance(float Distance) { m_Distance = Distance; }
+
+	DirectX::BoundingBox GetBoundingBox() { return m_BoundingBox; }
+	float GetDistance() { return m_Distance; }
 
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };

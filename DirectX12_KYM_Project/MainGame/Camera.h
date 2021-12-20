@@ -38,6 +38,11 @@ public:
 
 	void CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
+	DirectX::XMFLOAT3 GetRight() { return m_Right; }
+	DirectX::XMFLOAT3 GetUp() { return m_Up; }
+	DirectX::XMFLOAT3 GetLook() { return m_Look; }
+	DirectX::XMFLOAT3 GetPosition() { return m_Position; }
+
 	void SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	void Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, Player *Target);

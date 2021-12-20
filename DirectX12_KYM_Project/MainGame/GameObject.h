@@ -27,8 +27,8 @@ public:
 	GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 	~GameObject();
 
-	GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation);
-	GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
+	static GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation);
+	static GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
 	void LoadAnimationInfo(FILE* File);
 
 	void SetMesh(Mesh* UsingMesh);
@@ -58,9 +58,12 @@ public:
 	DirectX::XMFLOAT4X4 GetWorldPos() { return m_WorldPos; }
 	char* GetFrameName() { return m_FrameName; }
 
+	float GetCollisionMeshDistance();
 	int GetCurrentAnimationTrackIndex();
 
 	GameObject* FindFrame(char* FrameName);
+
+	GameObject* CheckCollision(DirectX::XMFLOAT3 StartPos, DirectX::XMFLOAT3 EndPos);
 
 	void UpdateTransform(DirectX::XMFLOAT4X4* Parents);
 

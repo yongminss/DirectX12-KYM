@@ -21,6 +21,7 @@
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include <DirectXCollision.h>
 
 #include <iostream>
 #include <vector>

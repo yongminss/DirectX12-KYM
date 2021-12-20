@@ -52,9 +52,6 @@
     <Filter Include="소스 파일\04. GameObject\05. Material">
       <UniqueIdentifier>{b381f120-72ca-48c1-a3d6-920abe47fc2f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\06. AnimationController">
-      <UniqueIdentifier>{04417130-363c-4aaa-9b30-81f549099bbf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="소스 파일\04. GameObject\07. Child-Class">
       <UniqueIdentifier>{40ad34bb-3fd3-44b7-b1e6-9186318705e2}</UniqueIdentifier>
     </Filter>
@@ -69,6 +66,9 @@
     </Filter>
     <Filter Include="소스 파일\04. GameObject\07. Child-Class\04. UserInterface">
       <UniqueIdentifier>{70daaf41-5874-46c3-b821-5f528fdd0720}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\06. AnimationController">
+      <UniqueIdentifier>{04417130-363c-4aaa-9b30-81f549099bbf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
