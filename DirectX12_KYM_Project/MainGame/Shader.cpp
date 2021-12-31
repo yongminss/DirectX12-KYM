@@ -336,7 +336,7 @@ D3D12_INPUT_LAYOUT_DESC SkinnedShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE SkinnedShader::CreateVertexShader()
 {
-	HRESULT hResult = D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "SkinedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "SkinnedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();

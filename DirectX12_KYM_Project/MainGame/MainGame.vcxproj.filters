@@ -70,6 +70,9 @@
     <Filter Include="소스 파일\04. GameObject\06. AnimationController">
       <UniqueIdentifier>{04417130-363c-4aaa-9b30-81f549099bbf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\05. InstancingModel">
+      <UniqueIdentifier>{20d61335-a25a-477e-aaaa-16bda28581cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -132,6 +135,9 @@
     <ClInclude Include="AnimationController.h">
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
     </ClInclude>
+    <ClInclude Include="InstancingModel.h">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\05. InstancingModel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainGame.cpp">
@@ -184,6 +190,9 @@
     </ClCompile>
     <ClCompile Include="AnimationController.cpp">
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
+    </ClCompile>
+    <ClCompile Include="InstancingModel.cpp">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\05. InstancingModel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

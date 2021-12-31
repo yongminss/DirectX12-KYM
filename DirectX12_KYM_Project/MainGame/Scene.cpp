@@ -5,6 +5,7 @@
 #include "Terrain.h"
 #include "Skybox.h"
 #include "UserInterface.h"
+#include "InstancingModel.h"
 
 #define MAP_HALF_SIZE 1250
 #define MAP_Y 300
@@ -23,7 +24,6 @@ Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
-	//if (m_MappingLight != nullptr) delete[] m_MappingLight; // --> 2개 이상의 조명이 있을 때 배열로 사용
 	if (m_LightBuffer != nullptr) m_LightBuffer->Release();
 
 	if (m_Player != nullptr) delete m_Player;
@@ -31,7 +31,7 @@ Scene::~Scene()
 	if (m_Skybox != nullptr) delete m_Skybox;
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
-	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) delete m_GameObjects[i];
+	if (m_Monsters != nullptr) delete m_Monsters;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -181,16 +181,9 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_HpGauge->UpdateTransform(nullptr);
 
 	// 게임 월드에 등장하는 Game Object 생성
-	m_GameObjects.reserve(10);
-
-	for (int i = 0; i < 9; ++i) {
-		GameObject *Monster = nullptr;
-		Monster = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_WeakOrc.bin", true);
-		m_GameObjects.emplace_back(new GameObject());
-		m_GameObjects.back()->SetChild(Monster);
-		float y = m_Terrain->GetHeightMapYPos(((100.f * i) + MAP_HALF_SIZE) / 20, (0 + MAP_HALF_SIZE) / 20) - MAP_Y;
-		m_GameObjects.back()->SetPosition(DirectX::XMFLOAT3(0.f + (100.f * i), y, 0.f));
-	}
+	m_Monsters = new InstancingSkinnedModel();
+	m_Monsters->CreateShader(Device, m_RootSignature);
+	m_Monsters->CreateModel(Device, CommandList, m_RootSignature, 100);
 }
 
 void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
@@ -208,11 +201,8 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y;
 		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
 	}
-	for (int i = 0; i < m_GameObjects.size(); ++i)
-		if (m_GameObjects[i] != nullptr) {
-			m_GameObjects[i]->Animate(ElapsedTime);
-			m_GameObjects[i]->UpdateTransform(nullptr);
-		}
+	if (m_Monsters != nullptr) m_Monsters->Animate(ElapsedTime);
+
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
 }
@@ -228,7 +218,8 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_Player != nullptr) m_Player->Render(CommandList);
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
-	for (int i = 0; i < m_GameObjects.size(); ++i) if (m_GameObjects[i] != nullptr) m_GameObjects[i]->Render(CommandList);
+	if (m_Monsters != nullptr) m_Monsters->Render(CommandList);
+
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
 	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
 }
@@ -310,13 +301,15 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 			GameObject *CollisionMonster = new GameObject();
 
-			for (int i = 0; i < m_GameObjects.size(); ++i) {
+			/*for (int i = 0; i < m_GameObjects.size(); ++i) {
 				CollisionMonster = m_GameObjects[i]->CheckCollision(StartPosition, EndPosition);
 
 				if (CollisionMonster != nullptr) {
 					std::cout << i << "번째 오브젝트와 충돌거리 : " << CollisionMonster->GetCollisionMeshDistance() << std::endl;
+
+					m_GameObjects[i]->SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
 				}
-			}
+			}*/
 		}
 	}
 	break;

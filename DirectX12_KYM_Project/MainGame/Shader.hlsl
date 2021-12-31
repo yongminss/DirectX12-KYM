@@ -218,7 +218,17 @@ struct LoadedVS_Input
     float3 bitangent : BITANGENT;
 };
 
-struct SkinedVS_Input
+struct InstancingLoadedVS_Input
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
+    float4x4 TransformPos : TRANSFORMPOS;
+};
+
+struct SkinnedVS_Input
 {
     float3 position : POSITION;
     float2 uv : UV;
@@ -227,6 +237,18 @@ struct SkinedVS_Input
     float3 bitangent : BITANGENT;
     uint4 boneindex : BONEINDEX;
     float4 boneweight : BONEWEIGHT;
+};
+
+struct InstancingSkinnedVS_Input
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
+    uint4 boneindex : BONEINDEX;
+    float4 boneweight : BONEWEIGHT;
+    float4x4 TransformPos : TRANSFORMPOS;
 };
 
 struct LoadedVS_Output
@@ -243,12 +265,77 @@ LoadedVS_Output LoadedVS(LoadedVS_Input Input)
 {
     LoadedVS_Output Output;
     
-    Output.positionw = mul(float4(Input.position, 1.f), WorldPos).xyz;
-    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
-    Output.uv = Input.uv;
+    Output.positionw = mul(float4(Input.position, 1.0f), WorldPos).xyz;
     Output.normal = mul(Input.normal, (float3x3) WorldPos);
     Output.tangent = mul(Input.tangent, (float3x3) WorldPos);
     Output.bitangent = mul(Input.bitangent, (float3x3) WorldPos);
+    
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
+    
+    return Output;
+}
+
+LoadedVS_Output InstanceLoadedVS(InstancingLoadedVS_Input Input)
+{
+    LoadedVS_Output Output;
+    
+    Output.positionw = mul(float4(Input.position, 1.0f), Input.TransformPos).xyz;
+    Output.normal = mul(Input.normal, (float3x3) Input.TransformPos);
+    Output.tangent = mul(Input.tangent, (float3x3) Input.TransformPos);
+    Output.bitangent = mul(Input.bitangent, (float3x3) Input.TransformPos);
+    
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
+    
+    return Output;
+}
+
+LoadedVS_Output SkinnedVS(SkinnedVS_Input Input)
+{
+    LoadedVS_Output Output;
+    
+    Output.positionw = float3(0.f, 0.f, 0.f);
+    Output.normal = float3(0.f, 0.f, 0.f);
+    Output.tangent = float3(0.f, 0.f, 0.f);
+    Output.bitangent = float3(0.f, 0.f, 0.f);
+    matrix VertexToBoneWorld;
+    
+    for (int i = 0; i < BONE_PER_VERTEX; ++i)
+    {
+        VertexToBoneWorld = mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
+        Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
+        Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
+        Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);
+        Output.bitangent += Input.boneweight[i] * mul(Input.bitangent, (float3x3) VertexToBoneWorld);
+    }
+    
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
+    
+    return Output;
+}
+
+LoadedVS_Output InstanceSkinnedVS(InstancingSkinnedVS_Input Input)
+{
+    LoadedVS_Output Output;
+    
+    Output.positionw = float3(0.f, 0.f, 0.f);
+    Output.normal = float3(0.f, 0.f, 0.f);
+    Output.tangent = float3(0.f, 0.f, 0.f);
+    Output.bitangent = float3(0.f, 0.f, 0.f);
+    matrix VertexToBoneWorld = Input.TransformPos;
+    
+    for (int i = 0; i < BONE_PER_VERTEX; ++i)
+    {
+        Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
+        Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
+        Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);
+        Output.bitangent += Input.boneweight[i] * mul(Input.bitangent, (float3x3) VertexToBoneWorld);
+    }
+    
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
     
     return Output;
 }
@@ -272,29 +359,4 @@ float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
     
     // 5. 모델의 텍스처와 조명 값을 적용해서 모델의 색상을 결정
     return lerp(AlbedoTexture, Illumination, 0.5f);
-}
-
-LoadedVS_Output SkinedVS(SkinedVS_Input Input)
-{
-    LoadedVS_Output Output;
-    
-    Output.positionw = float3(0.f, 0.f, 0.f);
-    Output.normal = float3(0.f, 0.f, 0.f);
-    Output.tangent = float3(0.f, 0.f, 0.f);
-    Output.bitangent = float3(0.f, 0.f, 0.f);
-    matrix VertexToBoneWorld;
-    
-    for (int i = 0; i < BONE_PER_VERTEX; ++i)
-    {
-        VertexToBoneWorld = mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
-        Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
-        Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
-        Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);
-        Output.bitangent += Input.boneweight[i] * mul(Input.bitangent, (float3x3) VertexToBoneWorld);
-    }
-    
-    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
-    Output.uv = Input.uv;
-    
-    return Output;
 }

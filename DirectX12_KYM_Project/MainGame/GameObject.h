@@ -1,6 +1,7 @@
 #pragma once
 
 class Mesh;
+class Shader;
 class Material;
 class AnimationController;
 
@@ -27,8 +28,8 @@ public:
 	GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature);
 	~GameObject();
 
-	static GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation);
-	static GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File);
+	static GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, Shader* InstanceShader, bool ActiveAnimation);
+	static GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, Shader* InstanceShader);
 	void LoadAnimationInfo(FILE* File);
 
 	void SetMesh(Mesh* UsingMesh);
@@ -70,4 +71,5 @@ public:
 	virtual void Animate(float ElapsedTime);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView, int ModelCount);
 };

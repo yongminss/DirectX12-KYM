@@ -3,6 +3,7 @@
 
 #include "Shader.h"
 #include "Texture.h"
+#include "InstancingModel.h"
 
 
 Material::Material()
@@ -78,7 +79,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 }
 
-void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, int Type)
+void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, int Type, Shader* InstanceShader)
 {
 	fread(&m_MaterialCount, sizeof(int), 1, File);
 
@@ -95,17 +96,44 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 		if (!strcmp(Word, "<Material>:")) {
 			fread(&MaterialCount, sizeof(int), 1, File);
 
-			// Shader & Texture를 Set
-			if (Type == 0) {
-				LoadedShader *UsingShader = new LoadedShader();
-				UsingShader->CreateShader(Device, RootSignature);
-				SetShader(UsingShader);
+			// 각 프레임에 맞는 Shader를 생성 및 설정
+			Shader *UsingShader = nullptr;
+			if (InstanceShader == nullptr) {
+				switch (Type)
+				{
+				case 0:
+				{
+					UsingShader = new LoadedShader();
+					UsingShader->CreateShader(Device, RootSignature);
+				}
+				break;
+
+				case 1:
+				{
+					UsingShader = new SkinnedShader();
+					UsingShader->CreateShader(Device, RootSignature);
+				}
+				break;
+				}
 			}
 			else {
-				SkinnedShader *UsingShader = new SkinnedShader();
-				UsingShader->CreateShader(Device, RootSignature);
-				SetShader(UsingShader);
+				switch (Type) {
+				case 0:
+				{
+					UsingShader = new InstancingLoadedModel();
+					UsingShader->CreateShader(Device, RootSignature);
+				}
+				break;
+
+				case 1:
+				{
+					UsingShader = new InstancingSkinnedModel();
+					UsingShader->CreateShader(Device, RootSignature);
+				}
+				break;
+				}
 			}
+			SetShader(UsingShader);
 		}
 
 		else if (!strcmp(Word, "<AlbedoColor>:")) {

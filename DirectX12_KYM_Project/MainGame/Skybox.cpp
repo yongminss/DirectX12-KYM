@@ -13,7 +13,7 @@ Skybox::Skybox(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	m_SkyboxMesh = new Mesh*[6];
 
 	for (int i = 0; i < 6; ++i) {
-		TextureMesh *UsingMesh = new TextureMesh();
+		TextureMesh *UsingMesh = nullptr;
 		DirectX::XMFLOAT3 MeshPosition{};
 		switch (i) {
 		case 0:
@@ -40,7 +40,7 @@ Skybox::Skybox(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 			MeshPosition.x = 500.f, MeshPosition.y = -500.f, MeshPosition.z = 500.f;
 			break;
 		}
-		UsingMesh->CreateMesh(Device, CommandList, MeshPosition, i);
+		UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, i);
 		SetMesh(i, UsingMesh);
 	}
 

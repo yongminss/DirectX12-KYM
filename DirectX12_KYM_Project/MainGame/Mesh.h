@@ -14,24 +14,29 @@ protected:
 	ID3D12Resource *m_UploadIndexBuffer = nullptr;
 	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView{};
 
-	unsigned int m_VertexCount = 0;
-	unsigned int m_IndexCount = 0;
+	int m_VertexCount = 0;
+	int m_IndexCount = 0;
 
-	DirectX::BoundingBox m_BoundingBox{};
+	D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
 	float m_Distance = 0.f;
+	DirectX::BoundingBox m_BoundingBox{};
 
 public:
 	Mesh();
+	Mesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
 	~Mesh();
-
-	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, float Size);
 
 	void SetDistance(float Distance) { m_Distance = Distance; }
 
-	DirectX::BoundingBox GetBoundingBox() { return m_BoundingBox; }
 	float GetDistance() { return m_Distance; }
+	DirectX::BoundingBox GetBoundingBox() { return m_BoundingBox; }
 
+	virtual void UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList) {}
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList);
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView) {}
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void Render(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView, int ModelCount);
 };
 
 // 텍스처 매핑을 하는 오브젝트가 사용하는 Mesh
@@ -39,9 +44,8 @@ class TextureMesh : public Mesh
 {
 public:
 	TextureMesh();
+	TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind);
 	~TextureMesh();
-
-	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind);
 };
 
 // 지형에 사용될 Mesh
@@ -52,13 +56,10 @@ private:
 
 public:
 	TerrainMesh();
+	TerrainMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Scale, int Width, int Length, BYTE* YPos);
 	~TerrainMesh();
 
 	float GetHeightMapYPos(int x, int z) { return m_HeightMapYPos[x][z]; }
-
-	void CreateMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Scale, int Width, int Length, BYTE* YPos);
-
-	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
 // bin 파일로 로드한 오브젝트가 사용하는 Mesh
@@ -110,11 +111,12 @@ public:
 
 	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
 
-	virtual void Render(ID3D12GraphicsCommandList* CommandList);
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList);
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView);
 };
 
 // bin 파일로 로드한 오브젝트 중 Skin이 있는 오브젝트가 사용하는 Mesh
-class SkinnedMesh : public Mesh
+class SkinnedMesh : public LoadedMesh
 {
 private:
 	DirectX::XMFLOAT4X4 *m_BindPoseBoneOffset = nullptr;
@@ -140,62 +142,19 @@ private:
 	char(*m_BoneName)[64] = nullptr;
 	GameObject **m_BoneFrame = nullptr;
 
-	// --------------------
-	// 각 프레임의 모델 좌표
-	ID3D12Resource *m_PositionBuffer = nullptr;
-	ID3D12Resource *m_UploadPositionBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_PositionBufferView{};
-
-	// 텍스처 매핑이 될 UV 좌표
-	ID3D12Resource *m_UvBuffer = nullptr;
-	ID3D12Resource *m_UploadUvBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_UvBufferView{};
-
-	// 노멀 매핑에 사용될 Normal, Tangent, BiTangent - 3x3 행렬 (Normal Map이 있는 모델은 Tangent, BiTangent까지 사용)
-	ID3D12Resource *m_NormalBuffer = nullptr;
-	ID3D12Resource *m_UploadNormalBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_NormalBufferView{};
-
-	ID3D12Resource *m_TangentBuffer = nullptr;
-	ID3D12Resource *m_UploadTangentBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_TangentBufferView{};
-
-	ID3D12Resource *m_BiTangentBuffer = nullptr;
-	ID3D12Resource *m_UploadBiTangentBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_BiTangentBufferView{};
-
-	char m_MeshName[64]{};
-
-	DirectX::XMFLOAT3 m_AabbCenter{};
-	DirectX::XMFLOAT3 m_AAbbExtent{};
-
-	DirectX::XMFLOAT3 *m_Position = nullptr;
-	DirectX::XMFLOAT4 m_Color{};
-	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
-	DirectX::XMFLOAT2 m_Uv1{};
-	DirectX::XMFLOAT3 *m_Normal = nullptr;
-	DirectX::XMFLOAT3 *m_Tangent = nullptr;
-	DirectX::XMFLOAT3 *m_BiTangent = nullptr;
-	UINT *m_MeshIndex = nullptr;
-
-	UINT m_SubMeshIndex = 0;
-	// --------------------
-
 public:
 	SkinnedMesh();
 	~SkinnedMesh();
 
-	void CreateShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 	void LoadSkinInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
+	void CreateShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
 	void SetBoneFrame(int Index, GameObject* Frame);
 
 	int GetBoneCount() { return m_BoneCount; }
 	char* GetBoneName(int Index) { return m_BoneName[Index]; }
 
-	void UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList);
-	virtual void Render(ID3D12GraphicsCommandList* CommandList);
-
-	// --------------------
-	void LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File);
+	virtual void UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList);
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList);
+	virtual void UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView);
 };

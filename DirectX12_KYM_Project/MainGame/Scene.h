@@ -23,6 +23,7 @@ class Terrain;
 class Skybox;
 class UserInterface;
 class GameObject;
+class InstancingSkinnedModel;
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene
@@ -39,7 +40,7 @@ private:
 	Skybox *m_Skybox = nullptr;
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
-	std::vector<GameObject*> m_GameObjects{};
+	InstancingSkinnedModel *m_Monsters = nullptr;
 
 	POINT m_PreviousPos{};
 

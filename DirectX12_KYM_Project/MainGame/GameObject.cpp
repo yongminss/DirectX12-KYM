@@ -37,8 +37,7 @@ GameObject::GameObject(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandL
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
 	// 오브젝트의 정점들의 집합인 Mesh 생성
-	Mesh *UsingMesh = new Mesh();
-	UsingMesh->CreateMesh(Device, CommandList, 10.f);
+	Mesh *UsingMesh = new Mesh(Device, CommandList, 10.f);
 	SetMesh(UsingMesh);
 
 	// 오브젝트가 사용할 그래픽스 파이프라인을 생성
@@ -51,15 +50,16 @@ GameObject::~GameObject()
 {
 	if (m_Mesh != nullptr) delete m_Mesh;
 	if (m_Material != nullptr) delete m_Material;
+	if (m_AnimationController != nullptr) delete m_AnimationController;
 }
 
-GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, bool ActiveAnimation)
+GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, Shader* InstanceShader, bool ActiveAnimation)
 {
 	FILE *File = nullptr;
 	fopen_s(&File, FileName, "rb");
 	rewind(File);
 
-	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
+	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File, InstanceShader);
 
 	Model->SetMeshBoneFrame(Model);
 
@@ -73,7 +73,7 @@ GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12Graphics
 	return Model;
 }
 
-GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File)
+GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, Shader* InstanceShader)
 {
 	GameObject *Frame = nullptr;
 
@@ -112,27 +112,27 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 
 			if (ChildCount > 0) {
 				for (int i = 0; i < ChildCount; ++i) {
-					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File);
+					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File, InstanceShader);
 					Frame->SetChild(Child);
 				}
 			}
 		}
 
 		else if (!strcmp(Word, "<Mesh>:")) {
-			LoadedMesh *UsingMesh = new LoadedMesh[10];
+			LoadedMesh *UsingMesh = new LoadedMesh();
 			UsingMesh->LoadMeshInfo(Device, CommandList, File);
 			Frame->SetMesh(UsingMesh);
 		}
 
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
-			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File, Frame->m_ShaderType);
+			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File, Frame->m_ShaderType, InstanceShader);
 			Frame->SetMaterial(UsingMaterial);
 		}
 
 		else if (!strcmp(Word, "<SkinningInfo>:")) {
 			Frame->m_ShaderType = 1;
-			SkinnedMesh *UsingMesh = new SkinnedMesh[10];
+			SkinnedMesh *UsingMesh = new SkinnedMesh();
 			UsingMesh->CreateShaderBuffer(Device, CommandList);
 
 			UsingMesh->LoadSkinInfo(Device, CommandList, File);
@@ -392,10 +392,21 @@ void GameObject::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateShaderCode(CommandList);
 
 	if (m_Material != nullptr) m_Material->SetPipeline(CommandList);
-
 	if (m_Material != nullptr) m_Material->MappingTexture(CommandList, 0);
+
 	if (m_Mesh != nullptr) m_Mesh->Render(CommandList);
 
 	if (m_Sibling != nullptr) m_Sibling->Render(CommandList);
 	if (m_Child != nullptr) m_Child->Render(CommandList);
+}
+
+void GameObject::Render(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView, int ModelCount)
+{
+	if (m_Material != nullptr) m_Material->SetPipeline(CommandList);
+	if (m_Material != nullptr) m_Material->MappingTexture(CommandList, 0);
+
+	if (m_Mesh != nullptr) m_Mesh->Render(CommandList, InstanceBufferView, ModelCount);
+
+	if (m_Sibling != nullptr) m_Sibling->Render(CommandList, InstanceBufferView, ModelCount);
+	if (m_Child != nullptr) m_Child->Render(CommandList, InstanceBufferView, ModelCount);
 }
