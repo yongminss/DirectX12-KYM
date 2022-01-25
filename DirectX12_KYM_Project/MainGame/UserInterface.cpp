@@ -13,6 +13,12 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	switch (Kind)
 	{
 	case 2:
+	{
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.42f, 0.061f, 0.f), 0);
+		SetMesh(UsingMesh);
+	}
+	break;
+
 	case 3:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.4f, 0.06f, 0.f), 0);
@@ -46,9 +52,7 @@ void UserInterface::Animate(float ElapsedTime)
 	m_TransformPos._41 = BarxPosition;
 
 	// 체력 게이지가 0이 됐으면 초기화
-	if (NextFrameBarxSize < 0.f) {
-		m_TransformPos._11 = 1.f, m_TransformPos._41 = -0.51f;
-	}
+	if (NextFrameBarxSize < 0.f) m_TransformPos._11 = 1.f, m_TransformPos._41 = -0.51f;
 
 	UpdateTransform(nullptr);
 }

@@ -324,10 +324,11 @@ LoadedVS_Output InstanceSkinnedVS(InstancingSkinnedVS_Input Input)
     Output.normal = float3(0.f, 0.f, 0.f);
     Output.tangent = float3(0.f, 0.f, 0.f);
     Output.bitangent = float3(0.f, 0.f, 0.f);
-    matrix VertexToBoneWorld = Input.TransformPos;
+    matrix VertexToBoneWorld;
     
     for (int i = 0; i < BONE_PER_VERTEX; ++i)
     {
+        VertexToBoneWorld = Input.TransformPos + mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
         Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
         Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
         Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);

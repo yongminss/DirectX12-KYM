@@ -45,13 +45,9 @@
 enum P_ANIMATION
 {
 	P_IDLE,
-	P_WALK,
 	P_RUN,
-	P_ATTACK_A,
-	P_ATTACK_B,
-	P_DAMAGED,
-	P_DEATH_A,
-	P_DEATH_B
+	P_SHOOT = 9,
+	P_DEATH = 28,
 };
 
 extern ID3D12Resource* CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);

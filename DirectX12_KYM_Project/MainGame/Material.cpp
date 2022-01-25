@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "InstancingModel.h"
+#include "GameObject.h"
 
 
 Material::Material()
@@ -52,7 +53,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, L"Texture/UI_Bar.dds", Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
 		SetTexture(UsingTexture);
 	}
 	break;
@@ -64,7 +65,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, L"Texture/UI_HpGauge.dds", Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
 		SetTexture(UsingTexture);
 	}
 	break;
@@ -79,7 +80,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 }
 
-void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, int Type, Shader* InstanceShader)
+void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, GameObject* ParentFrame, int Type, Shader* InstanceShader)
 {
 	fread(&m_MaterialCount, sizeof(int), 1, File);
 
@@ -169,31 +170,31 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 		}
 
 		else if (!strcmp(Word, "<AlbedoMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<SpecularMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<NormalMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<MetallicMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<EmissionMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<DetailAlbedoMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "<DetailNormalMap>:")) {
-			LoadTextureInfo(Device, CommandList, File);
+			LoadTextureInfo(Device, CommandList, File, ParentFrame);
 		}
 
 		else if (!strcmp(Word, "</Materials>")) {
@@ -202,7 +203,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 	}
 }
 
-void Material::LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File)
+void Material::LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, FILE* File, GameObject* ParentFrame)
 {
 	char TextureName[64] = { '\0' };
 	BYTE WordCount = '\0';
@@ -234,7 +235,17 @@ void Material::LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 
 			delete[] FrameTextureName;
 		}
+		// 같은 텍스처를 사용하는 경우, 이미 생성된 텍스처를 찾아서 그것을 사용하도록 설정
+		else {
+			if (ParentFrame != nullptr) SetTexture(ParentFrame->FindDuplicatedTexture(TextureName));
+		}
 	}
+}
+
+char* Material::GetTextureName()
+{
+	if (m_Texture != nullptr) return m_Texture->GetTextureName();
+	return nullptr;
 }
 
 void Material::SetPipeline(ID3D12GraphicsCommandList* CommandList)

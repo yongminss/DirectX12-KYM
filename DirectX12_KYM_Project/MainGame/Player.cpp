@@ -10,7 +10,7 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_PreviousCameraTransformPos, DirectX::XMMatrixIdentity());
 
-	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin", nullptr, true);
+	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Player_Soldier.bin", nullptr, true);
 	SetChild(Model);
 
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
@@ -18,8 +18,7 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	m_Camera->CreateCamera(Device, CommandList);
 
 	// 플레이어가 크기를 축소했으므로 카메라 좌표도 축소
-	DirectX::XMMATRIX Scale = DirectX::XMMatrixScaling(0.5f, 0.5f, 0.5f);
-	DirectX::XMStoreFloat4x4(&m_PreviousCameraTransformPos, DirectX::XMMatrixMultiply(Scale, DirectX::XMLoadFloat4x4(&m_PreviousCameraTransformPos)));
+	m_PreviousCameraTransformPos = m_TransformPos;
 }
 
 Player::~Player()
@@ -97,7 +96,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 
 	// 입력이 호출되면 Player의 속도를 천천히 증가
 	if (m_ActiveMove[0] == true || m_ActiveMove[1] == true || m_ActiveMove[2] == true || m_ActiveMove[3] == true) {
-		if (m_Speed <= 150.f) m_Speed += m_ElapsedTime * 100.f;
+		if (m_Speed <= 150.f) m_Speed += m_ElapsedTime * 500.f;
 	}
 
 	// 1. 입력이 없으면 속도를 감소
@@ -105,7 +104,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	if ((m_ActiveMove[0] == false && m_ActiveMove[1] == false && m_ActiveMove[2] == false && m_ActiveMove[3] == false) ||
 		(m_ActiveMove[0] == true && m_ActiveMove[1] == true) ||
 		(m_ActiveMove[2] == true && m_ActiveMove[3] == true)) {
-		m_Speed -= m_ElapsedTime * 500.f;
+		m_Speed -= m_ElapsedTime * 1000.f;
 		// 속도가 감소하다가 0보다 작아지면 움직임 멈춤
 		if (m_Speed <= 0.f) m_Speed = 0.f;
 	}
@@ -115,9 +114,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		DirectX::XMFLOAT3 Position{};
 		float Speed = m_Speed * m_ElapsedTime;
 
-		// 속도에 따른 애니메이션 설정
-		if (m_Speed >= 80.f) SetAnimationTrack(P_RUN, ANIMATION_TYPE_LOOP);
-		else SetAnimationTrack(P_WALK, ANIMATION_TYPE_LOOP);
+		// 움직이고 있는 상태이므로 애니메이션도 Run으로 설정
+		SetAnimationTrack(P_RUN, ANIMATION_TYPE_LOOP);
 
 		// Set Position - ActiveMove : 0(앞), 1(뒤), 2(좌), 3(우)
 		if (m_ActiveMove[0] == true) {
@@ -141,12 +139,9 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	}
 	// m_Speed가 0이면 움직임이 없으므로 IDLE 상태로 설정
 	else {
-		// Walk or Run 애니메이션일 경우에만 IDEL로 변경
-		if (GetCurrentAnimationTrackIndex() == P_WALK || GetCurrentAnimationTrackIndex() == P_RUN)
-			SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
+		// Walk or Run 애니메이션일 경우에만 IDLE로 변경
+		if (GetCurrentAnimationTrackIndex() == P_RUN) SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
 	}
-
-	UpdateTransform(nullptr);
 }
 
 void Player::Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY)

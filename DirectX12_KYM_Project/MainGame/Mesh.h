@@ -97,7 +97,7 @@ protected:
 	DirectX::XMFLOAT3 *m_Position = nullptr;
 	DirectX::XMFLOAT4 m_Color{};
 	DirectX::XMFLOAT2 *m_Uv0 = nullptr;
-	DirectX::XMFLOAT2 m_Uv1{};
+	DirectX::XMFLOAT2 *m_Uv1 = nullptr;
 	DirectX::XMFLOAT3 *m_Normal = nullptr;
 	DirectX::XMFLOAT3 *m_Tangent = nullptr;
 	DirectX::XMFLOAT3 *m_BiTangent = nullptr;

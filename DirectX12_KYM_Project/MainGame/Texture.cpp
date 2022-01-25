@@ -16,13 +16,19 @@ Texture::~Texture()
 	if (m_ShaderResourceViewDescriptorHeap != nullptr) m_ShaderResourceViewDescriptorHeap->Release();
 }
 
-void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind, int TextureCount, int RootParameterIndex)
+void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, wchar_t* TextureName, int Kind, int TextureCount, int RootParameterIndex)
 {
 	m_DescriptorHandleIncrementSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_RootParameterIndex = RootParameterIndex;
 	m_TextureCount = TextureCount;
 	m_TextureBuffer = new ID3D12Resource*[m_TextureCount];
 	m_UploadTextureBuffer = new ID3D12Resource*[m_TextureCount];
+
+	// (wchar_t *)로 넘어온 TextureName을 (char *)로 형 변환
+	int TextureNameSize = WideCharToMultiByte(CP_ACP, 0, TextureName, -1, NULL, 0, NULL, NULL);
+
+	m_TextureName = new char[TextureNameSize];
+	WideCharToMultiByte(CP_ACP, 0, TextureName, -1, m_TextureName, TextureNameSize, 0, 0);
 
 	// 1. 오브젝트에 매핑할 텍스처 파일(DDS)을 읽고 리소스를 생성
 	CreateTextureBuffer(Device, CommandList, TextureName, Kind);
@@ -32,7 +38,7 @@ void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* Com
 	CreateShaderResourceView(Device);
 }
 
-void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, const wchar_t* TextureName, int Kind)
+void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, wchar_t* TextureName, int Kind)
 {
 	for (int i = 0; i < m_TextureCount; ++i) {
 		std::unique_ptr<uint8_t[]> TextureFileData{};
@@ -106,6 +112,20 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 			}
 			break;
 			}
+		}
+		break;
+
+		case 2: // Hp Bar
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case 3: // Hp Gauge
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_HpGauge.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 

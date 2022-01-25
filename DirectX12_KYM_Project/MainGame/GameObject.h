@@ -2,6 +2,7 @@
 
 class Mesh;
 class Shader;
+class Texture;
 class Material;
 class AnimationController;
 
@@ -18,10 +19,10 @@ protected:
 
 	char m_FrameName[64]{};
 
+	int m_ShaderType = 0;
+
 	GameObject *m_Sibling = nullptr;
 	GameObject *m_Child = nullptr;
-
-	int m_ShaderType = 0;
 
 public:
 	GameObject();
@@ -29,11 +30,11 @@ public:
 	~GameObject();
 
 	static GameObject* LoadBinaryFileModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, const char* FileName, Shader* InstanceShader, bool ActiveAnimation);
-	static GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, Shader* InstanceShader);
+	static GameObject* LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, GameObject* ParentFrame, Shader* InstanceShader);
 	void LoadAnimationInfo(FILE* File);
 
-	void SetMesh(Mesh* UsingMesh);
-	void SetMaterial(Material* UsingMaterial);
+	void SetMesh(Mesh* UsingMesh) { m_Mesh = UsingMesh; }
+	void SetMaterial(Material* UsingMaterial) { m_Material = UsingMaterial; }
 
 	void SetRight(DirectX::XMFLOAT3 Right);
 	void SetUp(DirectX::XMFLOAT3 Up);
@@ -47,7 +48,6 @@ public:
 	void SetFrameName(char* FrameName) { memcpy(m_FrameName, FrameName, sizeof(m_FrameName)); }
 
 	void SetChild(GameObject* Child);
-
 	void SetMeshBoneFrame(GameObject* RootFrame);
 
 	void SetAnimationTrack(int Index, int Type);
@@ -60,9 +60,11 @@ public:
 	char* GetFrameName() { return m_FrameName; }
 
 	float GetCollisionMeshDistance();
+
 	int GetCurrentAnimationTrackIndex();
 
 	GameObject* FindFrame(char* FrameName);
+	Texture* FindDuplicatedTexture(char* TextureName);
 
 	GameObject* CheckCollision(DirectX::XMFLOAT3 StartPos, DirectX::XMFLOAT3 EndPos);
 

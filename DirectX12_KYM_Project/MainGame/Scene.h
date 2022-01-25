@@ -22,7 +22,6 @@ class Player;
 class Terrain;
 class Skybox;
 class UserInterface;
-class GameObject;
 class InstancingSkinnedModel;
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨

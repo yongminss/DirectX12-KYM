@@ -165,7 +165,6 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
 	m_Terrain->SetPosition(DirectX::XMFLOAT3(-MAP_HALF_SIZE, -MAP_Y, -MAP_HALF_SIZE));
-	m_Terrain->UpdateTransform(nullptr);
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox(Device, CommandList, m_RootSignature);
@@ -174,16 +173,14 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 게임에 필요한 UI 생성
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, 2);
 	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
-	m_HpBar->SetScale(DirectX::XMFLOAT3(1.03f, 1.02f, 0.f));
 
 	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, 3);
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
-	m_HpGauge->UpdateTransform(nullptr);
 
-	// 게임 월드에 등장하는 Game Object 생성
+	// 게임 월드에 등장하는 Game Objects 생성
 	m_Monsters = new InstancingSkinnedModel();
 	m_Monsters->CreateShader(Device, m_RootSignature);
-	m_Monsters->CreateModel(Device, CommandList, m_RootSignature, 100);
+	m_Monsters->CreateModel(Device, CommandList, m_RootSignature, 20);
 }
 
 void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
@@ -198,11 +195,11 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 {
 	if (m_Player != nullptr) {
 		float x = (m_Player->GetPosition().x + MAP_HALF_SIZE) / 20, z = (m_Player->GetPosition().z + MAP_HALF_SIZE) / 20;
-		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y;
+		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y + 15.f;
 		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
+		m_Player->UpdateTransform(nullptr);
 	}
 	if (m_Monsters != nullptr) m_Monsters->Animate(ElapsedTime);
-
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
 }
@@ -216,8 +213,10 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	UpdateLightShaderBuffer(CommandList);
 
 	if (m_Player != nullptr) m_Player->Render(CommandList);
+
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
+
 	if (m_Monsters != nullptr) m_Monsters->Render(CommandList);
 
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
@@ -292,16 +291,16 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 		// 플레이어가 다른 행동을 하지 않은 상태 (IDLE) 일때만 공격하도록 설정
 		if (m_Player->GetCurrentAnimationTrackIndex() == P_IDLE) {
-			m_Player->SetAnimationTrack(P_ATTACK_A, ANIMATION_TYPE_ONCE);
+			m_Player->SetAnimationTrack(P_SHOOT, ANIMATION_TYPE_ONCE);
 
 			// 카메라의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
 			DirectX::XMFLOAT3 StartPosition = m_Player->GetCameraWorldPosition();
 			DirectX::XMFLOAT3 EndPosition{};
 			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_Player->GetCameraWorldLook())));
 
-			GameObject *CollisionMonster = new GameObject();
+			/*GameObject *CollisionMonster = new GameObject();
 
-			/*for (int i = 0; i < m_GameObjects.size(); ++i) {
+			for (int i = 0; i < m_Monsters.size(); ++i) {
 				CollisionMonster = m_GameObjects[i]->CheckCollision(StartPosition, EndPosition);
 
 				if (CollisionMonster != nullptr) {

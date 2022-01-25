@@ -4,6 +4,7 @@
 #include "Vertex.h"
 #include "GameObject.h"
 
+
 Mesh::Mesh()
 {
 
@@ -95,8 +96,6 @@ void Mesh::UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList)
 
 void Mesh::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	UpdateShaderBuffer(CommandList);
-
 	CommandList->IASetPrimitiveTopology(m_PrimitiveTopology);
 
 	UpdateVertexBufferView(CommandList);
@@ -388,7 +387,10 @@ void LoadedMesh::LoadMeshInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 			fread(&UvCount, sizeof(int), 1, File);
 
 			if (UvCount > 0) {
-				fread(&m_Uv1, sizeof(DirectX::XMFLOAT2), UvCount, File);
+				m_Uv1 = new DirectX::XMFLOAT2[UvCount];
+				fread(m_Uv1, sizeof(DirectX::XMFLOAT2), UvCount, File);
+
+				delete[] m_Uv1;
 			}
 		}
 
@@ -638,12 +640,16 @@ void SkinnedMesh::UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList)
 
 void SkinnedMesh::UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList)
 {
+	UpdateShaderBuffer(CommandList);
+
 	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[7] = { m_PositionBufferView, m_UvBufferView, m_NormalBufferView, m_TangentBufferView, m_BiTangentBufferView, m_BoneIndexBufferView, m_BoneWeightBufferView };
 	CommandList->IASetVertexBuffers(0, 7, VertexBufferView);
 }
 
 void SkinnedMesh::UpdateVertexBufferView(ID3D12GraphicsCommandList* CommandList, D3D12_VERTEX_BUFFER_VIEW InstanceBufferView)
 {
+	UpdateShaderBuffer(CommandList);
+
 	D3D12_VERTEX_BUFFER_VIEW VertexBufferView[8] = { m_PositionBufferView, m_UvBufferView, m_NormalBufferView, m_TangentBufferView, m_BiTangentBufferView, m_BoneIndexBufferView, m_BoneWeightBufferView, InstanceBufferView };
 	CommandList->IASetVertexBuffers(0, 8, VertexBufferView);
 }

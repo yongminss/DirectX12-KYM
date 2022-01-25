@@ -59,7 +59,7 @@ GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12Graphics
 	fopen_s(&File, FileName, "rb");
 	rewind(File);
 
-	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File, InstanceShader);
+	GameObject *Model = LoadFrameHierarchy(Device, CommandList, RootSignature, File, nullptr, InstanceShader);
 
 	Model->SetMeshBoneFrame(Model);
 
@@ -73,7 +73,7 @@ GameObject* GameObject::LoadBinaryFileModel(ID3D12Device* Device, ID3D12Graphics
 	return Model;
 }
 
-GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, Shader* InstanceShader)
+GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, GameObject* ParentFrame, Shader* InstanceShader)
 {
 	GameObject *Frame = nullptr;
 
@@ -112,7 +112,7 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 
 			if (ChildCount > 0) {
 				for (int i = 0; i < ChildCount; ++i) {
-					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File, InstanceShader);
+					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File, Frame, InstanceShader);
 					Frame->SetChild(Child);
 				}
 			}
@@ -126,7 +126,7 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 
 		else if (!strcmp(Word, "<Materials>:")) {
 			Material *UsingMaterial = new Material();
-			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File, Frame->m_ShaderType, InstanceShader);
+			UsingMaterial->LoadMaterialInfo(Device, CommandList, RootSignature, File, ParentFrame, Frame->m_ShaderType, InstanceShader);
 			Frame->SetMaterial(UsingMaterial);
 		}
 
@@ -214,16 +214,6 @@ void GameObject::LoadAnimationInfo(FILE *File)
 	}
 }
 
-void GameObject::SetMesh(Mesh* UsingMesh)
-{
-	m_Mesh = UsingMesh;
-}
-
-void GameObject::SetMaterial(Material* UsingMaterial)
-{
-	m_Material = UsingMaterial;
-}
-
 void GameObject::SetRight(DirectX::XMFLOAT3 Right)
 {
 	m_TransformPos._11 = Right.x;
@@ -266,6 +256,8 @@ void GameObject::SetTransformPos(DirectX::XMFLOAT4X4 TransformPos)
 	m_TransformPos._21 = TransformPos._21, m_TransformPos._22 = TransformPos._22, m_TransformPos._23 = TransformPos._23, m_TransformPos._24 = TransformPos._24;
 	m_TransformPos._31 = TransformPos._31, m_TransformPos._32 = TransformPos._32, m_TransformPos._33 = TransformPos._33, m_TransformPos._34 = TransformPos._34;
 	m_TransformPos._41 = TransformPos._41, m_TransformPos._42 = TransformPos._42, m_TransformPos._43 = TransformPos._43, m_TransformPos._44 = TransformPos._44;
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::SetScale(DirectX::XMFLOAT3 Size)
@@ -316,6 +308,7 @@ void GameObject::SetAnimationTrack(int Index, int Type)
 float GameObject::GetCollisionMeshDistance()
 {
 	if (m_Mesh != nullptr) return m_Mesh->GetDistance();
+	return 0.f;
 }
 
 int GameObject::GetCurrentAnimationTrackIndex()
@@ -326,26 +319,6 @@ int GameObject::GetCurrentAnimationTrackIndex()
 	if (m_Child != nullptr) m_Child->GetCurrentAnimationTrackIndex();
 }
 
-GameObject* GameObject::CheckCollision(DirectX::XMFLOAT3 ObjectA, DirectX::XMFLOAT3 ObjectB)
-{
-	if (m_Mesh != nullptr) {
-		DirectX::BoundingBox CheckingBoundingBox = m_Mesh->GetBoundingBox();
-		CheckingBoundingBox.Transform(CheckingBoundingBox, DirectX::XMLoadFloat4x4(&m_WorldPos));
-
-		float Distance = 0.f;
-
-		if (CheckingBoundingBox.Intersects(DirectX::XMLoadFloat3(&ObjectA), DirectX::XMLoadFloat3(&ObjectB), Distance) == true) {
-			m_Mesh->SetDistance(Distance);
-			return this;
-		}
-	}
-
-	if (m_Sibling != nullptr) return m_Sibling->CheckCollision(ObjectA, ObjectB);
-	if (m_Child != nullptr) return m_Child->CheckCollision(ObjectA, ObjectB);
-
-	return nullptr;
-}
-
 GameObject* GameObject::FindFrame(char* FrameName)
 {
 	GameObject* Frame = nullptr;
@@ -354,6 +327,55 @@ GameObject* GameObject::FindFrame(char* FrameName)
 
 	if (m_Sibling != nullptr) if (Frame = m_Sibling->FindFrame(FrameName)) return Frame;
 	if (m_Child != nullptr) if (Frame = m_Child->FindFrame(FrameName)) return Frame;
+
+	return nullptr;
+}
+
+Texture* GameObject::FindDuplicatedTexture(char* TextureName)
+{
+	// 찾아야 하는 TextureName과 현재 프레임이 가지고 있는 TextureName을 비교
+	if (m_Material != nullptr) {
+		if (m_Material->GetTexture() != nullptr) {
+			// 찾고 있는 TextureName과 현재 프레임의 TextureName의 형식을 같도록 설정
+			int i = 0;
+			for (i = 1; TextureName[i]; ++i) TextureName[i - 1] = TextureName[i];
+			TextureName[i - 1] = '\0';
+
+			char CompareWord[64] = { '\0' };
+			strcpy_s(CompareWord, 64, "Model/Texture/");
+			strcat_s(CompareWord, TextureName);
+			strcat_s(CompareWord, ".dds");
+
+			// TextureName이 같으므로 현재 프레임이 가지고 있는 Texture를 반환
+			if (!strcmp(CompareWord, m_Material->GetTextureName())) return m_Material->GetTexture();
+		}
+	}
+
+	// TextureName이 같지 않다면 Sibling or Child에서 Texture를 찾음
+	Texture* OtherTexture = nullptr;
+
+	if (m_Sibling != nullptr) if (OtherTexture = m_Sibling->FindDuplicatedTexture(TextureName)) return OtherTexture;
+	if (m_Child != nullptr) if (OtherTexture = m_Child->FindDuplicatedTexture(TextureName)) return OtherTexture;
+
+	return nullptr;
+}
+
+GameObject* GameObject::CheckCollision(DirectX::XMFLOAT3 StartPos, DirectX::XMFLOAT3 EndPos)
+{
+	if (m_Mesh != nullptr) {
+		DirectX::BoundingBox CheckingBoundingBox = m_Mesh->GetBoundingBox();
+		CheckingBoundingBox.Transform(CheckingBoundingBox, DirectX::XMLoadFloat4x4(&m_WorldPos));
+
+		float Distance = 0.f;
+
+		if (CheckingBoundingBox.Intersects(DirectX::XMLoadFloat3(&StartPos), DirectX::XMLoadFloat3(&EndPos), Distance) == true) {
+			m_Mesh->SetDistance(Distance);
+			return this;
+		}
+	}
+
+	if (m_Sibling != nullptr) return m_Sibling->CheckCollision(StartPos, EndPos);
+	if (m_Child != nullptr) return m_Child->CheckCollision(StartPos, EndPos);
 
 	return nullptr;
 }

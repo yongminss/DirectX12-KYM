@@ -17,28 +17,40 @@ Skybox::Skybox(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 		DirectX::XMFLOAT3 MeshPosition{};
 		switch (i) {
 		case 0:
-			MeshPosition.x = 500.f, MeshPosition.y = 500.f, MeshPosition.z = +500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(+1000.f, +1000.f, +1000.f);
+		}
+		break;
 
 		case 1:
-			MeshPosition.x = 500.f, MeshPosition.y = 500.f, MeshPosition.z = -500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(+1000.f, +1000.f, -1000.f);
+		}
+		break;
 
 		case 2:
-			MeshPosition.x = -500.f, MeshPosition.y = 500.f, MeshPosition.z = 500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(-1000.f, +1000.f, +1000.f);
+		}
+		break;
 
 		case 3:
-			MeshPosition.x = +500.f, MeshPosition.y = 500.f, MeshPosition.z = 500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(+1000.f, +1000.f, +1000.f);
+		}
+		break;
 
 		case 4:
-			MeshPosition.x = 500.f, MeshPosition.y = +500.f, MeshPosition.z = 500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(+1000.f, +1000.f, +1000.f);
+		}
+		break;
 
 		case 5:
-			MeshPosition.x = 500.f, MeshPosition.y = -500.f, MeshPosition.z = 500.f;
-			break;
+		{
+			MeshPosition = DirectX::XMFLOAT3(+1000.f, -1000.f, +1000.f);
+		}
+		break;
 		}
 		UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, i);
 		SetMesh(i, UsingMesh);
@@ -58,8 +70,6 @@ Skybox::~Skybox()
 void Skybox::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)
 {
 	SetPosition(Position);
-
-	UpdateTransform(nullptr);
 }
 
 void Skybox::Render(ID3D12GraphicsCommandList* CommandList)

@@ -12,10 +12,10 @@ InstancingModel::~InstancingModel()
 {
 	if (m_InstanceBuffer != nullptr) m_InstanceBuffer->Release();
 
-	for (std::vector<GameObject*>::iterator Iter = m_InstancingObject.begin(); Iter != m_InstancingObject.end(); ++Iter) {
+	/*for (std::vector<GameObject*>::iterator Iter = m_InstancingObject.begin(); Iter != m_InstancingObject.end(); ++Iter) {
 		delete *Iter;
 		Iter = m_InstancingObject.erase(Iter);
-	}
+	}*/
 }
 
 void InstancingModel::CreateInstanceBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int ModelCount)
@@ -114,18 +114,14 @@ void InstancingSkinnedModel::CreateModel(ID3D12Device* Device, ID3D12GraphicsCom
 {
 	m_InstancingObject.reserve(ModelCount);
 
-	GameObject *Model = GameObject::LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin", this, true);
-	GameObject *UsingGameObject = nullptr;
+	GameObject *UsingGameObject = GameObject::LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Monster_WeakOrc.bin", this, true);
 
 	for (int i = 0; i < ModelCount; ++i) {
-		UsingGameObject = new GameObject();
-		UsingGameObject->SetChild(Model);
-		UsingGameObject->SetPosition(DirectX::XMFLOAT3(0.f + (i * 25.f), 0.f, 0.f));
-		UsingGameObject->SetScale(DirectX::XMFLOAT3(50.f, 50.f, 50.f));
-		UsingGameObject->SetRotate(DirectX::XMFLOAT3(-90.f, 0.f, 0.f));
-		m_InstancingObject.emplace_back(UsingGameObject);
+		m_InstancingObject.emplace_back(new GameObject());
+		m_InstancingObject.back()->SetChild(UsingGameObject);
+		m_InstancingObject.back()->SetPosition(DirectX::XMFLOAT3(0.f + (i * 100.f), 0.f, 0.f));
+		m_InstancingObject.back()->SetScale(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f));
 	}
-
 	CreateInstanceBuffer(Device, CommandList, ModelCount);
 }
 
@@ -166,5 +162,8 @@ D3D12_SHADER_BYTECODE InstancingSkinnedModel::CreateVertexShader()
 
 void InstancingSkinnedModel::Animate(float ElapsedTime)
 {
-
+	if (m_InstancingObject.size() != 0) {
+		m_InstancingObject[0]->Animate(ElapsedTime);
+		m_InstancingObject[0]->UpdateTransform(nullptr);
+	}
 }
