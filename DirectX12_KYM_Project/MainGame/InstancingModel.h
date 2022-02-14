@@ -3,11 +3,7 @@
 #include "Shader.h"
 
 class GameObject;
-
-struct MAPPING_INSTANCE
-{
-	DirectX::XMFLOAT4X4 m_TransformPos;
-};
+class Terrain;
 
 // Scene에서 많은 수로 등장하는 오브젝트를 인스턴싱 처리
 class InstancingModel : public Shader
@@ -23,7 +19,7 @@ public:
 	InstancingModel();
 	~InstancingModel();
 
-	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int ModelCount) {}
+	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind, int ModelCount) {}
 	void CreateInstanceBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int ModelCount);
 
 	void UpdateInstanceBuffer();
@@ -38,7 +34,7 @@ public:
 	InstancingLoadedModel();
 	~InstancingLoadedModel();
 
-	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int ModelCount) {}
+	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind, int ModelCount) {}
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
@@ -52,10 +48,10 @@ public:
 	InstancingSkinnedModel();
 	~InstancingSkinnedModel();
 
-	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int ModelCount);
+	virtual void CreateModel(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind, int ModelCount);
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 
-	virtual void Animate(float ElapsedTime);
+	virtual void Animate(float ElapsedTime, Terrain *GetTerrain);
 };

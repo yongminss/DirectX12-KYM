@@ -21,7 +21,7 @@ Material::~Material()
 void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind)
 {
 	switch (Kind) {
-	case 0: // Terrain
+	case T_TERRAIN: // Terrain
 	{
 		TerrainShader *UsingShader = new TerrainShader();
 		UsingShader->CreateShader(Device, RootSignature);
@@ -33,7 +33,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
-	case 1: // Skybox
+	case T_SKYBOX: // Skybox
 	{
 		SkyboxShader *UsingShader = new SkyboxShader();
 		UsingShader->CreateShader(Device, RootSignature);
@@ -46,7 +46,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	break;
 
 	// 여기부터 UI로 사용하는 Texture
-	case 2: // Bar
+	case T_HPBAR: // Bar
 	{
 		UserInterfaceShader *UsingShader = new UserInterfaceShader();
 		UsingShader->CreateShader(Device, RootSignature);
@@ -58,7 +58,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
-	case 2 + 1: // Hp Gauge
+	case T_HPGAUGE: // Hp Gauge
 	{
 		UserInterfaceShader *UsingShader = new UserInterfaceShader();
 		UsingShader->CreateShader(Device, RootSignature);

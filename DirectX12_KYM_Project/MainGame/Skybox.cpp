@@ -57,7 +57,7 @@ Skybox::Skybox(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	}
 
 	Material *UsingMaterial = new Material();
-	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, 1);
+	UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, T_SKYBOX);
 	SetMaterial(UsingMaterial);
 }
 

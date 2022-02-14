@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AnimationController.h" />
+    <ClInclude Include="Billboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
@@ -171,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AnimationController.cpp" />
+    <ClCompile Include="Billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="GameFramework.cpp" />

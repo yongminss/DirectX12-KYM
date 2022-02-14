@@ -315,8 +315,10 @@ int GameObject::GetCurrentAnimationTrackIndex()
 {
 	if (m_AnimationController != nullptr) return m_AnimationController->GetCurrentAnimationTrackIndex();
 
-	if (m_Sibling != nullptr) m_Sibling->GetCurrentAnimationTrackIndex();
-	if (m_Child != nullptr) m_Child->GetCurrentAnimationTrackIndex();
+	if (m_Sibling != nullptr) return m_Sibling->GetCurrentAnimationTrackIndex();
+	if (m_Child != nullptr) return m_Child->GetCurrentAnimationTrackIndex();
+
+	return -1;
 }
 
 GameObject* GameObject::FindFrame(char* FrameName)

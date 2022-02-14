@@ -5,10 +5,8 @@
 #include "Terrain.h"
 #include "Skybox.h"
 #include "UserInterface.h"
+#include "Billboard.h"
 #include "InstancingModel.h"
-
-#define MAP_HALF_SIZE 1250
-#define MAP_Y 300
 
 #define DIRECTIONAL_LIGHT 0
 #define SPOT_LIGHT 1
@@ -31,7 +29,12 @@ Scene::~Scene()
 	if (m_Skybox != nullptr) delete m_Skybox;
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
-	if (m_Monsters != nullptr) delete m_Monsters;
+
+	if (m_Billboard != nullptr) delete m_Billboard;
+	if (m_WeakOrcs != nullptr) delete m_WeakOrcs;
+	if (m_StrongOrcs != nullptr) delete m_StrongOrcs;
+	if (m_ShamanOrcs != nullptr) delete m_ShamanOrcs;
+	if (m_WolfRiderOrcs != nullptr) delete m_WolfRiderOrcs;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -161,26 +164,43 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player(Device, CommandList, m_RootSignature);
 	m_Player->SetScale(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f));
+	m_Player->SetPosition(DirectX::XMFLOAT3(MAP_SIZE / 2.f, 0.f, MAP_SIZE / 2.f));
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
-	m_Terrain->SetPosition(DirectX::XMFLOAT3(-MAP_HALF_SIZE, -MAP_Y, -MAP_HALF_SIZE));
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox(Device, CommandList, m_RootSignature);
 	m_Skybox->UpdateTransform(nullptr);
 
 	// 게임에 필요한 UI 생성
-	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, 2);
+	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
 	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
 
-	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, 3);
+	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, T_HPGAUGE);
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
 
+	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
+	m_Billboard = new Billboard();
+	m_Billboard->CreateShader(Device, m_RootSignature);
+	m_Billboard->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, 1000);
+
 	// 게임 월드에 등장하는 Game Objects 생성
-	m_Monsters = new InstancingSkinnedModel();
-	m_Monsters->CreateShader(Device, m_RootSignature);
-	m_Monsters->CreateModel(Device, CommandList, m_RootSignature, 20);
+	m_WeakOrcs = new InstancingSkinnedModel();
+	m_WeakOrcs->CreateShader(Device, m_RootSignature);
+	m_WeakOrcs->CreateModel(Device, CommandList, m_RootSignature, M_WEAKORC, 20);
+
+	m_StrongOrcs = new InstancingSkinnedModel();
+	m_StrongOrcs->CreateShader(Device, m_RootSignature);
+	m_StrongOrcs->CreateModel(Device, CommandList, m_RootSignature, M_STRONGORC, 20);
+
+	m_ShamanOrcs = new InstancingSkinnedModel();
+	m_ShamanOrcs->CreateShader(Device, m_RootSignature);
+	m_ShamanOrcs->CreateModel(Device, CommandList, m_RootSignature, M_SHAMANORC, 20);
+
+	m_WolfRiderOrcs = new InstancingSkinnedModel();
+	m_WolfRiderOrcs->CreateShader(Device, m_RootSignature);
+	m_WolfRiderOrcs->CreateModel(Device, CommandList, m_RootSignature, M_WOLFRIDERORC, 20);
 }
 
 void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
@@ -194,12 +214,16 @@ void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
 void Scene::Animate(float ElapsedTime, HWND Hwnd)
 {
 	if (m_Player != nullptr) {
-		float x = (m_Player->GetPosition().x + MAP_HALF_SIZE) / 20, z = (m_Player->GetPosition().z + MAP_HALF_SIZE) / 20;
-		float y = m_Terrain->GetHeightMapYPos((int)x, (int)z) - MAP_Y + 15.f;
-		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, y);
+		int GetHeightMapX = int(m_Player->GetPosition().x) / MAP_SCALE, GetHeightMapZ = int(m_Player->GetPosition().z) / MAP_SCALE;
+		float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
+		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
 		m_Player->UpdateTransform(nullptr);
 	}
-	if (m_Monsters != nullptr) m_Monsters->Animate(ElapsedTime);
+	if (m_WeakOrcs != nullptr) m_WeakOrcs->Animate(ElapsedTime, m_Terrain);
+	if (m_StrongOrcs != nullptr) m_StrongOrcs->Animate(ElapsedTime, m_Terrain);
+	if (m_ShamanOrcs != nullptr) m_ShamanOrcs->Animate(ElapsedTime, m_Terrain);
+	if (m_WolfRiderOrcs != nullptr) m_WolfRiderOrcs->Animate(ElapsedTime, m_Terrain);
+
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
 }
@@ -217,7 +241,12 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 
-	if (m_Monsters != nullptr) m_Monsters->Render(CommandList);
+	if (m_Billboard != nullptr) m_Billboard->Render(CommandList);
+
+	if (m_WeakOrcs != nullptr) m_WeakOrcs->Render(CommandList);
+	if (m_StrongOrcs != nullptr) m_StrongOrcs->Render(CommandList);
+	if (m_ShamanOrcs != nullptr) m_ShamanOrcs->Render(CommandList);
+	if (m_WolfRiderOrcs != nullptr) m_WolfRiderOrcs->Render(CommandList);
 
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
 	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -249,6 +278,12 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 		case 'D':
 			m_Player->ActiveMove(3, true);
 			break;
+
+		case VK_SHIFT:
+		{
+			m_Player->SetAnimationTrack(P_ROLL, ANIMATION_TYPE_ONCE);
+		}
+		break;
 		}
 		break;
 

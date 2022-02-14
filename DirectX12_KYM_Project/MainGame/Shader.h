@@ -1,4 +1,10 @@
 #pragma once
+
+struct MAPPING_INSTANCE
+{
+	DirectX::XMFLOAT4X4 m_TransformPos;
+};
+
 // HLSL과 그래픽스 파이프라인을 연결
 class Shader
 {

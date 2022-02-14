@@ -47,7 +47,7 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		bool ActiveCubeMap = false;
 
 		switch (Kind) {
-		case 0: // Terrain
+		case T_TERRAIN: // Terrain
 		{
 			switch (i) {
 			case 0:
@@ -67,7 +67,7 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
-		case 1: // Skybox
+		case T_SKYBOX: // Skybox
 		{
 			switch (i) {
 			case 0:
@@ -115,16 +115,23 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
-		case 2: // Hp Bar
+		case T_HPBAR: // Hp Bar
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 
-		case 3: // Hp Gauge
+		case T_HPGAUGE: // Hp Gauge
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_HpGauge.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GRASS: // Grass
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Grass.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;

@@ -85,9 +85,9 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		}
 	}
 	// Height Map의 높이에 따라 플레이어의 Y좌표를 변경
-	float MapDistance = m_TransformPos._42 - MapY;
+	float MapDistance = (m_TransformPos._42 - 15.f) - MapY;
 
-	if (abs(MapDistance) > 0.5f) {
+	if (abs(MapDistance) > 0.05f) {
 		DirectX::XMFLOAT3 Position{};
 		float Speed = -((MapDistance * 15.f) * m_ElapsedTime);
 		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetUp()), Speed)));
@@ -115,7 +115,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		float Speed = m_Speed * m_ElapsedTime;
 
 		// 움직이고 있는 상태이므로 애니메이션도 Run으로 설정
-		SetAnimationTrack(P_RUN, ANIMATION_TYPE_LOOP);
+		if (GetCurrentAnimationTrackIndex() != P_ROLL) SetAnimationTrack(P_RUN, ANIMATION_TYPE_LOOP);
 
 		// Set Position - ActiveMove : 0(앞), 1(뒤), 2(좌), 3(우)
 		if (m_ActiveMove[0] == true) {

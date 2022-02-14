@@ -70,7 +70,10 @@
     <Filter Include="소스 파일\04. GameObject\06. AnimationController">
       <UniqueIdentifier>{04417130-363c-4aaa-9b30-81f549099bbf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\07. Child-Class\05. InstancingModel">
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\05. Billboard">
+      <UniqueIdentifier>{e040fac7-ed8b-48d4-8e03-ec38be0b92fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\06. InstancingModel">
       <UniqueIdentifier>{20d61335-a25a-477e-aaaa-16bda28581cf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -136,7 +139,10 @@
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
     </ClInclude>
     <ClInclude Include="InstancingModel.h">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\05. InstancingModel</Filter>
+      <Filter>소스 파일\04. GameObject\07. Child-Class\06. InstancingModel</Filter>
+    </ClInclude>
+    <ClInclude Include="Billboard.h">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\05. Billboard</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -192,7 +198,10 @@
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
     </ClCompile>
     <ClCompile Include="InstancingModel.cpp">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\05. InstancingModel</Filter>
+      <Filter>소스 파일\04. GameObject\07. Child-Class\06. InstancingModel</Filter>
+    </ClCompile>
+    <ClCompile Include="Billboard.cpp">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\05. Billboard</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

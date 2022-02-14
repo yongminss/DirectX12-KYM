@@ -12,14 +12,14 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 
 	switch (Kind)
 	{
-	case 2:
+	case T_HPBAR:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.42f, 0.061f, 0.f), 0);
 		SetMesh(UsingMesh);
 	}
 	break;
 
-	case 3:
+	case T_HPGAUGE:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.4f, 0.06f, 0.f), 0);
 		SetMesh(UsingMesh);

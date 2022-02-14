@@ -104,7 +104,7 @@ VS_Output VS(VS_Input Input)
 {
     VS_Output Output;
         
-    Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    Output.position = mul(mul(mul(float4(Input.position, 1.f), WorldPos), CameraPos), ProjectionPos);
     Output.color = Input.color;
     
     return Output;
@@ -128,11 +128,19 @@ struct TextureVS_Output
     float2 uv : UV;
 };
 
+struct InstancingTextureVS_Input
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+    float4x4 TransformPos : TRANSFORMPOS;
+};
+
+// ---------- Vertex Shader ---------- //
 TextureVS_Output UserInterfaceVS(TextureVS_Input Input)
 {
     TextureVS_Output Output;
     
-    Output.position = mul(float4(Input.position, 1.0f), WorldPos);
+    Output.position = mul(float4(Input.position, 1.f), WorldPos);
     Output.uv = Input.uv;
     
     return Output;
@@ -142,12 +150,23 @@ TextureVS_Output TextureVS(TextureVS_Input Input)
 {
     TextureVS_Output Output;
     
-    Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    Output.position = mul(mul(mul(float4(Input.position, 1.f), WorldPos), CameraPos), ProjectionPos);
     Output.uv = Input.uv;
     
     return Output;
 }
 
+TextureVS_Output InstancingTextureVS(InstancingTextureVS_Input Input)
+{
+    TextureVS_Output Output;
+    
+    Output.position = mul(mul(mul(float4(Input.position, 1.f), Input.TransformPos), CameraPos), ProjectionPos);
+    Output.uv = Input.uv;
+    
+    return Output;
+}
+
+// ---------- Pixel Shader ---------- //
 float4 TexturePS(TextureVS_Output Input) : SV_TARGET
 {
     float4 Color = Texture.Sample(Sampler, Input.uv);
@@ -178,7 +197,7 @@ TerrainVS_Output TerrainVS(TerrainVS_Input Input)
 {
     TerrainVS_Output Output;
     
-    Output.position = mul(mul(mul(float4(Input.position, 1.0f), WorldPos), CameraPos), ProjectionPos);
+    Output.position = mul(mul(mul(float4(Input.position, 1.f), WorldPos), CameraPos), ProjectionPos);
     Output.uv0 = Input.uv0;
     Output.uv1 = Input.uv1;
     Output.color = Input.color;
@@ -265,7 +284,7 @@ LoadedVS_Output LoadedVS(LoadedVS_Input Input)
 {
     LoadedVS_Output Output;
     
-    Output.positionw = mul(float4(Input.position, 1.0f), WorldPos).xyz;
+    Output.positionw = mul(float4(Input.position, 1.f), WorldPos).xyz;
     Output.normal = mul(Input.normal, (float3x3) WorldPos);
     Output.tangent = mul(Input.tangent, (float3x3) WorldPos);
     Output.bitangent = mul(Input.bitangent, (float3x3) WorldPos);
@@ -280,7 +299,7 @@ LoadedVS_Output InstanceLoadedVS(InstancingLoadedVS_Input Input)
 {
     LoadedVS_Output Output;
     
-    Output.positionw = mul(float4(Input.position, 1.0f), Input.TransformPos).xyz;
+    Output.positionw = mul(float4(Input.position, 1.f), Input.TransformPos).xyz;
     Output.normal = mul(Input.normal, (float3x3) Input.TransformPos);
     Output.tangent = mul(Input.tangent, (float3x3) Input.TransformPos);
     Output.bitangent = mul(Input.bitangent, (float3x3) Input.TransformPos);
@@ -324,11 +343,11 @@ LoadedVS_Output InstanceSkinnedVS(InstancingSkinnedVS_Input Input)
     Output.normal = float3(0.f, 0.f, 0.f);
     Output.tangent = float3(0.f, 0.f, 0.f);
     Output.bitangent = float3(0.f, 0.f, 0.f);
-    matrix VertexToBoneWorld;
+    matrix VertexToBoneWorld = Input.TransformPos;
     
     for (int i = 0; i < BONE_PER_VERTEX; ++i)
     {
-        VertexToBoneWorld = Input.TransformPos + mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
+        //VertexToBoneWorld = Input.TransformPos + mul(BoneOffsetPos[Input.boneindex[i]], BoneTransformPos[Input.boneindex[i]]);
         Output.positionw += Input.boneweight[i] * mul(float4(Input.position, 1.f), VertexToBoneWorld).xyz;
         Output.normal += Input.boneweight[i] * mul(Input.normal, (float3x3) VertexToBoneWorld);
         Output.tangent += Input.boneweight[i] * mul(Input.tangent, (float3x3) VertexToBoneWorld);

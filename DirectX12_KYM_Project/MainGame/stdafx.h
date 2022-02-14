@@ -37,9 +37,32 @@
 #define Window_Width 800
 #define Window_Height 600
 
+// HeightMap Size ( x : 0 - 5100, z : 0 - 5100)
+#define MAP_SCALE 20
+#define MAP_SIZE 5000
+
 // Animation Type
 #define ANIMATION_TYPE_LOOP 0
 #define ANIMATION_TYPE_ONCE 1
+
+// Texture Kinds
+enum TEXTURE_KIND
+{
+	T_TERRAIN,
+	T_SKYBOX,
+	T_HPBAR,
+	T_HPGAUGE,
+	T_GRASS
+};
+
+// Monster Kinds
+enum MONSTER_KIND
+{
+	M_WEAKORC,
+	M_STRONGORC,
+	M_SHAMANORC,
+	M_WOLFRIDERORC
+};
 
 // Player Animation Kinds
 enum P_ANIMATION
@@ -47,7 +70,8 @@ enum P_ANIMATION
 	P_IDLE,
 	P_RUN,
 	P_SHOOT = 9,
-	P_DEATH = 28,
+	P_ROLL = 27,
+	P_DEATH
 };
 
 extern ID3D12Resource* CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);

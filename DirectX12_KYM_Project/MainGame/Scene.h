@@ -22,6 +22,7 @@ class Player;
 class Terrain;
 class Skybox;
 class UserInterface;
+class Billboard;
 class InstancingSkinnedModel;
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
@@ -39,7 +40,11 @@ private:
 	Skybox *m_Skybox = nullptr;
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
-	InstancingSkinnedModel *m_Monsters = nullptr;
+	Billboard *m_Billboard = nullptr;
+	InstancingSkinnedModel *m_WeakOrcs = nullptr;
+	InstancingSkinnedModel *m_StrongOrcs = nullptr;
+	InstancingSkinnedModel *m_ShamanOrcs = nullptr;
+	InstancingSkinnedModel *m_WolfRiderOrcs = nullptr;
 
 	POINT m_PreviousPos{};
 
