@@ -15,7 +15,7 @@ public:
 // 텍스쳐 맵핑을 하는 오브젝트가 사용하는 정점
 class TextureVertex
 {
-private:
+protected:
 	DirectX::XMFLOAT3 m_Position = { 0.f, 0.f, 0.f };
 	DirectX::XMFLOAT2 m_Uv = { 0.f, 0.f };
 
@@ -23,6 +23,18 @@ public:
 	TextureVertex();
 	TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv);
 	~TextureVertex();
+};
+
+// 빌보드 오브젝트가 사용하는 정점
+class BillboardVertex : public TextureVertex
+{
+private:
+	int m_Kind = 0;
+
+public:
+	BillboardVertex();
+	BillboardVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv, int Kind);
+	~BillboardVertex();
 };
 
 // 지형에 사용되는 정점

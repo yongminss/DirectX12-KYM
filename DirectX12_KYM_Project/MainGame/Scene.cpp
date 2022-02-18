@@ -30,7 +30,8 @@ Scene::~Scene()
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
 
-	if (m_Billboard != nullptr) delete m_Billboard;
+	if (m_Grass != nullptr) delete m_Grass;
+	if (m_Tree != nullptr) delete m_Tree;
 	if (m_WeakOrcs != nullptr) delete m_WeakOrcs;
 	if (m_StrongOrcs != nullptr) delete m_StrongOrcs;
 	if (m_ShamanOrcs != nullptr) delete m_ShamanOrcs;
@@ -181,9 +182,13 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
 
 	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
-	m_Billboard = new Billboard();
-	m_Billboard->CreateShader(Device, m_RootSignature);
-	m_Billboard->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, 1000);
+	m_Grass = new Billboard();
+	m_Grass->CreateShader(Device, m_RootSignature);
+	m_Grass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_GRASS, 10000);
+
+	m_Tree = new Billboard();
+	m_Tree->CreateShader(Device, m_RootSignature);
+	m_Tree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_TREE, 100);
 
 	// 게임 월드에 등장하는 Game Objects 생성
 	m_WeakOrcs = new InstancingSkinnedModel();
@@ -241,7 +246,8 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 
-	if (m_Billboard != nullptr) m_Billboard->Render(CommandList);
+	if (m_Grass != nullptr) m_Grass->Render(CommandList);
+	if (m_Tree != nullptr) m_Tree->Render(CommandList);
 
 	if (m_WeakOrcs != nullptr) m_WeakOrcs->Render(CommandList);
 	if (m_StrongOrcs != nullptr) m_StrongOrcs->Render(CommandList);

@@ -52,7 +52,8 @@ enum TEXTURE_KIND
 	T_SKYBOX,
 	T_HPBAR,
 	T_HPGAUGE,
-	T_GRASS
+	T_GRASS,
+	T_TREE
 };
 
 // Monster Kinds

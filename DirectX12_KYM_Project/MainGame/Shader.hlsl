@@ -132,7 +132,15 @@ struct InstancingTextureVS_Input
 {
     float3 position : POSITION;
     float2 uv : UV;
+    uint kind : KIND;
     float4x4 TransformPos : TRANSFORMPOS;
+};
+
+struct InstancingTextureVS_Output
+{
+    float3 position : POSITION;
+    float2 uv : UV;
+    uint kind : KIND;
 };
 
 // ---------- Vertex Shader ---------- //
@@ -156,18 +164,76 @@ TextureVS_Output TextureVS(TextureVS_Input Input)
     return Output;
 }
 
-TextureVS_Output InstancingTextureVS(InstancingTextureVS_Input Input)
+InstancingTextureVS_Output InstancingTextureVS(InstancingTextureVS_Input Input)
 {
-    TextureVS_Output Output;
+    InstancingTextureVS_Output Output;
     
-    Output.position = mul(mul(mul(float4(Input.position, 1.f), Input.TransformPos), CameraPos), ProjectionPos);
+    Output.position = mul(float4(Input.position, 1.f), Input.TransformPos);
     Output.uv = Input.uv;
+    Output.kind = Input.kind;
     
     return Output;
 }
 
+// ---------- Geometry Shader ---------- //
+struct InstancingTextureGS_Output
+{
+    float4 position : SV_POSITION;
+    float2 uv : UV;
+};
+
+[maxvertexcount(4)]
+void BillboardGS(point InstancingTextureVS_Output Input[1], inout TriangleStream<InstancingTextureGS_Output> OutputStream)
+{
+    // 빌보드 객체가 카메라를 바라 보도록 설정
+    float3 Up = float3(0.f, 1.f, 0.f);
+    float3 Look = normalize(CamwPos - Input[0].position);
+    float3 Right = cross(Up, Look);
+    
+    float Width = 0.f, Height = 0.f;
+    
+    // 객체의 종류에 따라 크기를 설정
+    switch (Input[0].kind)
+    {
+        case 4: // Grass
+            Width = 50.f, Height = 10.f;
+            break;
+        
+        case 5: // Tree
+            Width = 75.f, Height = 100.f;
+            break;
+    }
+    
+    // 위에서 계산한 Right, Up, Look을 통해 정점의 위치를 설정
+    float4 MeshVertex[4];
+    MeshVertex[0] = float4(Input[0].position + (Width * Right) - (Height * Up), 1.f);
+    MeshVertex[1] = float4(Input[0].position + (Width * Right) + (Height * Up), 1.f);
+    MeshVertex[2] = float4(Input[0].position - (Width * Right) - (Height * Up), 1.f);
+    MeshVertex[3] = float4(Input[0].position - (Width * Right) + (Height * Up), 1.f);
+    
+    float2 MeshUv[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    
+    InstancingTextureGS_Output Output;
+    
+    for (int i = 0; i < 4; ++i)
+    {
+        Output.position = mul(mul(MeshVertex[i], CameraPos), ProjectionPos);
+        Output.uv = MeshUv[i];
+        OutputStream.Append(Output);
+    }
+}
+
 // ---------- Pixel Shader ---------- //
 float4 TexturePS(TextureVS_Output Input) : SV_TARGET
+{
+    float4 Color = Texture.Sample(Sampler, Input.uv);
+    
+    clip(Color.a - 0.1f);
+    
+    return Color;
+}
+
+float4 InstancingTexturePS(InstancingTextureGS_Output Input) : SV_TARGET
 {
     float4 Color = Texture.Sample(Sampler, Input.uv);
     

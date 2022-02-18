@@ -40,7 +40,8 @@ private:
 	Skybox *m_Skybox = nullptr;
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
-	Billboard *m_Billboard = nullptr;
+	Billboard *m_Grass = nullptr;
+	Billboard *m_Tree = nullptr;
 	InstancingSkinnedModel *m_WeakOrcs = nullptr;
 	InstancingSkinnedModel *m_StrongOrcs = nullptr;
 	InstancingSkinnedModel *m_ShamanOrcs = nullptr;

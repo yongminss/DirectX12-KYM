@@ -16,6 +16,8 @@ private:
 	MAPPING_INSTANCE *m_MappingInstanceData = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_InstanceBufferView{};
 
+	ID3DBlob *m_GeometryBlob = nullptr;
+
 	Texture *m_Texture = nullptr;
 
 	int m_ObjectsCount = 0;
@@ -25,11 +27,13 @@ public:
 	Billboard();
 	~Billboard();
 
-	void CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, Terrain* SceneTerrain, int ObjectsCount);
+	virtual void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature);
+	void CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, Terrain* SceneTerrain, int Kind, int ObjectsCount);
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	D3D12_SHADER_BYTECODE CreateGeometryShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 
 	void Render(ID3D12GraphicsCommandList* CommandList);
