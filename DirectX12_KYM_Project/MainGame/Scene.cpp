@@ -6,11 +6,25 @@
 #include "Skybox.h"
 #include "UserInterface.h"
 #include "Billboard.h"
+#include "Effect.h"
+#include "Monster.h"
 #include "InstancingModel.h"
+
+#include "Material.h"
+#include "Texture.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define SPOT_LIGHT 1
 #define POINT_LIGHT 2
+
+
+ID3D12DescriptorHeap* Scene::m_CbvSrvDescriptorHeap = nullptr;
+
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CpuDescriptorStartHandle{};
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_GpuDescriptorStartHandle{};
+
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CpuDescriptorNextHandle{};
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_GpuDescriptorNextHandle{};
 
 
 Scene::Scene()
@@ -32,10 +46,8 @@ Scene::~Scene()
 
 	if (m_Grass != nullptr) delete m_Grass;
 	if (m_Tree != nullptr) delete m_Tree;
-	if (m_WeakOrcs != nullptr) delete m_WeakOrcs;
-	if (m_StrongOrcs != nullptr) delete m_StrongOrcs;
-	if (m_ShamanOrcs != nullptr) delete m_ShamanOrcs;
-	if (m_WolfRiderOrcs != nullptr) delete m_WolfRiderOrcs;
+
+	if (m_Signal != nullptr) delete m_Signal;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -138,6 +150,52 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	if (ErrorBlob != nullptr) ErrorBlob->Release();
 }
 
+void Scene::CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferViewCount, int ShaderResourceViewCount)
+{
+	DescriptorHandleIncrementSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// 텍스처 매핑에 필요한 ShaderResource View를 만들기 위해 Descriptor Heap을 생성
+	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
+	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	DescriptorHeapDesc.NumDescriptors = ConstantBufferViewCount + ShaderResourceViewCount;
+	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	DescriptorHeapDesc.NodeMask = 0;
+	Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_CbvSrvDescriptorHeap);
+
+	m_CpuDescriptorNextHandle = m_CpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_GpuDescriptorNextHandle = m_GpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture, int RootParameterIndex)
+{
+	// 오브젝트가 사용할 텍스처의 정보를 가져옴
+	int TextureCount = UsingTexture->GetTextureCount();
+
+	for (int i = 0; i < TextureCount; ++i) {
+		// Texture가 가지고 있는 Texture Buffer를 가져옴
+		ID3D12Resource *TextureBuffer = UsingTexture->GetTextureBuffer(i);
+		D3D12_RESOURCE_DESC ResourceDesc = TextureBuffer->GetDesc();
+
+		// ShaderResource View를 생성
+		D3D12_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc;
+		ZeroMemory(&ShaderResourceViewDesc, sizeof(D3D12_SHADER_RESOURCE_VIEW_DESC));
+		ShaderResourceViewDesc.Format = ResourceDesc.Format;
+		ShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		ShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		ShaderResourceViewDesc.Texture2D.MipLevels = -1;
+		ShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		ShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
+		ShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.f;
+
+		Device->CreateShaderResourceView(TextureBuffer, &ShaderResourceViewDesc, m_CpuDescriptorNextHandle);
+		m_CpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
+
+		UsingTexture->SetRootArgument(i, RootParameterIndex, m_GpuDescriptorNextHandle);
+		m_GpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
+	}
+}
+
 void Scene::CreateLightShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
 	m_Light.m_Ambient = DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.f);
@@ -145,8 +203,8 @@ void Scene::CreateLightShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandL
 	m_Light.m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 	m_Light.m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 	m_Light.m_Direction = DirectX::XMFLOAT3(-0.24f, 0.f, -0.43f);
-	m_Light.m_Active = true;
 	m_Light.m_Type = DIRECTIONAL_LIGHT;
+	m_Light.m_Active = true;
 
 	UINT BufferSize = ((sizeof(MAPPING_LIGHT) + 255) & ~255);
 
@@ -158,6 +216,12 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 {
 	// 리소스를 그래픽스 파이프라인에 연결하는 역할을 하는 RootSignature 생성
 	CreateRootSignature(Device);
+
+	// 오브젝트 별로 ConstantBuffer View or ShaderResource View를 사용하면 Set의 호출이 너무 많아지므로 한 번에 사용
+	CreateCbvSrvDescriptorHeap(Device, 0, 1000);
+
+	// Loaded & Skinned Model이 사용할 Shader를 Frame 별로 생성하면 메모리 사용이 많아지므로 미리 생성한 하나의 Shader를 사용
+	Material::PrepareShader(Device, m_RootSignature);
 
 	// Scene에서 사용할 조명을 설정 & Light Buffer 생성
 	CreateLightShaderBuffer(Device, CommandList);
@@ -172,7 +236,6 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new Skybox(Device, CommandList, m_RootSignature);
-	m_Skybox->UpdateTransform(nullptr);
 
 	// 게임에 필요한 UI 생성
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
@@ -184,28 +247,69 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
 	m_Grass = new Billboard();
 	m_Grass->CreateShader(Device, m_RootSignature);
-	m_Grass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_GRASS, 10000);
+	m_Grass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_GRASS, 1000);
 
 	m_Tree = new Billboard();
 	m_Tree->CreateShader(Device, m_RootSignature);
-	m_Tree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_TREE, 100);
+	m_Tree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_TREE, 500);
+
+	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
 
 	// 게임 월드에 등장하는 Game Objects 생성
-	m_WeakOrcs = new InstancingSkinnedModel();
-	m_WeakOrcs->CreateShader(Device, m_RootSignature);
-	m_WeakOrcs->CreateModel(Device, CommandList, m_RootSignature, M_WEAKORC, 20);
+	int MonsterCount = 20;
+	DirectX::XMFLOAT3 Position{};
 
-	m_StrongOrcs = new InstancingSkinnedModel();
-	m_StrongOrcs->CreateShader(Device, m_RootSignature);
-	m_StrongOrcs->CreateModel(Device, CommandList, m_RootSignature, M_STRONGORC, 20);
+	m_WeakOrcs.reserve(MonsterCount);
 
-	m_ShamanOrcs = new InstancingSkinnedModel();
-	m_ShamanOrcs->CreateShader(Device, m_RootSignature);
-	m_ShamanOrcs->CreateModel(Device, CommandList, m_RootSignature, M_SHAMANORC, 20);
+	for (int i = 0; i < MonsterCount; ++i) {
+		GameObject *Model = nullptr;
+		Model = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_WeakOrc.bin", nullptr, true);
+		m_WeakOrcs.emplace_back(new Monster(0));
+		m_WeakOrcs.back()->SetChild(Model);
+		m_WeakOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
 
-	m_WolfRiderOrcs = new InstancingSkinnedModel();
-	m_WolfRiderOrcs->CreateShader(Device, m_RootSignature);
-	m_WolfRiderOrcs->CreateModel(Device, CommandList, m_RootSignature, M_WOLFRIDERORC, 20);
+		Position.x = rand() % MAP_SIZE, Position.z = rand() % MAP_SIZE, Position.y = 0.f;
+		m_WeakOrcs.back()->SetPosition(Position);
+	}
+
+	m_StrongOrcs.reserve(MonsterCount);
+
+	for (int i = 0; i < MonsterCount; ++i) {
+		GameObject *Model = nullptr;
+		Model = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_StrongOrc.bin", nullptr, true);
+		m_StrongOrcs.emplace_back(new Monster(1));
+		m_StrongOrcs.back()->SetChild(Model);
+		m_StrongOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
+
+		Position.x = rand() % MAP_SIZE, Position.z = rand() % MAP_SIZE, Position.y = 0.f;
+		m_StrongOrcs.back()->SetPosition(Position);
+	}
+
+	m_ShamanOrcs.reserve(MonsterCount);
+
+	for (int i = 0; i < MonsterCount; ++i) {
+		GameObject *Model = nullptr;
+		Model = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_ShamanOrc.bin", nullptr, true);
+		m_ShamanOrcs.emplace_back(new Monster(2));
+		m_ShamanOrcs.back()->SetChild(Model);
+		m_ShamanOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
+
+		Position.x = rand() % MAP_SIZE, Position.z = rand() % MAP_SIZE, Position.y = 0.f;
+		m_ShamanOrcs.back()->SetPosition(Position);
+	}
+
+	m_WolfRiderOrcs.reserve(MonsterCount);
+
+	for (int i = 0; i < MonsterCount; ++i) {
+		GameObject *Model = nullptr;
+		Model = GameObject::LoadBinaryFileModel(Device, CommandList, m_RootSignature, "Model/Monster_WolfRiderOrc.bin", nullptr, true);
+		m_WolfRiderOrcs.emplace_back(new Monster(3));
+		m_WolfRiderOrcs.back()->SetChild(Model);
+		m_WolfRiderOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
+
+		Position.x = rand() % MAP_SIZE, Position.z = rand() % MAP_SIZE, Position.y = 0.f;
+		m_WolfRiderOrcs.back()->SetPosition(Position);
+	}
 }
 
 void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
@@ -224,10 +328,32 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
 		m_Player->UpdateTransform(nullptr);
 	}
-	if (m_WeakOrcs != nullptr) m_WeakOrcs->Animate(ElapsedTime, m_Terrain);
-	if (m_StrongOrcs != nullptr) m_StrongOrcs->Animate(ElapsedTime, m_Terrain);
-	if (m_ShamanOrcs != nullptr) m_ShamanOrcs->Animate(ElapsedTime, m_Terrain);
-	if (m_WolfRiderOrcs != nullptr) m_WolfRiderOrcs->Animate(ElapsedTime, m_Terrain);
+
+	for (int i = 0; i < m_WeakOrcs.size(); ++i)
+		if (m_WeakOrcs[i] != nullptr) {
+			m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_WeakOrcs[i]->UpdateTransform(nullptr);
+		}
+
+	for (int i = 0; i < m_StrongOrcs.size(); ++i)
+		if (m_StrongOrcs[i] != nullptr) {
+			m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_StrongOrcs[i]->UpdateTransform(nullptr);
+		}
+
+	for (int i = 0; i < m_ShamanOrcs.size(); ++i)
+		if (m_ShamanOrcs[i] != nullptr) {
+			m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_ShamanOrcs[i]->UpdateTransform(nullptr);
+		}
+
+	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
+		if (m_WolfRiderOrcs[i] != nullptr) {
+			m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
+		}
+
+	if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
 
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
@@ -237,6 +363,8 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	CommandList->SetGraphicsRootSignature(m_RootSignature);
 
+	CommandList->SetDescriptorHeaps(1, &m_CbvSrvDescriptorHeap);
+	
 	if (m_Player != nullptr) m_Player->UpdateCamera(CommandList);
 
 	UpdateLightShaderBuffer(CommandList);
@@ -246,13 +374,15 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 
+	for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
+	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
+	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->Render(CommandList);
+	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->Render(CommandList);
+
 	if (m_Grass != nullptr) m_Grass->Render(CommandList);
 	if (m_Tree != nullptr) m_Tree->Render(CommandList);
 
-	if (m_WeakOrcs != nullptr) m_WeakOrcs->Render(CommandList);
-	if (m_StrongOrcs != nullptr) m_StrongOrcs->Render(CommandList);
-	if (m_ShamanOrcs != nullptr) m_ShamanOrcs->Render(CommandList);
-	if (m_WolfRiderOrcs != nullptr) m_WolfRiderOrcs->Render(CommandList);
+	if (m_Signal != nullptr) m_Signal->Render(CommandList);
 
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
 	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -285,9 +415,14 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			m_Player->ActiveMove(3, true);
 			break;
 
+		case 'r':
+		case 'R':
+			m_Player->ActiveReload();
+			break;
+
 		case VK_SHIFT:
 		{
-			m_Player->SetAnimationTrack(P_ROLL, ANIMATION_TYPE_ONCE);
+			m_Player->ActiveRoll();
 		}
 		break;
 		}
@@ -330,26 +465,102 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		SetCursor(NULL);
 		GetCursorPos(&m_PreviousPos);
 
-		// 플레이어가 다른 행동을 하지 않은 상태 (IDLE) 일때만 공격하도록 설정
-		if (m_Player->GetCurrentAnimationTrackIndex() == P_IDLE) {
-			m_Player->SetAnimationTrack(P_SHOOT, ANIMATION_TYPE_ONCE);
+		// 마우스 왼쪽 버튼을 클릭했을 때, 몬스터와 충돌 여부를 확인
+		if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL) { // 구르기 도중에는 공격할 수 없음
+			m_Player->ActiveShoot();
 
-			// 카메라의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
-			DirectX::XMFLOAT3 StartPosition = m_Player->GetCameraWorldPosition();
+			// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
+			DirectX::XMFLOAT3 StartPosition = m_Player->GetPosition();
 			DirectX::XMFLOAT3 EndPosition{};
-			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_Player->GetCameraWorldLook())));
+			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_Player->GetLook())));
 
-			/*GameObject *CollisionMonster = new GameObject();
+			int MonsterType = -1;
+			int CollisionMonsterIndex = 0;
 
-			for (int i = 0; i < m_Monsters.size(); ++i) {
-				CollisionMonster = m_GameObjects[i]->CheckCollision(StartPosition, EndPosition);
+			GameObject *CollisionMonster = new GameObject();
+			GameObject *ResultMonster = new GameObject();
 
+			float MaxDistance = 800.f;
+
+			for (int i = 0; i < m_WeakOrcs.size(); ++i) {
+				CollisionMonster = m_WeakOrcs[i]->CheckCollision(StartPosition, EndPosition);
+
+				// 플레이어 공격에 피격된 몬스터가 있으면 충돌 처리를 수행해야 함
 				if (CollisionMonster != nullptr) {
-					std::cout << i << "번째 오브젝트와 충돌거리 : " << CollisionMonster->GetCollisionMeshDistance() << std::endl;
-
-					m_GameObjects[i]->SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
+					// 몬스터의 충돌 거리가 최대 사거리보다 작으면 충돌 처리
+					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+						// 충돌된 몬스터 중, 가장 가까운 거리의 몬스터만 충돌 처리를 수행
+						ResultMonster = CollisionMonster;
+						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+						CollisionMonsterIndex = i;
+						MonsterType = 0;
+					}
 				}
-			}*/
+			}
+
+			// 다른 타입의 몬스터도 같은 방식으로 충돌 처리를 수행
+			for (int i = 0; i < m_StrongOrcs.size(); ++i) {
+				CollisionMonster = m_StrongOrcs[i]->CheckCollision(StartPosition, EndPosition);
+				if (CollisionMonster != nullptr) {
+					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+						ResultMonster = CollisionMonster;
+						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+						CollisionMonsterIndex = i;
+						MonsterType = 1;
+					}
+				}
+			}
+
+			for (int i = 0; i < m_ShamanOrcs.size(); ++i) {
+				CollisionMonster = m_ShamanOrcs[i]->CheckCollision(StartPosition, EndPosition);
+				if (CollisionMonster != nullptr) {
+					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+						ResultMonster = CollisionMonster;
+						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+						CollisionMonsterIndex = i;
+						MonsterType = 2;
+					}
+				}
+			}
+
+			for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) {
+				CollisionMonster = m_WolfRiderOrcs[i]->CheckCollision(StartPosition, EndPosition);
+				if (CollisionMonster != nullptr) {
+					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+						ResultMonster = CollisionMonster;
+						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+						CollisionMonsterIndex = i;
+						MonsterType = 3;
+					}
+				}
+			}
+
+			// 가장 가까운 거리에서 공격 당한 몬스터만 피격 애니메이션을 수행
+			switch (MonsterType) {
+			case 0:
+			{
+				m_WeakOrcs[CollisionMonsterIndex]->ActiveDamaged();
+			}
+			break;
+
+			case 1:
+			{
+				m_StrongOrcs[CollisionMonsterIndex]->ActiveDamaged();
+			}
+			break;
+
+			case 2:
+			{
+				m_ShamanOrcs[CollisionMonsterIndex]->ActiveDamaged();
+			}
+			break;
+
+			case 3:
+			{
+				m_WolfRiderOrcs[CollisionMonsterIndex]->ActiveDamaged();
+			}
+			break;
+			}
 		}
 	}
 	break;

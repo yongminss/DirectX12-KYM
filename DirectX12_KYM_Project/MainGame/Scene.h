@@ -8,8 +8,8 @@ struct LIGHT
 	DirectX::XMFLOAT4 m_Specular;
 	DirectX::XMFLOAT4 m_Emissive;
 	DirectX::XMFLOAT3 m_Direction;
-	bool m_Active;
 	int m_Type;
+	bool m_Active;
 };
 
 // 조명 버퍼에서 사용할 조명들 - 아직까진 햇빛으로 사용하는 방향성 조명 1개만 존재
@@ -18,18 +18,28 @@ struct MAPPING_LIGHT
 	LIGHT m_Light;
 };
 
+class Texture;
 class Player;
 class Terrain;
 class Skybox;
 class UserInterface;
 class Billboard;
-class InstancingSkinnedModel;
+class Effect;
+class Monster;
 
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene
 {
 private:
 	ID3D12RootSignature *m_RootSignature = nullptr;
+
+	static ID3D12DescriptorHeap *m_CbvSrvDescriptorHeap;
+
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_CpuDescriptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_GpuDescriptorStartHandle;
+
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_CpuDescriptorNextHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_GpuDescriptorNextHandle;
 
 	LIGHT m_Light{};
 	MAPPING_LIGHT *m_MappingLight = nullptr;
@@ -42,10 +52,11 @@ private:
 	UserInterface *m_HpGauge = nullptr;
 	Billboard *m_Grass = nullptr;
 	Billboard *m_Tree = nullptr;
-	InstancingSkinnedModel *m_WeakOrcs = nullptr;
-	InstancingSkinnedModel *m_StrongOrcs = nullptr;
-	InstancingSkinnedModel *m_ShamanOrcs = nullptr;
-	InstancingSkinnedModel *m_WolfRiderOrcs = nullptr;
+	Effect *m_Signal = nullptr;
+	std::vector<Monster*> m_WeakOrcs{};
+	std::vector<Monster*> m_StrongOrcs{};
+	std::vector<Monster*> m_ShamanOrcs{};
+	std::vector<Monster*> m_WolfRiderOrcs{};
 
 	POINT m_PreviousPos{};
 
@@ -54,6 +65,10 @@ public:
 	~Scene();
 
 	void CreateRootSignature(ID3D12Device* Device);
+	
+	static void CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferViewCount, int ShaderResourceViewCount);
+	static void CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture, int RootParameterIndex);
+
 	void CreateLightShaderBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 	void CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 

@@ -73,7 +73,13 @@
     <Filter Include="소스 파일\04. GameObject\07. Child-Class\05. Billboard">
       <UniqueIdentifier>{e040fac7-ed8b-48d4-8e03-ec38be0b92fb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\07. Child-Class\06. InstancingModel">
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\06. Effect">
+      <UniqueIdentifier>{570f3b67-f890-4369-9e69-d6a512907e67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\07. Monster">
+      <UniqueIdentifier>{09ee9ba2-ae7c-4936-b287-a097e28c7f63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\08. InstancingModel">
       <UniqueIdentifier>{20d61335-a25a-477e-aaaa-16bda28581cf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -139,10 +145,16 @@
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
     </ClInclude>
     <ClInclude Include="InstancingModel.h">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\06. InstancingModel</Filter>
+      <Filter>소스 파일\04. GameObject\07. Child-Class\08. InstancingModel</Filter>
     </ClInclude>
     <ClInclude Include="Billboard.h">
       <Filter>소스 파일\04. GameObject\07. Child-Class\05. Billboard</Filter>
+    </ClInclude>
+    <ClInclude Include="Monster.h">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\07. Monster</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\06. Effect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -198,10 +210,16 @@
       <Filter>소스 파일\04. GameObject\06. AnimationController</Filter>
     </ClCompile>
     <ClCompile Include="InstancingModel.cpp">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\06. InstancingModel</Filter>
+      <Filter>소스 파일\04. GameObject\07. Child-Class\08. InstancingModel</Filter>
     </ClCompile>
     <ClCompile Include="Billboard.cpp">
       <Filter>소스 파일\04. GameObject\07. Child-Class\05. Billboard</Filter>
+    </ClCompile>
+    <ClCompile Include="Monster.cpp">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\07. Monster</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\06. Effect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

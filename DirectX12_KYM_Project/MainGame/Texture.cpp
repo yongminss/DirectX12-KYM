@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Texture.h"
+
 #include "DDSTextureLoader12.h"
+#include "Scene.h"
 
 
 Texture::Texture()
@@ -32,10 +34,10 @@ void Texture::CreateTexture(ID3D12Device* Device, ID3D12GraphicsCommandList* Com
 
 	// 1. 오브젝트에 매핑할 텍스처 파일(DDS)을 읽고 리소스를 생성
 	CreateTextureBuffer(Device, CommandList, TextureName, Kind);
-	// 2. ShaderResource View를 만들기 위해 Descriptor Heap을 생성
-	CreateDescriptorHeap(Device);
-	// 3. 텍스처 매핑을 위해 ShaderResource View 생성
-	CreateShaderResourceView(Device);
+
+	// 2. 텍스처 매핑을 위해 ShaderResource View 생성
+	// ShaderResource View를 만들기 위해 필요한 Descriptor Heap은 Scene에서 생성했으므로 ShaderResource View를 생성
+	Scene::CreateShaderResourceView(Device, this, RootParameterIndex);
 }
 
 void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, wchar_t* TextureName, int Kind)
@@ -143,6 +145,13 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
+		case T_SIGNAL: // Signal
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Signal.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
 		default:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, TextureName, 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
@@ -225,11 +234,16 @@ void Texture::CreateShaderResourceView(ID3D12Device* Device)
 	}
 }
 
+void Texture::SetRootArgument(int Index, int RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE GpuDescriptorHandle)
+{
+	if (m_RootArgument == nullptr)
+		m_RootArgument = new ROOTARGUMENT[m_TextureCount];
+
+	m_RootArgument[Index].m_RootParameterIndex = RootParameterIndex;
+	m_RootArgument[Index].m_GpuDescriptorHandle = GpuDescriptorHandle;
+}
+
 void Texture::Render(ID3D12GraphicsCommandList* CommandList, int TextureIndex)
 {
-	if (TextureIndex == 0) CommandList->SetDescriptorHeaps(1, &m_ShaderResourceViewDescriptorHeap);
-
-	D3D12_GPU_DESCRIPTOR_HANDLE TargetGpuDescriptorHandle;
-	TargetGpuDescriptorHandle.ptr = m_GpuDescriptorHandle.ptr + (TextureIndex * m_DescriptorHandleIncrementSize);
-	CommandList->SetGraphicsRootDescriptorTable(m_RootParameterIndex, TargetGpuDescriptorHandle);
+	CommandList->SetGraphicsRootDescriptorTable(m_RootArgument[TextureIndex].m_RootParameterIndex, m_RootArgument[TextureIndex].m_GpuDescriptorHandle);
 }

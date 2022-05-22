@@ -13,7 +13,7 @@ private:
 	float *m_KeyFrameTransformTime = nullptr;
 	DirectX::XMFLOAT4X4 **m_KeyFrameTransformPos = nullptr;
 
-	int m_Type = 0;
+	int m_Type = ANIMATION_TYPE_LOOP;
 	float m_StartPositionTime = 0.f;
 	bool m_ChangeAnimationTrack = false;
 
@@ -31,7 +31,10 @@ public:
 	void SetKeyFrameTransformPos(int Index, DirectX::XMFLOAT4X4* KeyFrameTransformPos) { m_KeyFrameTransformPos[Index] = KeyFrameTransformPos; }
 	void SetType(int Type) { m_Type = Type; }
 
+	void SetStartPosTime(float StartPositionTime) { m_StartPositionTime = StartPositionTime; }
+
 	int GetKeyFrameTransformCount() { return m_KeyFrameTransformCount; }
+	float GetStartPosTime() { return m_StartPositionTime; }
 	bool GetChangeAnimationTrack() { return m_ChangeAnimationTrack; }
 
 	void InitAnimationSet();
@@ -73,7 +76,9 @@ private:
 	float m_CumulativeTime = 0.f;
 
 	int m_CurrentAnimationTrackIndex = 0;
-	int m_NextAnimationTrackIndex = -1;
+	int m_NextAnimationTrackIndex = 0;
+
+	bool m_ChangeState = false;
 
 public:
 	AnimationController();
@@ -84,13 +89,15 @@ public:
 	void AssignAniSetToAniTrack();
 
 	void SetBoneFrame(int Index, GameObject *Frame) { m_BoneFrame[Index] = Frame; }
+	void SetChangeState(bool ChangeState) { m_ChangeState = ChangeState; }
 
-	void SetAnimationTrack(int Index, int Type);
+	void SetAnimationTrack(int Index, int Type, bool Conversion = false);
 
 	int GetAnimationCount() { return m_AnimationCount; }
 	AnimationSet* GetAnimationSet(int Index) { return &m_AnimationSet[Index]; }
 	int GetBoneFrameCount() { return m_BoneFrameCount; }
 	int GetCurrentAnimationTrackIndex() { return m_CurrentAnimationTrackIndex; }
+	bool GetChangeState() { return m_ChangeState; }
 
 	void UpdateAnimationPos(float ElapsedTime);
 };

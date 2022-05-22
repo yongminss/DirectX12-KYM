@@ -41,9 +41,12 @@
 #define MAP_SCALE 20
 #define MAP_SIZE 5000
 
+static SIZE_T DescriptorHandleIncrementSize = 0;
+
 // Animation Type
 #define ANIMATION_TYPE_LOOP 0
 #define ANIMATION_TYPE_ONCE 1
+#define ANIMATION_TYPE_CONVERT 2
 
 // Texture Kinds
 enum TEXTURE_KIND
@@ -53,7 +56,8 @@ enum TEXTURE_KIND
 	T_HPBAR,
 	T_HPGAUGE,
 	T_GRASS,
-	T_TREE
+	T_TREE,
+	T_SIGNAL
 };
 
 // Monster Kinds
@@ -69,10 +73,55 @@ enum MONSTER_KIND
 enum P_ANIMATION
 {
 	P_IDLE,
-	P_RUN,
-	P_SHOOT = 9,
-	P_ROLL = 27,
+
+	// 1 ~ 8 - Run Animation
+	P_RUN_FRONT,
+	P_RUN_BACK,
+	P_RUN_RIGHT,
+	P_RUN_LEFT,
+	P_RUN_FRONT_RIGHT,
+	P_RUN_FRONT_LEFT,
+	P_RUN_BACK_RIGHT,
+	P_RUN_BACK_LEFT,
+
+	// 9 ~ 17 - Shoot Animation
+	P_SHOOT,
+	P_RUN_SHOOT_FRONT,
+	P_RUN_SHOOT_BACK,
+	P_RUN_SHOOT_RIGHT,
+	P_RUN_SHOOT_LEFT,
+	P_RUN_SHOOT_FRONT_RIGHT,
+	P_RUN_SHOOT_FRONT_LEFT,
+	P_RUN_SHOOT_BACK_RIGHT,
+	P_RUN_SHOOT_BACK_LEFT,
+
+	// 18 ~ 26 - Reload Animation
+	P_RELOAD,
+	P_RUN_RELOAD_FRONT,
+	P_RUN_RELOAD_BACK,
+	P_RUN_RELOAD_RIGHT,
+	P_RUN_RELOAD_LEFT,
+	P_RUN_RELOAD_FRONT_RIGHT,
+	P_RUN_RELOAD_FRONT_LEFT,
+	P_RUN_RELOAD_BACK_RIGHT,
+	P_RUN_RELOAD_BACK_LEFT,
+
+	P_ROLL,
+	P_DAMAGED,
 	P_DEATH
+};
+
+// Monster Animation Kinds
+enum M_ANIMATION
+{
+	M_IDLE,
+	M_WALK,
+	M_RUN,
+	M_ATTACK_A,
+	M_ATTACK_B,
+	M_DAMAGED,
+	M_DEATH_A,
+	M_DEATH_B
 };
 
 extern ID3D12Resource* CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, void* VertexData, int Size, D3D12_HEAP_TYPE HeapType, D3D12_RESOURCE_STATES ResourceState, ID3D12Resource *UploadBuffer);

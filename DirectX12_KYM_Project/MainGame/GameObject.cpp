@@ -113,7 +113,7 @@ GameObject* GameObject::LoadFrameHierarchy(ID3D12Device* Device, ID3D12GraphicsC
 			if (ChildCount > 0) {
 				for (int i = 0; i < ChildCount; ++i) {
 					GameObject *Child = LoadFrameHierarchy(Device, CommandList, RootSignature, File, Frame, InstanceShader);
-					Frame->SetChild(Child);
+					if (Child != nullptr) Frame->SetChild(Child);
 				}
 			}
 		}
@@ -297,12 +297,28 @@ void GameObject::SetMeshBoneFrame(GameObject* RootFrame)
 	if (m_Child != nullptr) m_Child->SetMeshBoneFrame(RootFrame);
 }
 
-void GameObject::SetAnimationTrack(int Index, int Type)
+void GameObject::SetDamaged(int Damaged)
 {
-	if (m_AnimationController != nullptr) m_AnimationController->SetAnimationTrack(Index, Type);
+	if (m_Material != nullptr) m_Material->SetDamaged(Damaged);
 
-	if (m_Sibling != nullptr) m_Sibling->SetAnimationTrack(Index, Type);
-	if (m_Child != nullptr) m_Child->SetAnimationTrack(Index, Type);
+	if (m_Sibling != nullptr) m_Sibling->SetDamaged(Damaged);
+	if (m_Child != nullptr) m_Child->SetDamaged(Damaged);
+}
+
+void GameObject::SetAnimationTrack(int Index, int Type, bool Conversion)
+{
+	if (m_AnimationController != nullptr) m_AnimationController->SetAnimationTrack(Index, Type, Conversion);
+
+	if (m_Sibling != nullptr) m_Sibling->SetAnimationTrack(Index, Type, Conversion);
+	if (m_Child != nullptr) m_Child->SetAnimationTrack(Index, Type, Conversion);
+}
+
+void GameObject::SetChangeState(bool ChangeState)
+{
+	if (m_AnimationController != nullptr) m_AnimationController->SetChangeState(ChangeState);
+
+	if (m_Sibling != nullptr) m_Sibling->SetChangeState(ChangeState);
+	if (m_Child != nullptr) m_Child->SetChangeState(ChangeState);
 }
 
 float GameObject::GetCollisionMeshDistance()
@@ -317,8 +333,14 @@ int GameObject::GetCurrentAnimationTrackIndex()
 
 	if (m_Sibling != nullptr) return m_Sibling->GetCurrentAnimationTrackIndex();
 	if (m_Child != nullptr) return m_Child->GetCurrentAnimationTrackIndex();
+}
 
-	return -1;
+bool GameObject::GetChangeState()
+{
+	if (m_AnimationController != nullptr) return m_AnimationController->GetChangeState();
+
+	if (m_Sibling != nullptr) return m_Sibling->GetChangeState();
+	if (m_Child != nullptr) return m_Child->GetChangeState();
 }
 
 GameObject* GameObject::FindFrame(char* FrameName)

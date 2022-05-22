@@ -58,6 +58,19 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
 
+// ---
+class EffectShader : public Shader
+{
+public:
+	EffectShader() { }
+	~EffectShader() { }
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+};
+
 // 지형에 사용할 Shader
 class TerrainShader : public Shader
 {

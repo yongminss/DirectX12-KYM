@@ -70,6 +70,18 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
+	case T_SIGNAL: // Signal - 몬스터가 플레이어를 인식했을 때 사용
+	{
+		EffectShader *UsingShader = new EffectShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
 	default:
 	{
 		Shader *UsingShader = new Shader();
@@ -78,6 +90,18 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 	}
+}
+
+Shader* Material::m_LoadedShader = nullptr;
+Shader* Material::m_SkinnedShader = nullptr;
+
+void Material::PrepareShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature)
+{
+	m_LoadedShader = new LoadedShader();
+	m_LoadedShader->CreateShader(Device, RootSignature);
+
+	m_SkinnedShader = new SkinnedShader();
+	m_SkinnedShader->CreateShader(Device, RootSignature);
 }
 
 void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, GameObject* ParentFrame, int Type, Shader* InstanceShader)
@@ -104,15 +128,15 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 				{
 				case 0:
 				{
-					UsingShader = new LoadedShader();
-					UsingShader->CreateShader(Device, RootSignature);
+					UsingShader = m_LoadedShader;
+					SetShader(UsingShader);
 				}
 				break;
 
 				case 1:
 				{
-					UsingShader = new SkinnedShader();
-					UsingShader->CreateShader(Device, RootSignature);
+					UsingShader = m_SkinnedShader;
+					SetShader(UsingShader);
 				}
 				break;
 				}
@@ -123,6 +147,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 				{
 					UsingShader = new InstancingLoadedModel();
 					UsingShader->CreateShader(Device, RootSignature);
+					SetShader(UsingShader);
 				}
 				break;
 
@@ -130,11 +155,11 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 				{
 					UsingShader = new InstancingSkinnedModel();
 					UsingShader->CreateShader(Device, RootSignature);
+					SetShader(UsingShader);
 				}
 				break;
 				}
 			}
-			SetShader(UsingShader);
 		}
 
 		else if (!strcmp(Word, "<AlbedoColor>:")) {
@@ -259,6 +284,8 @@ void Material::MappingTexture(ID3D12GraphicsCommandList* CommandList, int Index)
 	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Diffuse, 20);
 	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Specular, 24);
 	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Emissive, 28);
+
+	CommandList->SetGraphicsRoot32BitConstants(1, 1, &m_Damaged, 32);
 
 	if (m_Texture != nullptr) m_Texture->Render(CommandList, Index);
 }

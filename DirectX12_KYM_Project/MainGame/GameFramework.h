@@ -2,6 +2,8 @@
 
 class Scene;
 
+#define SWAP_CHAIN_COUNT 2
+
 // DirectX Device 초기화 및 관리
 class GameFramework
 {
@@ -16,10 +18,11 @@ private:
 	IDXGISwapChain3 *m_SwapChain = nullptr;
 
 	ID3D12Fence *m_Fence = nullptr;
+	UINT64 m_FenceValueCount[SWAP_CHAIN_COUNT]{};
 	HANDLE m_FenceEvent{};
 
 	ID3D12DescriptorHeap *m_RenderTargetViewDescriptorHeap = nullptr;
-	ID3D12Resource *m_RenderTargetBuffer[2]{};
+	ID3D12Resource *m_RenderTargetBuffer[SWAP_CHAIN_COUNT]{};
 	ID3D12DescriptorHeap *m_DepthStencilViewDescriptorHeap = nullptr;
 	ID3D12Resource *m_DepthStencilBuffer = nullptr;
 
@@ -48,6 +51,9 @@ public:
 	void CreateFence();
 	void CreateResource();
 	void CreateScene();
+
+	void WaitToCompleteGpu();
+	void MoveNextFrame();
 
 	void GameFrameworkLoop();
 

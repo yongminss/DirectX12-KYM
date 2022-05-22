@@ -223,6 +223,32 @@ void GameFramework::CreateScene()
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
+void GameFramework::WaitToCompleteGpu()
+{
+	UINT64 WaitFenceValueCount = ++m_FenceValueCount[m_SwapChainIndex];
+
+	m_CommandQueue->Signal(m_Fence, WaitFenceValueCount);
+
+	if (m_Fence->GetCompletedValue() < WaitFenceValueCount) {
+		m_Fence->SetEventOnCompletion(WaitFenceValueCount, m_FenceEvent);
+		WaitForSingleObject(m_FenceEvent, INFINITE);
+	}
+}
+
+void GameFramework::MoveNextFrame()
+{
+	m_SwapChainIndex = m_SwapChain->GetCurrentBackBufferIndex();
+
+	UINT64 WaitFenceValueCount = ++m_FenceValueCount[m_SwapChainIndex];
+
+	m_CommandQueue->Signal(m_Fence, WaitFenceValueCount);
+
+	if (m_Fence->GetCompletedValue() < WaitFenceValueCount) {
+		m_Fence->SetEventOnCompletion(WaitFenceValueCount, m_FenceEvent);
+		WaitForSingleObject(m_FenceEvent, INFINITE);
+	}
+}
+
 // DirectX 12 게임을 플레이 할 수 있도록 매 프레임마다 반복 (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
@@ -271,10 +297,14 @@ void GameFramework::GameFrameworkLoop()
 	ID3D12CommandList *CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 
+	// CPU와 GPU 작업을 동기화하기 위해 GPU의 작업이 끝날 때까지 대기
+	WaitToCompleteGpu();
+
 	// Rendering이 끝난 RenderTarget이 화면에 보이도록 Present 호출
 	m_SwapChain->Present(0, 0);
 
-	m_SwapChainIndex = m_SwapChain->GetCurrentBackBufferIndex();
+	// CPU-GPU 동기화를 확인하고 다음 프레임 화면으로 이동
+	MoveNextFrame();
 
 	// 프레임 당 경과 시간(Elapsed Time)과 1초에 몇 번의 프레임을 진행(Frame Rate) 하는지 계산
 	std::chrono::duration<float> ElapsedTime = std::chrono::system_clock::now() - LoopStartTime;

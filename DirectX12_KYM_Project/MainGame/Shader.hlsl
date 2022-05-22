@@ -28,6 +28,7 @@ cbuffer GameObject : register(b1)
 {
     matrix WorldPos : packoffset(c0);
     MATERIAL Material : packoffset(c4);
+    int Damaged : packoffset(c8);
 };
 
 // 게임 내에서 사용할 조명 설정 - 구조체, 버퍼, 여러 개의 조명을 생성
@@ -442,6 +443,12 @@ float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
     
     // 4. Scene의 방향성 조명과 모델의 재질 정보를 사용하여 조명 값을 계산
     float4 Illumination = CalLighting(Input.positionw, Normalw);
+    
+    // 오브젝트 피격 시, 색상 변경
+    if (Damaged & 0x02)
+    {
+        AlbedoTexture.x = 1.f;
+    }
     
     // 5. 모델의 텍스처와 조명 값을 적용해서 모델의 색상을 결정
     return lerp(AlbedoTexture, Illumination, 0.5f);

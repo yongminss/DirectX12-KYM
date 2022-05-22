@@ -49,8 +49,11 @@ public:
 
 	void SetChild(GameObject* Child);
 	void SetMeshBoneFrame(GameObject* RootFrame);
+	
+	void SetDamaged(int Damaged);
 
-	void SetAnimationTrack(int Index, int Type);
+	void SetAnimationTrack(int Index, int Type, bool Conversion = false);
+	void SetChangeState(bool ChangeState);
 
 	DirectX::XMFLOAT3 GetRight() { return DirectX::XMFLOAT3(m_TransformPos._11, m_TransformPos._12, m_TransformPos._13); }
 	DirectX::XMFLOAT3 GetUp() { return DirectX::XMFLOAT3(m_TransformPos._21, m_TransformPos._22, m_TransformPos._23); }
@@ -62,6 +65,7 @@ public:
 	float GetCollisionMeshDistance();
 
 	int GetCurrentAnimationTrackIndex();
+	bool GetChangeState();
 
 	GameObject* FindFrame(char* FrameName);
 	Texture* FindDuplicatedTexture(char* TextureName);

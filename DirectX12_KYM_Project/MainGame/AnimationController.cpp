@@ -53,6 +53,18 @@ float AnimationSet::ResetPositionTime(float PositionTime)
 		}
 	}
 	break;
+
+	case ANIMATION_TYPE_CONVERT: // 도중에 바뀌는 애니메이션 종류가 사용 (ex. 공격 or 장전)
+	{
+		if (m_StartPositionTime == 0.f) m_StartPositionTime = PositionTime;
+
+		ResetTime = (PositionTime - m_StartPositionTime) - int((PositionTime - m_StartPositionTime) / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1]) * m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1];
+
+		if ((PositionTime - m_StartPositionTime) / m_KeyFrameTransformTime[m_KeyFrameTransformCount - 1] >= 1.f) {
+			m_ChangeAnimationTrack = true;
+		}
+	}
+	break;
 	}
 
 	return ResetTime;
@@ -134,19 +146,38 @@ void AnimationController::AssignAniSetToAniTrack()
 	SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
 }
 
-void AnimationController::SetAnimationTrack(int Index, int Type)
+void AnimationController::SetAnimationTrack(int Index, int Type, bool Conversion)
 {
 	if (m_AnimationTrack != nullptr) {
-		// 기존에 하던 애니메이션 초기화
+		float GetStartPosTime = 0.f;
+
+		switch (Type) {
+		case ANIMATION_TYPE_CONVERT:
+		{
+			// 애니메이션을 이어서 진행하기 위해 이전에 수행하던 Track의 StartPos Time을 가져옴 (ex. Idle 상태의 Shoot -> Run 상태의 Shoot)
+			if (Conversion) {
+				GetStartPosTime = m_AnimationTrack[m_CurrentAnimationTrackIndex].GetAnimationSet()->GetStartPosTime();
+			}
+		}
+		break;
+		}
+
+		// 이 함수의 호출 전에 진행되던 애니메이션 초기화
 		for (int i = 0; i < m_AnimationCount; ++i) {
 			m_AnimationTrack[i].SetActive(false);
 			m_AnimationTrack[i].GetAnimationSet()->InitAnimationSet();
 		}
-		// 재설정
+		// 새로 진행하는 애니메이션 트랙을 활성화
 		m_AnimationTrack[Index].SetActive(true);
 		m_AnimationTrack[Index].GetAnimationSet()->SetType(Type);
+
+		// 애니메이션 전환을 할 수 있도록 활성화 및 이전 트랙의 StartPosTime을 전달
+		if (Conversion) {
+			m_AnimationTrack[Index].GetAnimationSet()->SetStartPosTime(GetStartPosTime);
+		}
+		// 활성화된 애니메이션 트랙의 인덱스를 저장
+		m_CurrentAnimationTrackIndex = Index;
 	}
-	m_CurrentAnimationTrackIndex = Index;
 }
 
 void AnimationController::UpdateAnimationPos(float ElapsedTime)
@@ -157,6 +188,7 @@ void AnimationController::UpdateAnimationPos(float ElapsedTime)
 		m_NextAnimationTrackIndex = -1;
 		SetAnimationTrack(m_CurrentAnimationTrackIndex, ANIMATION_TYPE_LOOP);
 	}
+
 	// 2. 현재 활성화된 애니메이션 트랙의 애니메이션 수행
 	if (m_AnimationTrack != nullptr) {
 		if (m_AnimationTrack[m_CurrentAnimationTrackIndex].GetActive() == true) {
@@ -168,10 +200,11 @@ void AnimationController::UpdateAnimationPos(float ElapsedTime)
 			for (int i = 0; i < m_BoneFrameCount; ++i) {
 				m_BoneFrame[i]->SetTransformPos(UsingAniSet->GetSRT(i, PositionTime));
 			}
-			// 3. 애니메이션 트랙의 변경 명령이 있으면 다음 프레임에 바꾸기 위해 값을 설정
+			// 3. 애니메이션 트랙의 변경 명령이 있으면 다음 프레임에 바꾸기 위해 값을 설정 (Once or Convert Type의 애니메이션이 종료)
 			if (UsingAniSet->GetChangeAnimationTrack() == true) {
 				m_NextAnimationTrackIndex = P_IDLE;
 				UsingAniSet->InitAnimationSet();
+				m_ChangeState = true;
 			}
 		}
 	}
