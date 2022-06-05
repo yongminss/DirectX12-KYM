@@ -64,7 +64,7 @@ void Camera::Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, P
 
 	// 2. 플레이어의 회전 정보를 가져오고 카메라 회전 행렬에 대입
 	DirectX::XMFLOAT3 Right{}, Up{}, Look{};
-	Right = Target->GetRight(), Up = Target->GetUp(), Look = Target->GetLook();
+	Right = Target->GetCameraRight(), Up = Target->GetCameraUp(), Look = Target->GetCameraLook();
 	CameraRotate._11 = Right.x, CameraRotate._12 = Right.y, CameraRotate._13 = Right.z;
 	CameraRotate._21 = Up.x, CameraRotate._22 = Up.y, CameraRotate._23 = Up.z;
 	CameraRotate._31 = Look.x, CameraRotate._32 = Look.y, CameraRotate._33 = Look.z;
@@ -75,7 +75,7 @@ void Camera::Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, P
 
 	// 4. 플레이어의 위치와 회전한 오프셋 벡터를 더해서 회전한 카메라의 위치를 구함
 	DirectX::XMFLOAT3 Position{};
-	DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&Target->GetPosition()), DirectX::XMLoadFloat3(&Offset)));
+	DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&Target->GetCameraPosition()), DirectX::XMLoadFloat3(&Offset)));
 
 	// 5. 현재 카메라의 위치에서 회전한 카메라의 위치까지의 방향과 거리를 나타내는 벡터를 구함
 	DirectX::XMFLOAT3 Direction{};
@@ -98,7 +98,7 @@ void Camera::Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, P
 
 		// 8. 플레이어 회전 정보에 따라 카메라의 회전 정보도 변경
 		DirectX::XMFLOAT4X4 RotateInfo{};
-		DirectX::XMStoreFloat4x4(&RotateInfo, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Target->GetPosition()), DirectX::XMLoadFloat3(&Target->GetUp())));
+		DirectX::XMStoreFloat4x4(&RotateInfo, DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&m_Position), DirectX::XMLoadFloat3(&Target->GetCameraPosition()), DirectX::XMLoadFloat3(&Target->GetCameraUp())));
 
 		m_Right = DirectX::XMFLOAT3(RotateInfo._11, RotateInfo._21, RotateInfo._31);
 		m_Up = DirectX::XMFLOAT3(RotateInfo._12, RotateInfo._22, RotateInfo._32);

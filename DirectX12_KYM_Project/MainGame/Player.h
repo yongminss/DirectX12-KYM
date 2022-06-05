@@ -22,8 +22,10 @@ private:
 
 	float m_RollDistance = 0.f;
 
-	DirectX::XMFLOAT4X4 m_PreviousCameraTransformPos{};
-	float m_Pitch = 0.f;
+	DirectX::XMFLOAT3 m_CameraRight = DirectX::XMFLOAT3(1.f, 0.f, 0.f);
+	DirectX::XMFLOAT3 m_CameraUp = DirectX::XMFLOAT3(0.f, 1.f, 0.f);
+	DirectX::XMFLOAT3 m_CameraLook = DirectX::XMFLOAT3(0.f, 0.f, 1.f);
+	DirectX::XMFLOAT3 m_CameraPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
 
 	float m_ElapsedTime = 0.f;
 
@@ -37,15 +39,10 @@ public:
 	void ActiveReload() { m_State = STATE_RELOAD; }
 	void ActiveRoll() { m_State = STATE_ROLL; }
 
-	DirectX::XMFLOAT3 GetCameraRight() { return DirectX::XMFLOAT3(m_PreviousCameraTransformPos._11, m_PreviousCameraTransformPos._12, m_PreviousCameraTransformPos._13); }
-	DirectX::XMFLOAT3 GetCameraUp() { return DirectX::XMFLOAT3(m_PreviousCameraTransformPos._21, m_PreviousCameraTransformPos._22, m_PreviousCameraTransformPos._23); }
-	DirectX::XMFLOAT3 GetCameraLook() { return DirectX::XMFLOAT3(m_PreviousCameraTransformPos._31, m_PreviousCameraTransformPos._32, m_PreviousCameraTransformPos._33); }
-	DirectX::XMFLOAT3 GetCameraPosition() { return DirectX::XMFLOAT3(m_PreviousCameraTransformPos._41, m_PreviousCameraTransformPos._42, m_PreviousCameraTransformPos._43); }
-
-	DirectX::XMFLOAT3 GetCameraWorldRight();
-	DirectX::XMFLOAT3 GetCameraWorldUp();
-	DirectX::XMFLOAT3 GetCameraWorldLook();
-	DirectX::XMFLOAT3 GetCameraWorldPosition();
+	DirectX::XMFLOAT3 GetCameraRight() { return m_CameraRight; }
+	DirectX::XMFLOAT3 GetCameraUp() { return m_CameraUp; }
+	DirectX::XMFLOAT3 GetCameraLook() { return m_CameraLook; }
+	DirectX::XMFLOAT3 GetCameraPosition() { return m_CameraPosition; }
 
 	void Move(HWND Hwnd, POINT PreviousPos, float MapY);
 

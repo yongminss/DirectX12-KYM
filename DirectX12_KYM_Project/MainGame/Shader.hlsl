@@ -45,8 +45,8 @@ struct LIGHT
     float4 m_Specular;
     float4 m_Emissive;
     float3 m_Direction;
-    bool m_Active;
     int m_Type;
+    bool m_Active;
 };
 
 // 조명 계산에 사용되는 버퍼

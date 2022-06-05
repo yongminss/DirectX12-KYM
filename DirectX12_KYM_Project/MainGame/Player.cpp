@@ -8,7 +8,6 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
-	DirectX::XMStoreFloat4x4(&m_PreviousCameraTransformPos, DirectX::XMMatrixIdentity());
 
 	GameObject* Model = LoadBinaryFileModel(Device, CommandList, RootSignature, "Model/Player_Soldier.bin", nullptr, true);
 	SetChild(Model);
@@ -16,34 +15,11 @@ Player::Player(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	// Player 오브젝트가 바라보는 화면을 플레이어에게 보여줄 수 있게 Camera 생성
 	m_Camera = new Camera();
 	m_Camera->CreateCamera(Device, CommandList);
-
-	// 플레이어가 크기를 축소했으므로 카메라 좌표도 축소
-	m_PreviousCameraTransformPos = m_TransformPos;
 }
 
 Player::~Player()
 {
 	if (m_Camera != nullptr) delete m_Camera;
-}
-
-DirectX::XMFLOAT3 Player::GetCameraWorldRight()
-{
-	if (m_Camera != nullptr) return m_Camera->GetRight();
-}
-
-DirectX::XMFLOAT3 Player::GetCameraWorldUp()
-{
-	if (m_Camera != nullptr) return m_Camera->GetUp();
-}
-
-DirectX::XMFLOAT3 Player::GetCameraWorldLook()
-{
-	if (m_Camera != nullptr) return m_Camera->GetLook();
-}
-
-DirectX::XMFLOAT3 Player::GetCameraWorldPosition()
-{
-	if (m_Camera != nullptr) return m_Camera->GetPosition();
 }
 
 void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
@@ -58,29 +34,17 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		XAxisRotation = (MousePos.y - PreviousPos.y) / 10.f;
 		SetCursorPos(PreviousPos.x, PreviousPos.y);
 
-		// 마우스 입력이 있으면 플레이어와 카메라를 회전
-		if (YAxisRotation != 0.f || XAxisRotation != 0.f) {
-			// 카메라의 X축 회전을 위해 누적된 회전량을 저장 - 플레이어는 X축 회전을 하지 않음
-			m_Pitch += XAxisRotation;
+		// 마우스 입력이 있으면 플레이어와 카메라의 회전
+		if (0.f != YAxisRotation || 0.f != XAxisRotation) {
+			// 마우스가 x축으로 이동하면 플레이어의 y축을 회전
+			if (0.f != YAxisRotation) {
+				SetRotate(DirectX::XMFLOAT3(0.f, YAxisRotation, 0.f));
 
-			// 카메라의 뒤집힘 방지를 위해 최대 Pitch 값을 설정
-			if (m_Pitch >= 80.f || m_Pitch <= -50.f) {
-				m_Pitch -= XAxisRotation;
+				m_CameraRight = GetRight(), m_CameraUp = GetUp(), m_CameraLook = GetLook();
 			}
-			// X축 회전이 최대에 도달하지 않았으면 회전을 수행
-			else {
-				// 마우스에 입력된 회전량을 바탕으로 X or Y축 회전을 수행
-				if ((XAxisRotation > -0.2f || XAxisRotation < 0.2f) && (YAxisRotation > 0.5f || YAxisRotation < -0.5f)) {
-					// 마우스의 위아래 움직임이 적고 좌우의 움직임이 크다면 플레이어를 Y축 회전
-					SetRotate(DirectX::XMFLOAT3(0.f, YAxisRotation, 0.f));
-					m_PreviousCameraTransformPos = m_TransformPos;
-					m_Pitch = 0.f;
-				}
-				else {
-					// 플레이어는 그대로, 카메라만 X축 회전
-					DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(XAxisRotation), DirectX::XMConvertToRadians(0.f), DirectX::XMConvertToRadians(0.f));
-					DirectX::XMStoreFloat4x4(&m_PreviousCameraTransformPos, DirectX::XMMatrixMultiply(Rotate, DirectX::XMLoadFloat4x4(&m_PreviousCameraTransformPos)));
-				}
+			// 마우스가 y축으로 이동하면 카메라의 x축을 회전
+			if (0.f != XAxisRotation) {
+				m_CameraLook.y -= XAxisRotation / 10.f;
 			}
 		}
 	}
@@ -108,8 +72,6 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		DirectX::XMFLOAT3 Position{};
 		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), RollSpeed)));
 		m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y, m_TransformPos._43 = Position.z;
-
-		m_PreviousCameraTransformPos._41 = m_TransformPos._41, m_PreviousCameraTransformPos._42 = m_TransformPos._42, m_PreviousCameraTransformPos._43 = m_TransformPos._43;
 
 		m_RollDistance += RollSpeed;
 
@@ -309,6 +271,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		break;
 		}
 	}
+	// 플레이어와 카메라의 위치를 동기화
+	m_CameraPosition = GetPosition();
 }
 
 void Player::Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY)
