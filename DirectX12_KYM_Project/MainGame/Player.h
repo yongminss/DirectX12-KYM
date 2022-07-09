@@ -22,6 +22,8 @@ private:
 
 	float m_RollDistance = 0.f;
 
+	float m_Pitch = 0.f;
+
 	DirectX::XMFLOAT3 m_CameraRight = DirectX::XMFLOAT3(1.f, 0.f, 0.f);
 	DirectX::XMFLOAT3 m_CameraUp = DirectX::XMFLOAT3(0.f, 1.f, 0.f);
 	DirectX::XMFLOAT3 m_CameraLook = DirectX::XMFLOAT3(0.f, 0.f, 1.f);
@@ -38,6 +40,8 @@ public:
 	void ActiveShoot() { m_State = STATE_SHOOT; }
 	void ActiveReload() { m_State = STATE_RELOAD; }
 	void ActiveRoll() { m_State = STATE_ROLL; }
+
+	Camera* GetCamera() { return m_Camera; }
 
 	DirectX::XMFLOAT3 GetCameraRight() { return m_CameraRight; }
 	DirectX::XMFLOAT3 GetCameraUp() { return m_CameraUp; }

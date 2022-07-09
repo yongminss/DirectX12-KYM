@@ -50,6 +50,7 @@ private:
 	Skybox *m_Skybox = nullptr;
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
+	UserInterface *m_Aim = nullptr;
 	Billboard *m_Grass = nullptr;
 	Billboard *m_Tree = nullptr;
 	Effect *m_Signal = nullptr;

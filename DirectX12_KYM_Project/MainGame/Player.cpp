@@ -34,18 +34,52 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		XAxisRotation = (MousePos.y - PreviousPos.y) / 10.f;
 		SetCursorPos(PreviousPos.x, PreviousPos.y);
 
+		if (0.f != XAxisRotation) {
+			m_Pitch += XAxisRotation;
+
+			if (30.f < m_Pitch) { XAxisRotation = 0.f, m_Pitch = 30.f; }
+			if (-20.f > m_Pitch) { XAxisRotation = 0.f, m_Pitch = -20.f; }
+		}
+
 		// 마우스 입력이 있으면 플레이어와 카메라의 회전
 		if (0.f != YAxisRotation || 0.f != XAxisRotation) {
 			// 마우스가 x축으로 이동하면 플레이어의 y축을 회전
 			if (0.f != YAxisRotation) {
-				SetRotate(DirectX::XMFLOAT3(0.f, YAxisRotation, 0.f));
+				DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationAxis(DirectX::XMLoadFloat3(&GetUp()), DirectX::XMConvertToRadians(YAxisRotation));
 
-				m_CameraRight = GetRight(), m_CameraUp = GetUp(), m_CameraLook = GetLook();
+				DirectX::XMFLOAT3 Look{};
+				DirectX::XMStoreFloat3(&Look, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&GetLook()), Rotate));
+				SetLook(Look);
+
+				DirectX::XMFLOAT3 Right{};
+				DirectX::XMStoreFloat3(&Right, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&GetRight()), Rotate));
+				SetRight(Right);
 			}
-			// 마우스가 y축으로 이동하면 카메라의 x축을 회전
+
+			// 플레이어의 회전이 수행됐으므로 카메라의 회전 수행
+			if (0.f != YAxisRotation) {
+				DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationAxis(DirectX::XMLoadFloat3(&GetUp()), DirectX::XMConvertToRadians(YAxisRotation));
+
+				DirectX::XMStoreFloat3(&m_CameraLook, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&m_CameraLook), Rotate));
+
+				DirectX::XMStoreFloat3(&m_CameraRight, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&m_CameraRight), Rotate));
+
+				DirectX::XMStoreFloat3(&m_CameraUp, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&m_CameraUp), Rotate));
+			}
+
 			if (0.f != XAxisRotation) {
-				m_CameraLook.y -= XAxisRotation / 10.f;
+				DirectX::XMMATRIX Rotate = DirectX::XMMatrixRotationAxis(DirectX::XMLoadFloat3(&m_CameraRight), DirectX::XMConvertToRadians(XAxisRotation));
+
+				DirectX::XMStoreFloat3(&m_CameraLook, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&m_CameraLook), Rotate));
+
+				DirectX::XMStoreFloat3(&m_CameraUp, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&m_CameraUp), Rotate));
 			}
+
+			DirectX::XMStoreFloat3(&m_CameraLook, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_CameraLook)));
+
+			DirectX::XMStoreFloat3(&m_CameraRight, DirectX::XMVector3Normalize(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&m_CameraUp), DirectX::XMLoadFloat3(&m_CameraLook))));
+
+			DirectX::XMStoreFloat3(&m_CameraUp, DirectX::XMVector3Normalize(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&m_CameraLook), DirectX::XMLoadFloat3(&m_CameraRight))));
 		}
 	}
 	// Height Map의 높이에 따라 플레이어의 Y좌표를 변경
@@ -271,8 +305,6 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		break;
 		}
 	}
-	// 플레이어와 카메라의 위치를 동기화
-	m_CameraPosition = GetPosition();
 }
 
 void Player::Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY)

@@ -26,6 +26,13 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	}
 	break;
 
+	case T_AIM:
+	{
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.06f, 0.08f, 0.f), 0);
+		SetMesh(UsingMesh);
+	}
+	break;
+
 	default:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.5f, 0.5f, 0.f), 0);

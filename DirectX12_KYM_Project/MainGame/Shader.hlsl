@@ -196,11 +196,11 @@ void BillboardGS(point InstancingTextureVS_Output Input[1], inout TriangleStream
     // 객체의 종류에 따라 크기를 설정
     switch (Input[0].kind)
     {
-        case 4: // Grass
+        case 5: // Grass
             Width = 50.f, Height = 10.f;
             break;
         
-        case 5: // Tree
+        case 6: // Tree
             Width = 75.f, Height = 100.f;
             break;
     }

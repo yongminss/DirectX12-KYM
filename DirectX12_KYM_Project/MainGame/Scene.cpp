@@ -9,6 +9,7 @@
 #include "Effect.h"
 #include "Monster.h"
 #include "InstancingModel.h"
+#include "Camera.h"
 
 #include "Material.h"
 #include "Texture.h"
@@ -244,6 +245,9 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, T_HPGAUGE);
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
 
+	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
+	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
 	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
 	m_Grass = new Billboard();
 	m_Grass->CreateShader(Device, m_RootSignature);
@@ -373,6 +377,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
+	if (m_Aim != nullptr) m_Aim->Render(CommandList);
 
 	for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
 	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
@@ -470,9 +475,10 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 			m_Player->ActiveShoot();
 
 			// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
+			Camera* GetCamera = m_Player->GetCamera();
 			DirectX::XMFLOAT3 StartPosition = m_Player->GetPosition();
 			DirectX::XMFLOAT3 EndPosition{};
-			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&m_Player->GetLook())));
+			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&GetCamera->GetLook())));
 
 			int MonsterType = -1;
 			int CollisionMonsterIndex = 0;
