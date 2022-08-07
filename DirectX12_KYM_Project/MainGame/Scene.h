@@ -54,6 +54,7 @@ private:
 	Billboard *m_Grass = nullptr;
 	Billboard *m_Tree = nullptr;
 	Effect *m_Signal = nullptr;
+	Effect *m_Spark = nullptr;
 	std::vector<Monster*> m_WeakOrcs{};
 	std::vector<Monster*> m_StrongOrcs{};
 	std::vector<Monster*> m_ShamanOrcs{};

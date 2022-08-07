@@ -61,7 +61,8 @@ enum TEXTURE_KIND
 	T_GRASS,
 	T_TREE,
 	// 7 ~ - In Game Effect
-	T_SIGNAL
+	T_SIGNAL,
+	T_SPARK
 };
 
 // Monster Kinds

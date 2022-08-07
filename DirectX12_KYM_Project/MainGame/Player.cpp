@@ -27,7 +27,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	// 마우스 입력으로 플레이어의 방향을 전환
 	POINT MousePos{};
 	float YAxisRotation = 0.f, XAxisRotation = 0.f;
-
+	
 	if (GetCapture() == Hwnd) {
 		GetCursorPos(&MousePos);
 		YAxisRotation = (MousePos.x - PreviousPos.x) / 10.f;
@@ -95,6 +95,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	if (true == GetChangeState()) {
 		SetChangeState(false), m_State = STATE_NONE;
 	}
+
+	if (m_Hp <= 0) m_State = STATE_DEATH;
 
 	// 키보드 or 마우스 명령에 따라 플레이어가 수행할 애니메이션을 결정
 	switch (m_State) {
@@ -304,6 +306,25 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		}
 		break;
 		}
+	}
+
+	// 플레이어의 행동 외 설정 (ex. 피격 or 사망 등) - 추가적인 처리 필요
+	switch (m_State) {
+	case STATE_DAMAGED:
+	{
+		if (P_DAMAGED != GetCurrentAnimationTrackIndex() && m_CheckDamagedTime < 0.99f) {
+			if (0.f == m_CheckDamagedTime) m_Hp -= 5;
+			SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
+			m_CheckDamagedTime += m_ElapsedTime;
+		}
+	}
+	break;
+
+	case STATE_DEATH:
+	{
+		SetAnimationTrack(P_DEATH, ANIMATION_TYPE_LOOP);
+	}
+	break;
 	}
 }
 

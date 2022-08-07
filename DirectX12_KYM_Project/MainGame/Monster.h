@@ -17,6 +17,7 @@ private:
 	float m_HitTime = 0.f;
 
 	bool m_ActiveDamaged = false;
+	bool m_SuccessAttack = false;
 	bool m_Death = false;
 	
 	float m_AnimateTime = 0.f;
@@ -29,6 +30,9 @@ public:
 
 	void SetState(int State) { m_State = State; }
 	void ActiveDamaged() { m_ActiveDamaged = true; }
+	void SetSuccessAttack(bool SuccessAttack) { m_SuccessAttack = SuccessAttack; }
+
+	bool GetSuccessAttack() { return m_SuccessAttack; }
 
 	void MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Effect* Signal);
 	void Animate(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Terrain* GetTerrain, Effect* Signal);

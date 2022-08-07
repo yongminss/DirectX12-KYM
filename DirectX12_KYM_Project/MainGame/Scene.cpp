@@ -49,6 +49,7 @@ Scene::~Scene()
 	if (m_Tree != nullptr) delete m_Tree;
 
 	if (m_Signal != nullptr) delete m_Signal;
+	if (m_Spark != nullptr) delete m_Spark;
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -243,7 +244,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
 
 	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, T_HPGAUGE);
-	m_HpGauge->SetPosition(DirectX::XMFLOAT3(-0.51f, 0.9f, 0.f));
+	m_HpGauge->SetPosition(DirectX::XMFLOAT3(0.f, 0.9f, 0.f));
 
 	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
 	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
@@ -258,6 +259,8 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Tree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_TREE, 500);
 
 	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
+
+	m_Spark = new Effect(Device, CommandList, m_RootSignature, T_SPARK);
 
 	// 게임 월드에 등장하는 Game Objects 생성
 	int MonsterCount = 20;
@@ -333,34 +336,47 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 		m_Player->UpdateTransform(nullptr);
 	}
 
+	bool PlayerHit = false;
+
 	for (int i = 0; i < m_WeakOrcs.size(); ++i)
 		if (m_WeakOrcs[i] != nullptr) {
 			m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
 			m_WeakOrcs[i]->UpdateTransform(nullptr);
+
+			if (false == PlayerHit) PlayerHit = m_WeakOrcs[i]->GetSuccessAttack(), m_WeakOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_StrongOrcs.size(); ++i)
 		if (m_StrongOrcs[i] != nullptr) {
 			m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
 			m_StrongOrcs[i]->UpdateTransform(nullptr);
+
+			if (false == PlayerHit) PlayerHit = m_StrongOrcs[i]->GetSuccessAttack(), m_StrongOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_ShamanOrcs.size(); ++i)
 		if (m_ShamanOrcs[i] != nullptr) {
 			m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
 			m_ShamanOrcs[i]->UpdateTransform(nullptr);
+
+			if (false == PlayerHit) PlayerHit = m_ShamanOrcs[i]->GetSuccessAttack(), m_ShamanOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
 		if (m_WolfRiderOrcs[i] != nullptr) {
 			m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
 			m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
+
+			if (false == PlayerHit) PlayerHit = m_WolfRiderOrcs[i]->GetSuccessAttack(), m_WolfRiderOrcs[i]->SetSuccessAttack(false);
 		}
 
+	if (true == PlayerHit) m_Player->ActiveDamaged();
+
 	if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
+	if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
 
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
-	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime);
+	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -388,6 +404,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_Tree != nullptr) m_Tree->Render(CommandList);
 
 	if (m_Signal != nullptr) m_Signal->Render(CommandList);
+	if (m_Spark != nullptr) m_Spark->Render(CommandList);
 
 	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
 	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -470,9 +487,22 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		SetCursor(NULL);
 		GetCursorPos(&m_PreviousPos);
 
-		// 마우스 왼쪽 버튼을 클릭했을 때, 몬스터와 충돌 여부를 확인
+		// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
 		if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL) { // 구르기 도중에는 공격할 수 없음
 			m_Player->ActiveShoot();
+
+			// 총구 불꽃 활성화
+			GameObject* PlayerWeapon = m_Player->GetFrame(25);
+
+			// Weapon의 모델 좌표를 저장
+			DirectX::XMFLOAT4X4 WeaponPos = PlayerWeapon->GetTransformPos();
+
+			// 플레이어의 현재 위치 정보를 통해 Weapon의 월드 좌표를 구함
+			DirectX::XMFLOAT4X4 WeaponWorldPos{};
+			DirectX::XMStoreFloat4x4(&WeaponWorldPos, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&WeaponPos), DirectX::XMLoadFloat4x4(&m_Player->GetWorldPos())));
+
+			// Weapon의 월드 좌표를 넘겨줌
+			m_Spark->ActiveEffect(WeaponWorldPos);
 
 			// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
 			Camera* GetCamera = m_Player->GetCamera();

@@ -93,6 +93,7 @@ public:
 
 	void SetAnimationTrack(int Index, int Type, bool Conversion = false);
 
+	GameObject* GetBoneFrame(int Index) { return m_BoneFrame[Index]; }
 	int GetAnimationCount() { return m_AnimationCount; }
 	AnimationSet* GetAnimationSet(int Index) { return &m_AnimationSet[Index]; }
 	int GetBoneFrameCount() { return m_BoneFrameCount; }

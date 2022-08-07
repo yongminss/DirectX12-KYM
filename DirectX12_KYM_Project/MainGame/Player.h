@@ -6,6 +6,8 @@
 #define STATE_SHOOT 1
 #define STATE_RELOAD 2
 #define STATE_ROLL 3
+#define STATE_DAMAGED 4
+#define STATE_DEATH 5
 
 class Camera;
 
@@ -15,14 +17,16 @@ class Player : public GameObject
 private:
 	Camera *m_Camera = nullptr;
 
-	float m_Speed = 0.f;
 	bool m_ActiveMove[4]{};
+	float m_Speed = 0.f;
+	float m_RollDistance = 0.f;
+	float m_CheckDamagedTime = 0.f;
 
 	int m_State = STATE_NONE;
 
-	float m_RollDistance = 0.f;
-
 	float m_Pitch = 0.f;
+
+	int m_Hp = 100;
 
 	DirectX::XMFLOAT3 m_CameraRight = DirectX::XMFLOAT3(1.f, 0.f, 0.f);
 	DirectX::XMFLOAT3 m_CameraUp = DirectX::XMFLOAT3(0.f, 1.f, 0.f);
@@ -40,6 +44,7 @@ public:
 	void ActiveShoot() { m_State = STATE_SHOOT; }
 	void ActiveReload() { m_State = STATE_RELOAD; }
 	void ActiveRoll() { m_State = STATE_ROLL; }
+	void ActiveDamaged() { m_State = STATE_DAMAGED, m_CheckDamagedTime = 0.f; }
 
 	Camera* GetCamera() { return m_Camera; }
 
@@ -47,6 +52,8 @@ public:
 	DirectX::XMFLOAT3 GetCameraUp() { return m_CameraUp; }
 	DirectX::XMFLOAT3 GetCameraLook() { return m_CameraLook; }
 	DirectX::XMFLOAT3 GetCameraPosition() { return m_CameraPosition; }
+
+	int GetHp() { return m_Hp; }
 
 	void Move(HWND Hwnd, POINT PreviousPos, float MapY);
 

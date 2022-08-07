@@ -355,6 +355,14 @@ GameObject* GameObject::FindFrame(char* FrameName)
 	return nullptr;
 }
 
+GameObject* GameObject::GetFrame(int Index)
+{
+	if (m_AnimationController != nullptr) return m_AnimationController->GetBoneFrame(Index);
+
+	if (m_Sibling != nullptr) return m_Sibling->GetFrame(Index);
+	if (m_Child != nullptr) return m_Child->GetFrame(Index);
+}
+
 Texture* GameObject::FindDuplicatedTexture(char* TextureName)
 {
 	// 찾아야 하는 TextureName과 현재 프레임이 가지고 있는 TextureName을 비교

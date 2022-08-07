@@ -82,7 +82,7 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 
 			// State 값에 따라 몬스터의 행동 설정 - 0 (플레이어 인식), 1 (플레이어 추격), 2 (플레이어 공격) 3 (몬스터 사망)
 			switch (m_State) {
-			case 0:
+			case 0: // Ready State
 			{
 				// 1. 플레이어의 월드 좌표에서 몬스터의 월드 좌표를 뺄셈하여 몬스터의 방향 벡터를 계산
 				DirectX::XMFLOAT3 NewLook{};
@@ -111,7 +111,7 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 			}
 			break;
 
-			case 1:
+			case 1: // Tracking State
 			{
 				// 공격 범위보다 플레이어의 거리가 멀 경우, 플레이어를 추격
 				if ((60.f * 60.f) <= (Distance * Distance)) {
@@ -138,7 +138,7 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 			}
 			break;
 
-			case 2:
+			case 2: // Attack State
 			{
 				if (GetCurrentAnimationTrackIndex() != M_ATTACK_A) SetAnimationTrack(M_ATTACK_A, ANIMATION_TYPE_ONCE);
 
@@ -149,6 +149,9 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 				case 0:
 				case 1:
 				{
+					// 무기를 휘둘렀을 때, 플레이어가 범위 내에 있으면 공격 성공처리
+					if (false == m_SuccessAttack && m_AnimateTime > 0.3f && (60.f * 60.f) > (Distance * Distance)) m_SuccessAttack = true;
+
 					// Weak & Strong : A (1.0), B (1.0)
 					if (m_AnimateTime >= 0.999f) m_AnimateTime = 0.f, m_State = 1;
 				}
@@ -157,14 +160,20 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 				default:
 				{
 					// Shaman : 1.33, WolfRider : A (1.3334), B (1.3334)
-					if (m_AnimateTime >= 1.333f) m_AnimateTime = 0.f, m_State = 1;
+					if (m_AnimateTime >= 1.329f) m_AnimateTime = 0.f, m_State = 1;
+
+					// 무기를 휘둘렀을 때, 플레이어가 범위 내에 있으면 공격 성공처리
+					if (false == m_SuccessAttack && m_AnimateTime > 0.3f && (60.f * 60.f) > (Distance * Distance)) m_SuccessAttack = true;
+
+					// Shaman : 1.33, WolfRider : A (1.3334), B (1.3334)
+					if (m_AnimateTime >= 1.3333) m_AnimateTime = 0.f, m_State = 1;
 				}
 				break;
 				}
 			}
 			break;
 
-			case 3:
+			case 3: // Death State
 			{
 				if (GetCurrentAnimationTrackIndex() != M_DEATH_A) SetAnimationTrack(M_DEATH_A, ANIMATION_TYPE_ONCE);
 
@@ -175,21 +184,21 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 				case 1:
 				{
 					// Weak & Strong : A (1.83334), B (1.6667)
-					if (m_AnimateTime >= 1.833f) m_AnimateTime = 0.f, m_Death = true;
+					if (m_AnimateTime >= 1.799f) m_AnimateTime = 0.f, m_Death = true;
 				}
 				break;
 
 				case 2:
 				{
 					// Shaman : A (1.6667), B (1.6667)
-					if (m_AnimateTime >= 1.666f) m_AnimateTime = 0.f, m_Death = true;
+					if (m_AnimateTime >= 1.599f) m_AnimateTime = 0.f, m_Death = true;
 				}
 				break;
 
 				default:
 				{
 					// WolfRider : A (2.000001) B (2.0)
-					if (m_AnimateTime >= 1.999f) m_AnimateTime = 0.f, m_Death = true;
+					if (m_AnimateTime >= 1.949f) m_AnimateTime = 0.f, m_Death = true;
 				}
 				break;
 				}

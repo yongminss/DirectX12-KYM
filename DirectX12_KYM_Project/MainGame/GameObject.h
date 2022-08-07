@@ -60,6 +60,7 @@ public:
 	DirectX::XMFLOAT3 GetLook() { return DirectX::XMFLOAT3(m_TransformPos._31, m_TransformPos._32, m_TransformPos._33); }
 	DirectX::XMFLOAT3 GetPosition() { return DirectX::XMFLOAT3(m_TransformPos._41, m_TransformPos._42, m_TransformPos._43); }
 	DirectX::XMFLOAT4X4 GetWorldPos() { return m_WorldPos; }
+	DirectX::XMFLOAT4X4 GetTransformPos() { return m_TransformPos; }
 	char* GetFrameName() { return m_FrameName; }
 
 	float GetCollisionMeshDistance();
@@ -68,6 +69,7 @@ public:
 	bool GetChangeState();
 
 	GameObject* FindFrame(char* FrameName);
+	GameObject* GetFrame(int Index);
 	Texture* FindDuplicatedTexture(char* TextureName);
 
 	GameObject* CheckCollision(DirectX::XMFLOAT3 StartPos, DirectX::XMFLOAT3 EndPos);

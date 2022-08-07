@@ -19,6 +19,8 @@ protected:
 
 	D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
+	char m_MeshName[64]{};
+
 	float m_Distance = 0.f;
 	DirectX::BoundingBox m_BoundingBox{};
 
@@ -29,6 +31,7 @@ public:
 
 	void SetDistance(float Distance) { m_Distance = Distance; }
 
+	char* GetMeshName() { return m_MeshName; }
 	float GetDistance() { return m_Distance; }
 	DirectX::BoundingBox GetBoundingBox() { return m_BoundingBox; }
 
@@ -88,8 +91,6 @@ protected:
 	ID3D12Resource *m_BiTangentBuffer = nullptr;
 	ID3D12Resource *m_UploadBiTangentBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_BiTangentBufferView{};
-
-	char m_MeshName[64]{};
 
 	DirectX::XMFLOAT3 m_AabbCenter{};
 	DirectX::XMFLOAT3 m_AAbbExtent{};

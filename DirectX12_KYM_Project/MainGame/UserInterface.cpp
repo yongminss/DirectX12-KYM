@@ -10,6 +10,8 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
 
+	m_Kind = Kind;
+
 	switch (Kind)
 	{
 	case T_HPBAR:
@@ -21,7 +23,7 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 
 	case T_HPGAUGE:
 	{
-		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.4f, 0.06f, 0.f), 0);
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.41f, 0.06f, 0.f), 0);
 		SetMesh(UsingMesh);
 	}
 	break;
@@ -50,16 +52,16 @@ UserInterface::~UserInterface()
 
 }
 
-void UserInterface::Animate(float ElapsedTime)
+void UserInterface::Animate(float ElapsedTime, int Hp)
 {
-	float NextFrameBarxSize = m_TransformPos._11 - (0.5f * ElapsedTime);
-	float BarxPosition = m_TransformPos._41 - (0.199f * ElapsedTime);
-
-	m_TransformPos._11 = NextFrameBarxSize;
-	m_TransformPos._41 = BarxPosition;
-
-	// 체력 게이지가 0이 됐으면 초기화
-	if (NextFrameBarxSize < 0.f) m_TransformPos._11 = 1.f, m_TransformPos._41 = -0.51f;
+	switch (m_Kind) {
+	case T_HPGAUGE:
+	{
+		// 플레이어의 체력에 비례하여 게이지를 설정
+		m_TransformPos._11 = (float)Hp / 100.f, m_TransformPos._41 = ((float)(Hp - 100)) / 240.f - 0.5f;
+	}
+	break;
+	}
 
 	UpdateTransform(nullptr);
 }

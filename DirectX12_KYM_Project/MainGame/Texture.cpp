@@ -159,6 +159,13 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
+		case T_SPARK: // Spark
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Spark.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
 		default:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, TextureName, 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
