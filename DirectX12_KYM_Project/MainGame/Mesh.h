@@ -47,7 +47,7 @@ class TextureMesh : public Mesh
 {
 public:
 	TextureMesh();
-	TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind);
+	TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind, int NumbersIndex = 0);
 	~TextureMesh();
 };
 

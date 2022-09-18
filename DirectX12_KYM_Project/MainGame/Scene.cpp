@@ -249,6 +249,17 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
 	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
+	int NumbersCount = 14;
+
+	m_Numbers.reserve(NumbersCount);
+
+	for (int i = 0; i < NumbersCount; ++i) {
+		float x = 0.85f, y = -0.85f;
+		if (i > 9) x = 0.725f;
+		m_Numbers.emplace_back(new UserInterface(Device, CommandList, m_RootSignature, T_NUMBERS, i));
+		m_Numbers.back()->SetPosition(DirectX::XMFLOAT3(x, y, 0.f));
+	}
+
 	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
 	m_Grass = new Billboard();
 	m_Grass->CreateShader(Device, m_RootSignature);
@@ -340,36 +351,35 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 	for (int i = 0; i < m_WeakOrcs.size(); ++i)
 		if (m_WeakOrcs[i] != nullptr) {
-			m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 			m_WeakOrcs[i]->UpdateTransform(nullptr);
 
-			if (false == PlayerHit) PlayerHit = m_WeakOrcs[i]->GetSuccessAttack(), m_WeakOrcs[i]->SetSuccessAttack(false);
+			if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WeakOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_StrongOrcs.size(); ++i)
 		if (m_StrongOrcs[i] != nullptr) {
-			m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 			m_StrongOrcs[i]->UpdateTransform(nullptr);
 
-			if (false == PlayerHit) PlayerHit = m_StrongOrcs[i]->GetSuccessAttack(), m_StrongOrcs[i]->SetSuccessAttack(false);
+			if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_StrongOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_ShamanOrcs.size(); ++i)
 		if (m_ShamanOrcs[i] != nullptr) {
-			m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 			m_ShamanOrcs[i]->UpdateTransform(nullptr);
 
-			if (false == PlayerHit) PlayerHit = m_ShamanOrcs[i]->GetSuccessAttack(), m_ShamanOrcs[i]->SetSuccessAttack(false);
+			if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_ShamanOrcs[i]->SetSuccessAttack(false);
 		}
 
 	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
 		if (m_WolfRiderOrcs[i] != nullptr) {
-			m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetPosition(), m_Terrain, m_Signal);
+			m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 			m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
 
-			if (false == PlayerHit) PlayerHit = m_WolfRiderOrcs[i]->GetSuccessAttack(), m_WolfRiderOrcs[i]->SetSuccessAttack(false);
+			if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
 		}
-
 	if (true == PlayerHit) m_Player->ActiveDamaged();
 
 	if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
@@ -377,6 +387,13 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
+
+	m_BulletCountOne = m_BulletCount % 10;
+	m_BulletCountTen = m_BulletCount / 10 + 10;
+
+	for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(ElapsedTime, 0);
+	if (m_Numbers[m_BulletCountOne] != nullptr) m_Numbers[m_BulletCountOne]->Animate(ElapsedTime, 1);
+	if (m_Numbers[m_BulletCountTen] != nullptr) m_Numbers[m_BulletCountTen]->Animate(ElapsedTime, 1);
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
@@ -394,6 +411,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 	if (m_Aim != nullptr) m_Aim->Render(CommandList);
+	for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Render(CommandList);
 
 	for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
 	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
@@ -439,8 +457,12 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 
 		case 'r':
 		case 'R':
+			// Reload
+		{
+			m_BulletCount = 30;
 			m_Player->ActiveReload();
-			break;
+		}
+		break;
 
 		case VK_SHIFT:
 		{
@@ -488,7 +510,8 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 		GetCursorPos(&m_PreviousPos);
 
 		// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
-		if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL) { // 구르기 도중에는 공격할 수 없음
+		if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL && m_Player->GetCurrentAnimationTrackIndex() != P_RELOAD && m_BulletCount > 0) { // 구르기 도중에는 공격할 수 없음
+			--m_BulletCount;
 			m_Player->ActiveShoot();
 
 			// 총구 불꽃 활성화

@@ -34,7 +34,7 @@ public:
 
 	bool GetSuccessAttack() { return m_SuccessAttack; }
 
-	void MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Effect* Signal);
-	void Animate(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Terrain* GetTerrain, Effect* Signal);
+	void MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Effect* Signal);
+	void Animate(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Terrain* GetTerrain, Effect* Signal);
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);
 };

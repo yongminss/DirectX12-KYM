@@ -51,6 +51,7 @@ private:
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
 	UserInterface *m_Aim = nullptr;
+	std::vector<UserInterface*> m_Numbers{};
 	Billboard *m_Grass = nullptr;
 	Billboard *m_Tree = nullptr;
 	Effect *m_Signal = nullptr;
@@ -61,6 +62,10 @@ private:
 	std::vector<Monster*> m_WolfRiderOrcs{};
 
 	POINT m_PreviousPos{};
+
+	int m_BulletCountOne = 0;
+	int m_BulletCountTen = 3;
+	int m_BulletCount = 30;
 
 public:
 	Scene();

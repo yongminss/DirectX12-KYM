@@ -44,7 +44,7 @@ public:
 	void ActiveShoot() { m_State = STATE_SHOOT; }
 	void ActiveReload() { m_State = STATE_RELOAD; }
 	void ActiveRoll() { m_State = STATE_ROLL; }
-	void ActiveDamaged() { m_State = STATE_DAMAGED, m_CheckDamagedTime = 0.f; }
+	void ActiveDamaged() { m_State = STATE_DAMAGED; }
 
 	Camera* GetCamera() { return m_Camera; }
 

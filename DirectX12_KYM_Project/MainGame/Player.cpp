@@ -94,6 +94,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 
 	if (true == GetChangeState()) {
 		SetChangeState(false), m_State = STATE_NONE;
+		m_CheckDamagedTime = 0.f;
 	}
 
 	if (m_Hp <= 0) m_State = STATE_DEATH;
@@ -308,15 +309,17 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		}
 	}
 
-	// 플레이어의 행동 외 설정 (ex. 피격 or 사망 등) - 추가적인 처리 필요
+	// 플레이어의 키보드 명령 외 행동 수행 (ex. 몬스터의 공격 피격 or 사망 등)
 	switch (m_State) {
 	case STATE_DAMAGED:
 	{
-		if (P_DAMAGED != GetCurrentAnimationTrackIndex() && m_CheckDamagedTime < 0.99f) {
-			if (0.f == m_CheckDamagedTime) m_Hp -= 5;
+		if (P_DAMAGED != GetCurrentAnimationTrackIndex()) {
 			SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
-			m_CheckDamagedTime += m_ElapsedTime;
+			if (0.f == m_CheckDamagedTime) SetDamaged(0x02), m_Hp -= 5;
 		}
+		if (m_CheckDamagedTime > 0.15f) SetDamaged(0x00);
+
+		m_CheckDamagedTime += m_ElapsedTime;
 	}
 	break;
 

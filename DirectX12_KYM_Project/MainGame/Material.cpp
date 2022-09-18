@@ -82,6 +82,18 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
+	case T_NUMBERS: // Numbers
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
 	case T_SIGNAL: // Signal
 	{
 		EffectShader *UsingShader = new EffectShader();

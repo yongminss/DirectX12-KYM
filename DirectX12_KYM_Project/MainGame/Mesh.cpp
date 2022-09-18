@@ -135,7 +135,7 @@ TextureMesh::~TextureMesh()
 
 }
 
-TextureMesh::TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind)
+TextureMesh::TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind, int NumbersIndex)
 {
 	TextureVertex MeshVertex[6];
 
@@ -214,6 +214,30 @@ TextureMesh::TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* Comman
 		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 0.f));
 	}
 	break;
+
+	case 6: // UV 값을 다르게 설정할 텍스처에 사용 (ex. Numbers)
+	{
+		const float UvX = 0.25f, UvY = 0.32f;
+
+		if (NumbersIndex > 9) NumbersIndex -= 10;
+
+		float AddX = 0.f, AddY = 0.f;
+
+		AddX = UvX * (NumbersIndex % 4);
+
+		if (NumbersIndex >= 4 && NumbersIndex < 8) AddY = UvY * 1.f;
+		else if (NumbersIndex >= 8) AddY = UvY * 2.f;
+
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, 0.f + AddY));
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, UvY + AddY));
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, UvY + AddY));
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, UvY + AddY));
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, 0.f + AddY));
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, 0.f + AddY));
+	}
+	break;
+
 	}
 	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 

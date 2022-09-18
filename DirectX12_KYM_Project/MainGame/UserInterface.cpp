@@ -5,7 +5,7 @@
 #include "Material.h"
 
 
-UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind)
+UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind, int NumbersIndex)
 {
 	DirectX::XMStoreFloat4x4(&m_WorldPos, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_TransformPos, DirectX::XMMatrixIdentity());
@@ -31,6 +31,15 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	case T_AIM:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.06f, 0.08f, 0.f), 0);
+		SetMesh(UsingMesh);
+	}
+	break;
+
+	case T_NUMBERS:
+	{
+		m_Active = false;
+
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.075f, 0.1f, 0.f), 6, NumbersIndex);
 		SetMesh(UsingMesh);
 	}
 	break;
@@ -61,7 +70,18 @@ void UserInterface::Animate(float ElapsedTime, int Hp)
 		m_TransformPos._11 = (float)Hp / 100.f, m_TransformPos._41 = ((float)(Hp - 100)) / 240.f - 0.5f;
 	}
 	break;
+
+	case T_NUMBERS:
+	{
+		m_Active = Hp;
+	}
+	break;
 	}
 
 	UpdateTransform(nullptr);
+}
+
+void UserInterface::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	if (m_Active == true) GameObject::Render(CommandList);
 }

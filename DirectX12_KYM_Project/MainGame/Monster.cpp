@@ -15,8 +15,9 @@ Monster::~Monster()
 
 }
 
-void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Effect* Signal)
+void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Effect* Signal)
 {
+	DirectX::XMFLOAT3 TargetPosition = DirectX::XMFLOAT3(TargetTransformPos._41, TargetTransformPos._42, TargetTransformPos._43);
 	TargetPosition.y -= 25.f; // TargetPosition은 Root Frame이므로 플레이어 모델의 몸통을 기준으로 설정
 
 	// 몬스터와 플레이어의 거리에 따라 몬스터의 Animate && Render를 설정
@@ -140,7 +141,20 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 
 			case 2: // Attack State
 			{
-				if (GetCurrentAnimationTrackIndex() != M_ATTACK_A) SetAnimationTrack(M_ATTACK_A, ANIMATION_TYPE_ONCE);
+				if (GetCurrentAnimationTrackIndex() != M_ATTACK_A) {
+					if ((30.f * 30.f) <= (Distance * Distance)) {
+						DirectX::XMFLOAT3 NewLook{};
+						DirectX::XMStoreFloat3(&NewLook, DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&TargetPosition), DirectX::XMLoadFloat3(&GetPosition())));
+						DirectX::XMStoreFloat3(&NewLook, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&NewLook)));
+
+						DirectX::XMFLOAT3 NewRight{};
+						DirectX::XMStoreFloat3(&NewRight, DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&GetUp()), DirectX::XMLoadFloat3(&NewLook)));
+						DirectX::XMStoreFloat3(&NewRight, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&NewRight)));
+
+						SetRight(NewRight), SetLook(NewLook);
+					}
+					SetAnimationTrack(M_ATTACK_A, ANIMATION_TYPE_ONCE);
+				}
 
 				m_AnimateTime += ElapsedTime;
 
@@ -209,10 +223,10 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, 
 	}
 }
 
-void Monster::Animate(float ElapsedTime, DirectX::XMFLOAT3 TargetPosition, Terrain* GetTerrain, Effect* Signal)
+void Monster::Animate(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Terrain* GetTerrain, Effect* Signal)
 {
 	// 1. 명령에 따라 몬스터의 행동 결정
-	MoveToPlayer(ElapsedTime, TargetPosition, Signal);
+	MoveToPlayer(ElapsedTime, TargetTransformPos, Signal);
 
 	// 몬스터가 활성 상태일때만 Animate && Render
 	if (true == m_ActiveMonster) {
