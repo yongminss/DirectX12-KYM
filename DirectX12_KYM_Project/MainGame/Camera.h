@@ -38,6 +38,8 @@ public:
 
 	void CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
+	void SetOffset(DirectX::XMFLOAT3 Offset) { m_Offset = Offset; }
+
 	DirectX::XMFLOAT3 GetRight() { return m_Right; }
 	DirectX::XMFLOAT3 GetUp() { return m_Up; }
 	DirectX::XMFLOAT3 GetLook() { return m_Look; }

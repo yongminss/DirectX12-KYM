@@ -21,6 +21,7 @@ Billboard::~Billboard()
 	if (m_GeometryBlob != nullptr) m_GeometryBlob->Release();
 
 	if (m_Texture != nullptr) delete m_Texture;
+
 	if (m_ObjectsWorldPos != nullptr) delete[] m_ObjectsWorldPos;
 }
 
@@ -66,32 +67,39 @@ void Billboard::CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList*
 	m_ObjectsCount = ObjectsCount;
 	m_ObjectsWorldPos = new DirectX::XMFLOAT4X4[m_ObjectsCount];
 
+	int ObjectIndex = 0;
 	float ObjectX = 0.f, ObjectY = 0.f, ObjectZ = 0.f;
 
-	for (int i = 0; i < m_ObjectsCount; ++i) {
-		ObjectX = rand() % 5000, ObjectZ = rand() % 5000;
-		int GetHeightMapX = int(ObjectX) / MAP_SCALE, GetHeightMapZ = int(ObjectZ) / MAP_SCALE;
+	int ObjectsCountSquareRoot = sqrt(ObjectsCount);
+	
+	for (int z = 0; z < ObjectsCountSquareRoot; ++z) {
+		for (int x = 0; x < ObjectsCountSquareRoot; ++x) {
+			ObjectX = (200.f * x) + rand() % 50;
+			ObjectZ = (200.f * z) + rand() % 50;
 
-		switch (Kind)
-		{
-		case T_GRASS:
-		{
-			ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 2.5f;
-		}
-		break;
+			int GetHeightMapX = int(ObjectX) / MAP_SCALE, GetHeightMapZ = int(ObjectZ) / MAP_SCALE;
 
-		case T_TREE:
-		{
-			ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 100.f;
-		}
-		break;
-		}
+			switch (Kind)
+			{
+			case T_BILLBOARDGRASS:
+			{
+				ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 2.5f;
+			}
+			break;
 
-		m_ObjectsWorldPos[i] = DirectX::XMFLOAT4X4(
-			1.f, 0.f, 0.f, 0.f,
-			0.f, 1.f, 0.f, 0.f,
-			0.f, 0.f, 1.f, 0.f,
-			ObjectX, ObjectY, ObjectZ, 1.f);
+			case T_BILLBOARDTREE:
+			{
+				ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 80.f;
+			}
+			break;
+			}
+
+			m_ObjectsWorldPos[ObjectIndex++] = DirectX::XMFLOAT4X4(
+				1.f, 0.f, 0.f, 0.f,
+				0.f, 1.f, 0.f, 0.f,
+				0.f, 0.f, 1.f, 0.f,
+				ObjectX, ObjectY, ObjectZ, 1.f);
+		}
 	}
 
 	// Create Instance Buffer

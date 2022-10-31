@@ -11,6 +11,7 @@ class GameObject
 {
 protected:
 	Mesh *m_Mesh = nullptr;
+	Mesh **m_MultiMesh = nullptr;
 	Material *m_Material = nullptr;
 	AnimationController *m_AnimationController = nullptr;
 
@@ -19,6 +20,7 @@ protected:
 
 	char m_FrameName[64]{};
 
+	int m_Kind = 0;
 	int m_ShaderType = 0;
 
 	GameObject *m_Sibling = nullptr;
@@ -34,6 +36,7 @@ public:
 	void LoadAnimationInfo(FILE* File);
 
 	void SetMesh(Mesh* UsingMesh) { m_Mesh = UsingMesh; }
+	void SetMesh(int Index, Mesh* UsingMesh) { m_MultiMesh[Index] = UsingMesh; };
 	void SetMaterial(Material* UsingMaterial) { m_Material = UsingMaterial; }
 
 	void SetRight(DirectX::XMFLOAT3 Right);

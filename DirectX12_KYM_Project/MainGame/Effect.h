@@ -8,7 +8,6 @@ class Effect : public GameObject
 private:
 	bool m_Active = false;
 	float m_AnimateTime = 0.f;
-	int m_Kind = -1;
 
 	DirectX::XMFLOAT4X4 m_TargetTransformPos{};
 

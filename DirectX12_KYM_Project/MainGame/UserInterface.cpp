@@ -14,6 +14,20 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 
 	switch (Kind)
 	{
+	case T_TITLESCREEN:
+	{
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(1.f, 1.f, 0.f), 0);
+		SetMesh(UsingMesh);
+	}
+	break;
+
+	case T_SELECTION:
+	{
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.5f, 0.1f, 0.f), 0);
+		SetMesh(UsingMesh);
+	}
+	break;
+
 	case T_HPBAR:
 	{
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.42f, 0.061f, 0.f), 0);
@@ -40,6 +54,15 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 		m_Active = false;
 
 		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.075f, 0.1f, 0.f), 6, NumbersIndex);
+		SetMesh(UsingMesh);
+	}
+	break;
+
+	case T_GAMEOVER:
+	{
+		m_Active = false;
+
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(1.f, 1.f, 0.f), 0);
 		SetMesh(UsingMesh);
 	}
 	break;
@@ -74,6 +97,14 @@ void UserInterface::Animate(float ElapsedTime, int Hp)
 	case T_NUMBERS:
 	{
 		m_Active = Hp;
+	}
+	break;
+
+	case T_GAMEOVER:
+	{
+		m_GameOverTime += ElapsedTime;
+		int ScreenBrightness = 500 + int(m_GameOverTime * 100.f);
+		SetDamaged(ScreenBrightness);
 	}
 	break;
 	}

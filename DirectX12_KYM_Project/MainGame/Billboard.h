@@ -35,6 +35,8 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	D3D12_SHADER_BYTECODE CreateGeometryShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+	 
+	DirectX::XMFLOAT4X4 *GetObjectsWorldPos() { return m_ObjectsWorldPos; }
 
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };

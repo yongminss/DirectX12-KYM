@@ -61,9 +61,6 @@
     <Filter Include="소스 파일\04. GameObject\07. Child-Class\02. Terrain">
       <UniqueIdentifier>{a5f62b38-7b61-4d49-a8db-843ea937fb45}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\04. GameObject\07. Child-Class\03. Skybox">
-      <UniqueIdentifier>{331ecc9c-3a4c-416d-859a-ae7f9ebbdfa5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="소스 파일\04. GameObject\07. Child-Class\04. UserInterface">
       <UniqueIdentifier>{70daaf41-5874-46c3-b821-5f528fdd0720}</UniqueIdentifier>
     </Filter>
@@ -81,6 +78,9 @@
     </Filter>
     <Filter Include="소스 파일\04. GameObject\07. Child-Class\08. InstancingModel">
       <UniqueIdentifier>{20d61335-a25a-477e-aaaa-16bda28581cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\04. GameObject\07. Child-Class\03. MultipleTexture">
+      <UniqueIdentifier>{331ecc9c-3a4c-416d-859a-ae7f9ebbdfa5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -132,9 +132,6 @@
     <ClInclude Include="Terrain.h">
       <Filter>소스 파일\04. GameObject\07. Child-Class\02. Terrain</Filter>
     </ClInclude>
-    <ClInclude Include="Skybox.h">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\03. Skybox</Filter>
-    </ClInclude>
     <ClInclude Include="UserInterface.h">
       <Filter>소스 파일\04. GameObject\07. Child-Class\04. UserInterface</Filter>
     </ClInclude>
@@ -155,6 +152,9 @@
     </ClInclude>
     <ClInclude Include="Effect.h">
       <Filter>소스 파일\04. GameObject\07. Child-Class\06. Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="MultipleTexture.h">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\03. MultipleTexture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -197,9 +197,6 @@
     <ClCompile Include="Terrain.cpp">
       <Filter>소스 파일\04. GameObject\07. Child-Class\02. Terrain</Filter>
     </ClCompile>
-    <ClCompile Include="Skybox.cpp">
-      <Filter>소스 파일\04. GameObject\07. Child-Class\03. Skybox</Filter>
-    </ClCompile>
     <ClCompile Include="UserInterface.cpp">
       <Filter>소스 파일\04. GameObject\07. Child-Class\04. UserInterface</Filter>
     </ClCompile>
@@ -220,6 +217,9 @@
     </ClCompile>
     <ClCompile Include="Effect.cpp">
       <Filter>소스 파일\04. GameObject\07. Child-Class\06. Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="MultipleTexture.cpp">
+      <Filter>소스 파일\04. GameObject\07. Child-Class\03. MultipleTexture</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

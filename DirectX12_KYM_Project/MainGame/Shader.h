@@ -14,11 +14,13 @@ protected:
 	ID3DBlob *m_VertexBlob = nullptr;
 	ID3DBlob *m_PixelBlob = nullptr;
 
+	int m_Type = 0;
+
 public:
 	Shader();
 	~Shader();
 
-	void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature);
+	void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Type = 0);
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -39,17 +41,18 @@ public:
 	~UserInterfaceShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_BLEND_DESC CreateBlendState();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
 
-// Skybox에 사용할 Shader
-class SkyboxShader : public Shader
+// 여러 개의 텍스처에 사용할 Shader
+class MultipleTextureShader : public Shader
 {
 public:
-	SkyboxShader() { }
-	~SkyboxShader() { }
+	MultipleTextureShader() { }
+	~MultipleTextureShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();

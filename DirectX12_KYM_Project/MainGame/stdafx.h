@@ -51,17 +51,22 @@ static SIZE_T DescriptorHandleIncrementSize = 0;
 // Texture Kinds
 enum TEXTURE_KIND
 {
-	// 0 ~ 5 - UserInterface
+	// 0 ~ 1 - Geometry Shader Texture (ex. Billboard Texture)
+	T_BILLBOARDGRASS,
+	T_BILLBOARDTREE,
+	// 2 - Terrain Texture
 	T_TERRAIN,
-	T_SKYBOX,
+	// 3 ~ 9 - UserInterface Texture
+	T_TITLESCREEN,
+	T_SELECTION,
 	T_HPBAR,
 	T_HPGAUGE,
 	T_AIM,
 	T_NUMBERS,
-	// 6 ~ 7 - Billboard Texture
-	T_GRASS,
+	T_GAMEOVER,
+	// 10 ~ - Use World Position Texture
+	T_SKYBOX,
 	T_TREE,
-	// 8 ~ - In Game Effect
 	T_SIGNAL,
 	T_SPARK
 };

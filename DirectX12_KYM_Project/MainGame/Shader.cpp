@@ -9,14 +9,16 @@ Shader::Shader()
 
 Shader::~Shader()
 {
+	if (m_PipelineState != nullptr) m_PipelineState->Release();
+
 	if (m_VertexBlob != nullptr) m_VertexBlob->Release();
 	if (m_PixelBlob != nullptr) m_PixelBlob->Release();
-
-	if (m_PipelineState != nullptr) m_PipelineState->Release();
 }
 
-void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature)
+void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Type)
 {
+	m_Type = Type;
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipelineStateDesc;
 	ZeroMemory(&GraphicsPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	GraphicsPipelineStateDesc.pRootSignature = RootSignature;
@@ -154,6 +156,39 @@ D3D12_INPUT_LAYOUT_DESC UserInterfaceShader::CreateInputLayout()
 	return InputLayoutDesc;
 }
 
+D3D12_BLEND_DESC UserInterfaceShader::CreateBlendState()
+{
+	switch (m_Type) {
+	case 0:
+	{
+		return Shader::CreateBlendState();
+	}
+	break;
+
+	// Blending을 하는 UserInterface에서 사용
+	case 1:
+	{
+		D3D12_BLEND_DESC BlendDesc;
+		ZeroMemory(&BlendDesc, sizeof(D3D12_BLEND_DESC));
+		BlendDesc.AlphaToCoverageEnable = true; // 다중 샘플링을 위해 렌더타겟 0의 알파 값을 커버리지 매스크로 변환
+		BlendDesc.IndependentBlendEnable = false; // 각 렌더타겟에서 독립적인 블랜딩 - false이면 0번만 사용
+		BlendDesc.RenderTarget[0].BlendEnable = true; // 블렌딩 활성화
+		BlendDesc.RenderTarget[0].LogicOpEnable = false; // 논리 연산 활성화
+		BlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA; // 픽셀 색상에 곱하는 값 - 요소별 연산
+		BlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA; // 렌더타겟 색상에 곱하는 값
+		BlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD; // RGB 색상 블렌드 연산자
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // 블렌드 타겟에게 적용할 마스크
+
+		return BlendDesc;
+	}
+	break;
+	}
+}
+
 D3D12_SHADER_BYTECODE UserInterfaceShader::CreateVertexShader()
 {
 	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "UserInterfaceVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
@@ -167,7 +202,19 @@ D3D12_SHADER_BYTECODE UserInterfaceShader::CreateVertexShader()
 
 D3D12_SHADER_BYTECODE UserInterfaceShader::CreatePixelShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	switch (m_Type) {
+	case 0:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	}
+	break;
+
+	case 1:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "BlendTexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	}
+	break;
+	}
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
@@ -177,7 +224,7 @@ D3D12_SHADER_BYTECODE UserInterfaceShader::CreatePixelShader()
 }
 
 // --------------------
-D3D12_INPUT_LAYOUT_DESC SkyboxShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC MultipleTextureShader::CreateInputLayout()
 {
 	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -191,29 +238,41 @@ D3D12_INPUT_LAYOUT_DESC SkyboxShader::CreateInputLayout()
 	return InputLayoutDesc;
 }
 
-D3D12_DEPTH_STENCIL_DESC SkyboxShader::CreateDepthStencilState()
+D3D12_DEPTH_STENCIL_DESC MultipleTextureShader::CreateDepthStencilState()
 {
-	D3D12_DEPTH_STENCIL_DESC DepthStencilDesc;
-	ZeroMemory(&DepthStencilDesc, sizeof(D3D12_DEPTH_STENCIL_DESC));
-	DepthStencilDesc.DepthEnable = true;
-	DepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	DepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	DepthStencilDesc.StencilEnable = false;
-	DepthStencilDesc.StencilWriteMask = 0;
-	DepthStencilDesc.StencilReadMask = 0;
-	DepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
-	DepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	DepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
+	switch (m_Type) {
+	case T_SKYBOX:
+	{
+		D3D12_DEPTH_STENCIL_DESC DepthStencilDesc;
+		ZeroMemory(&DepthStencilDesc, sizeof(D3D12_DEPTH_STENCIL_DESC));
+		DepthStencilDesc.DepthEnable = true;
+		DepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		DepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		DepthStencilDesc.StencilEnable = false;
+		DepthStencilDesc.StencilWriteMask = 0;
+		DepthStencilDesc.StencilReadMask = 0;
+		DepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
+		DepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		DepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 
-	return DepthStencilDesc;
+		return DepthStencilDesc;
+	}
+	break;
+
+	default:
+	{
+		return Shader::CreateDepthStencilState();
+	}
+	break;
+	}
 }
 
-D3D12_SHADER_BYTECODE SkyboxShader::CreateVertexShader()
+D3D12_SHADER_BYTECODE MultipleTextureShader::CreateVertexShader()
 {
 	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
@@ -224,7 +283,7 @@ D3D12_SHADER_BYTECODE SkyboxShader::CreateVertexShader()
 	return ShaderByteCode;
 }
 
-D3D12_SHADER_BYTECODE SkyboxShader::CreatePixelShader()
+D3D12_SHADER_BYTECODE MultipleTextureShader::CreatePixelShader()
 {
 	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
 

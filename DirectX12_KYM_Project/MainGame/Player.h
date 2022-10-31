@@ -18,6 +18,7 @@ private:
 	Camera *m_Camera = nullptr;
 
 	bool m_ActiveMove[4]{};
+	bool m_CompletedReload = false;
 	float m_Speed = 0.f;
 	float m_RollDistance = 0.f;
 	float m_CheckDamagedTime = 0.f;
@@ -46,14 +47,17 @@ public:
 	void ActiveRoll() { m_State = STATE_ROLL; }
 	void ActiveDamaged() { m_State = STATE_DAMAGED; }
 
+	void SetCompletedReload(bool CompletedReload) { m_CompletedReload = CompletedReload; }
+
 	Camera* GetCamera() { return m_Camera; }
 
+	bool GetCompletedReload() { return m_CompletedReload; }
+	int GetHp() { return m_Hp; }
+	
 	DirectX::XMFLOAT3 GetCameraRight() { return m_CameraRight; }
 	DirectX::XMFLOAT3 GetCameraUp() { return m_CameraUp; }
 	DirectX::XMFLOAT3 GetCameraLook() { return m_CameraLook; }
 	DirectX::XMFLOAT3 GetCameraPosition() { return m_CameraPosition; }
-
-	int GetHp() { return m_Hp; }
 
 	void Move(HWND Hwnd, POINT PreviousPos, float MapY);
 

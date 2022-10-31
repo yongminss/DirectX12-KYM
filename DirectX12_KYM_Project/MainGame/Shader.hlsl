@@ -196,11 +196,11 @@ void BillboardGS(point InstancingTextureVS_Output Input[1], inout TriangleStream
     // 객체의 종류에 따라 크기를 설정
     switch (Input[0].kind)
     {
-        case 6: // Grass
+        case 0: // Grass
             Width = 50.f, Height = 10.f;
             break;
         
-        case 7: // Tree
+        case 1: // Tree
             Width = 75.f, Height = 100.f;
             break;
     }
@@ -239,6 +239,16 @@ float4 InstancingTexturePS(InstancingTextureGS_Output Input) : SV_TARGET
     float4 Color = Texture.Sample(Sampler, Input.uv);
     
     clip(Color.a - 0.1f);
+    
+    return Color;
+}
+
+float4 BlendTexturePS(TextureVS_Output Input) : SV_TARGET
+{
+    float4 Color = Texture.Sample(Sampler, Input.uv);
+    
+    // UserInterface는 GameObject Buffer의 Damaged를 사용하지 않으므로 Blend를 따로 생성하지 않고 사용
+    Color.w = Damaged / 1000.f;
     
     return Color;
 }

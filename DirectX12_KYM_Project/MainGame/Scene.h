@@ -21,16 +21,21 @@ struct MAPPING_LIGHT
 class Texture;
 class Player;
 class Terrain;
-class Skybox;
+class MultipleTexture;
 class UserInterface;
 class Billboard;
 class Effect;
 class Monster;
 
+#define STATE_TITLE 0
+#define STATE_MAIN 1
+
 // 렌더 타겟에 오브젝트가 렌더링 되며 실제 게임이 진행됨
 class Scene
 {
 private:
+	int m_State = STATE_TITLE;
+
 	ID3D12RootSignature *m_RootSignature = nullptr;
 
 	static ID3D12DescriptorHeap *m_CbvSrvDescriptorHeap;
@@ -45,15 +50,22 @@ private:
 	MAPPING_LIGHT *m_MappingLight = nullptr;
 	ID3D12Resource *m_LightBuffer = nullptr;
 
+	// Title State에서 사용하는 오브젝트
+	UserInterface *m_TitleScreen = nullptr;
+	UserInterface *m_Selection = nullptr;
+
+	// Main State에서 사용하는 오브젝트
 	Player *m_Player = nullptr;
 	Terrain *m_Terrain = nullptr;
-	Skybox *m_Skybox = nullptr;
+	MultipleTexture *m_Skybox = nullptr;
+	std::vector<MultipleTexture*> m_Tree{};
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
 	UserInterface *m_Aim = nullptr;
+	UserInterface *m_GameOverScreen = nullptr;
 	std::vector<UserInterface*> m_Numbers{};
-	Billboard *m_Grass = nullptr;
-	Billboard *m_Tree = nullptr;
+	Billboard *m_BillboardGrass = nullptr;
+	Billboard *m_BillboardTree = nullptr;
 	Effect *m_Signal = nullptr;
 	Effect *m_Spark = nullptr;
 	std::vector<Monster*> m_WeakOrcs{};
@@ -66,6 +78,8 @@ private:
 	int m_BulletCountOne = 0;
 	int m_BulletCountTen = 3;
 	int m_BulletCount = 30;
+
+	int m_SaveBillboardTreeIndex[25][25]{};
 
 public:
 	Scene();

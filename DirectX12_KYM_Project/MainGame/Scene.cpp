@@ -3,7 +3,7 @@
 
 #include "Player.h"
 #include "Terrain.h"
-#include "Skybox.h"
+#include "MultipleTexture.h"
 #include "UserInterface.h"
 #include "Billboard.h"
 #include "Effect.h"
@@ -37,19 +37,33 @@ Scene::~Scene()
 {
 	if (m_RootSignature != nullptr) m_RootSignature->Release();
 
+	if (m_CbvSrvDescriptorHeap != nullptr) m_CbvSrvDescriptorHeap->Release();
+
 	if (m_LightBuffer != nullptr) m_LightBuffer->Release();
+
+	if (m_TitleScreen != nullptr) delete m_TitleScreen;
+	if (m_Selection != nullptr) delete m_Selection;
 
 	if (m_Player != nullptr) delete m_Player;
 	if (m_Terrain != nullptr) delete m_Terrain;
 	if (m_Skybox != nullptr) delete m_Skybox;
+	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) delete m_Tree[i];
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
+	if (m_Aim != nullptr) delete m_Aim;
+	if (m_GameOverScreen != nullptr) delete m_GameOverScreen;
+	for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) delete m_Numbers[i];
 
-	if (m_Grass != nullptr) delete m_Grass;
-	if (m_Tree != nullptr) delete m_Tree;
+	if (m_BillboardGrass != nullptr) delete m_BillboardGrass;
+	if (m_BillboardTree != nullptr) delete m_BillboardTree;
 
 	if (m_Signal != nullptr) delete m_Signal;
 	if (m_Spark != nullptr) delete m_Spark;
+
+	for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) delete m_WeakOrcs[i];
+	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) delete m_StrongOrcs[i];
+	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) delete m_ShamanOrcs[i];
+	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) delete m_WolfRiderOrcs[i];
 }
 
 void Scene::CreateRootSignature(ID3D12Device* Device)
@@ -220,13 +234,21 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	CreateRootSignature(Device);
 
 	// 오브젝트 별로 ConstantBuffer View or ShaderResource View를 사용하면 Set의 호출이 너무 많아지므로 한 번에 사용
-	CreateCbvSrvDescriptorHeap(Device, 0, 1000);
+	CreateCbvSrvDescriptorHeap(Device, 0, 500);
 
 	// Loaded & Skinned Model이 사용할 Shader를 Frame 별로 생성하면 메모리 사용이 많아지므로 미리 생성한 하나의 Shader를 사용
 	Material::PrepareShader(Device, m_RootSignature);
 
 	// Scene에서 사용할 조명을 설정 & Light Buffer 생성
 	CreateLightShaderBuffer(Device, CommandList);
+
+	// Title State에서 사용할 화면 (ex. 게임 시작 or 설명 or 종료 등)
+	m_TitleScreen = new UserInterface(Device, CommandList, m_RootSignature, T_TITLESCREEN);
+	m_TitleScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+	// Title State에서 플레이어가 어떤 행동을 할지 고르는 선택창
+	m_Selection = new UserInterface(Device, CommandList, m_RootSignature, T_SELECTION);
+	m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.125f, 0.f));
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player(Device, CommandList, m_RootSignature);
@@ -237,7 +259,15 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
 
 	// 게임의 배경 역할을 하는 Skybox 생성
-	m_Skybox = new Skybox(Device, CommandList, m_RootSignature);
+	m_Skybox = new MultipleTexture(Device, CommandList, m_RootSignature, T_SKYBOX);
+
+	// Player에게 가까운 Billboard Tree를 여러 개의 Mesh를 가진 Tree로 바꾸기 위해 생성
+	int TreeCount = 9;
+	m_Tree.reserve(TreeCount);
+
+	for (int i = 0; i < TreeCount; ++i) {
+		m_Tree.emplace_back(new MultipleTexture(Device, CommandList, m_RootSignature, T_TREE));
+	}
 
 	// 게임에 필요한 UI 생성
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
@@ -249,8 +279,10 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
 	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	int NumbersCount = 14;
+	m_GameOverScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEOVER);
+	m_GameOverScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
+	int NumbersCount = 14;
 	m_Numbers.reserve(NumbersCount);
 
 	for (int i = 0; i < NumbersCount; ++i) {
@@ -261,19 +293,24 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	}
 
 	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
-	m_Grass = new Billboard();
-	m_Grass->CreateShader(Device, m_RootSignature);
-	m_Grass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_GRASS, 1000);
+	m_BillboardGrass = new Billboard();
+	m_BillboardGrass->CreateShader(Device, m_RootSignature);
+	m_BillboardGrass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_BILLBOARDGRASS, 500);
 
-	m_Tree = new Billboard();
-	m_Tree->CreateShader(Device, m_RootSignature);
-	m_Tree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_TREE, 500);
+	m_BillboardTree = new Billboard();
+	m_BillboardTree->CreateShader(Device, m_RootSignature);
+	m_BillboardTree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_BILLBOARDTREE, 625);
 
+	// Billboard Tree -> Tree 변환을 위해 Billboard Tree의 Index를 저장
+	int BillTreeIndex = 0;
+	for (int z = 0; z < 25; ++z) for (int x = 0; x < 25; ++x) m_SaveBillboardTreeIndex[x][z] = BillTreeIndex++;
+
+	// 월드 좌표계를 사용하는 텍스처 오브젝트 생성 (ex. 몬스터의 플레이어 인식 or 플레이어의 총 불꽃 등)
 	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
 
 	m_Spark = new Effect(Device, CommandList, m_RootSignature, T_SPARK);
 
-	// 게임 월드에 등장하는 Game Objects 생성
+	// 게임 월드에 등장하는 Game Objects 생성 (ex. Monster)
 	int MonsterCount = 20;
 	DirectX::XMFLOAT3 Position{};
 
@@ -340,286 +377,423 @@ void Scene::UpdateLightShaderBuffer(ID3D12GraphicsCommandList* CommandList)
 
 void Scene::Animate(float ElapsedTime, HWND Hwnd)
 {
-	if (m_Player != nullptr) {
-		int GetHeightMapX = int(m_Player->GetPosition().x) / MAP_SCALE, GetHeightMapZ = int(m_Player->GetPosition().z) / MAP_SCALE;
-		float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
-		m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
-		m_Player->UpdateTransform(nullptr);
+	switch (m_State) {
+	case STATE_TITLE:
+	{
+
 	}
+	break;
 
-	bool PlayerHit = false;
+	case STATE_MAIN:
+	{
+		if (m_Player != nullptr) {
+			int GetHeightMapX = int(m_Player->GetPosition().x) / MAP_SCALE, GetHeightMapZ = int(m_Player->GetPosition().z) / MAP_SCALE;
+			float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
 
-	for (int i = 0; i < m_WeakOrcs.size(); ++i)
-		if (m_WeakOrcs[i] != nullptr) {
-			m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-			m_WeakOrcs[i]->UpdateTransform(nullptr);
+			m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
+			m_Player->UpdateTransform(nullptr);
 
-			if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WeakOrcs[i]->SetSuccessAttack(false);
+			// 1. Reload Animation의 수행이 완료되면 총알의 개수를 최대로 변경
+			if (true == m_Player->GetCompletedReload()) {
+				m_BulletCount = 30;
+				m_Player->SetCompletedReload(false);
+			}
+
+			// 2. Player와 가까운 Billboard Tree를 Tree로 변경
+			DirectX::XMFLOAT2 GetPlayerPos = DirectX::XMFLOAT2(m_Player->GetPosition().x, m_Player->GetPosition().z);
+			int x = int(GetPlayerPos.x / 200), z = int(GetPlayerPos.y / 200);
+
+			DirectX::XMFLOAT4X4 *GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
+
+			for (int RangeX = -1, i = 0; RangeX < 2; ++RangeX) {
+				for (int RangeZ = -1; RangeZ < 2; ++RangeZ, ++i) {
+					// 플레이어와 가까운 Billboard Tree의 좌표를 Tree에 대입
+					int xIndex = x + RangeX, zIndex = z + RangeZ;
+					// 범위 밖의 Index에 접근할 수 있으므로 예외처리 수행
+					if (xIndex < 0) xIndex = 0;
+					if (xIndex > 24) xIndex = 24;
+					if (zIndex < 0) zIndex = 0;
+					if (zIndex > 24) zIndex = 24;
+
+					m_Tree[i]->SetPosition(DirectX::XMFLOAT3(GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._41,
+						GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._42, GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._43));
+				}
+			}
 		}
 
-	for (int i = 0; i < m_StrongOrcs.size(); ++i)
-		if (m_StrongOrcs[i] != nullptr) {
-			m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-			m_StrongOrcs[i]->UpdateTransform(nullptr);
+		bool PlayerHit = false;
 
-			if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_StrongOrcs[i]->SetSuccessAttack(false);
+		for (int i = 0; i < m_WeakOrcs.size(); ++i)
+			if (m_WeakOrcs[i] != nullptr) {
+				m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+				m_WeakOrcs[i]->UpdateTransform(nullptr);
+
+				if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WeakOrcs[i]->SetSuccessAttack(false);
+			}
+
+		for (int i = 0; i < m_StrongOrcs.size(); ++i)
+			if (m_StrongOrcs[i] != nullptr) {
+				m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+				m_StrongOrcs[i]->UpdateTransform(nullptr);
+
+				if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_StrongOrcs[i]->SetSuccessAttack(false);
+			}
+
+		for (int i = 0; i < m_ShamanOrcs.size(); ++i)
+			if (m_ShamanOrcs[i] != nullptr) {
+				m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+				m_ShamanOrcs[i]->UpdateTransform(nullptr);
+
+				if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_ShamanOrcs[i]->SetSuccessAttack(false);
+			}
+
+		for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
+			if (m_WolfRiderOrcs[i] != nullptr) {
+				m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+				m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
+
+				if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
+			}
+
+		if (true == PlayerHit) m_Player->ActiveDamaged();
+
+		if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
+		if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
+
+		if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
+		if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
+
+		// 플레이어의 사망 시 게임 오버 화면 출력
+		if (m_Player->GetCurrentAnimationTrackIndex() == P_DEATH) {
+			if (m_GameOverScreen != nullptr) {
+				m_GameOverScreen->SetActive(true);
+				m_GameOverScreen->Animate(ElapsedTime, 0);
+			}
 		}
 
-	for (int i = 0; i < m_ShamanOrcs.size(); ++i)
-		if (m_ShamanOrcs[i] != nullptr) {
-			m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-			m_ShamanOrcs[i]->UpdateTransform(nullptr);
+		m_BulletCountOne = m_BulletCount % 10;
+		m_BulletCountTen = m_BulletCount / 10 + 10;
 
-			if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_ShamanOrcs[i]->SetSuccessAttack(false);
-		}
-
-	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
-		if (m_WolfRiderOrcs[i] != nullptr) {
-			m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-			m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
-
-			if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
-		}
-	if (true == PlayerHit) m_Player->ActiveDamaged();
-
-	if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
-	if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
-
-	if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
-	if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
-
-	m_BulletCountOne = m_BulletCount % 10;
-	m_BulletCountTen = m_BulletCount / 10 + 10;
-
-	for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(ElapsedTime, 0);
-	if (m_Numbers[m_BulletCountOne] != nullptr) m_Numbers[m_BulletCountOne]->Animate(ElapsedTime, 1);
-	if (m_Numbers[m_BulletCountTen] != nullptr) m_Numbers[m_BulletCountTen]->Animate(ElapsedTime, 1);
+		for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(ElapsedTime, 0);
+		if (m_Numbers[m_BulletCountOne] != nullptr) m_Numbers[m_BulletCountOne]->Animate(ElapsedTime, 1);
+		if (m_Numbers[m_BulletCountTen] != nullptr) m_Numbers[m_BulletCountTen]->Animate(ElapsedTime, 1);
+	}
+	break;
+	}
 }
 
 void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 {
-	CommandList->SetGraphicsRootSignature(m_RootSignature);
+	switch (m_State) {
+	case STATE_TITLE:
+	{
+		CommandList->SetGraphicsRootSignature(m_RootSignature);
 
-	CommandList->SetDescriptorHeaps(1, &m_CbvSrvDescriptorHeap);
-	
-	if (m_Player != nullptr) m_Player->UpdateCamera(CommandList);
+		CommandList->SetDescriptorHeaps(1, &m_CbvSrvDescriptorHeap);
 
-	UpdateLightShaderBuffer(CommandList);
+		D3D12_VIEWPORT Viewport = { 0.f, 0.f, Window_Width, Window_Height, 0.f, 1.f };
+		D3D12_RECT ScissorRect = { 0, 0, Window_Width, Window_Height };
 
-	if (m_Player != nullptr) m_Player->Render(CommandList);
+		CommandList->RSSetViewports(1, &Viewport);
+		CommandList->RSSetScissorRects(1, &ScissorRect);
 
-	if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
-	if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
-	if (m_Aim != nullptr) m_Aim->Render(CommandList);
-	for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Render(CommandList);
+		if (m_Selection != nullptr) m_Selection->Render(CommandList);
+		if (m_TitleScreen != nullptr) m_TitleScreen->Render(CommandList);
+	}
+	break;
 
-	for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
-	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
-	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->Render(CommandList);
-	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->Render(CommandList);
+	case STATE_MAIN:
+	{
+		CommandList->SetGraphicsRootSignature(m_RootSignature);
 
-	if (m_Grass != nullptr) m_Grass->Render(CommandList);
-	if (m_Tree != nullptr) m_Tree->Render(CommandList);
+		CommandList->SetDescriptorHeaps(1, &m_CbvSrvDescriptorHeap);
 
-	if (m_Signal != nullptr) m_Signal->Render(CommandList);
-	if (m_Spark != nullptr) m_Spark->Render(CommandList);
+		if (m_Player != nullptr) m_Player->UpdateCamera(CommandList);
 
-	if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
-	if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
+		UpdateLightShaderBuffer(CommandList);
+
+		if (m_Player != nullptr) m_Player->Render(CommandList);
+
+		if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
+		if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
+		if (m_Aim != nullptr) m_Aim->Render(CommandList);
+		for (int i = 0; i < m_Numbers.size(); ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Render(CommandList);
+
+		for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->Render(CommandList);
+
+		for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
+		for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
+		for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->Render(CommandList);
+		for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->Render(CommandList);
+
+		if (m_BillboardGrass != nullptr) m_BillboardGrass->Render(CommandList);
+		if (m_BillboardTree != nullptr) m_BillboardTree->Render(CommandList);
+
+		if (m_Signal != nullptr) m_Signal->Render(CommandList);
+		if (m_Spark != nullptr) m_Spark->Render(CommandList);
+
+		if (m_Terrain != nullptr) m_Terrain->Render(CommandList);
+		if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
+
+		if (m_GameOverScreen != nullptr) m_GameOverScreen->Render(CommandList);
+	}
+	break;
+	}
 }
 
 void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 {
-	switch (MessageIndex)
+	switch (m_State) {
+	case STATE_TITLE:
 	{
-	case WM_KEYDOWN:
-		switch (Wparam)
+		switch (MessageIndex)
 		{
-		case 'w':
-		case 'W':
-			m_Player->ActiveMove(0, true);
+		case WM_KEYDOWN:
+			switch (Wparam)
+			{
+			case VK_UP:
+			{
+				m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.125f, 0.f));
+			}
 			break;
 
-		case 's':
-		case 'S':
-			m_Player->ActiveMove(1, true);
+			case VK_DOWN:
+			{
+				m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.45f, 0.f));
+			}
 			break;
 
-		case 'a':
-		case 'A':
-			m_Player->ActiveMove(2, true);
+			case VK_RETURN:
+			{
+				if (m_Selection->GetPosition().y == -0.125f) m_State = STATE_MAIN;
+				else if (m_Selection->GetPosition().y == -0.45f) PostQuitMessage(0);
+			}
 			break;
 
-		case 'd':
-		case 'D':
-			m_Player->ActiveMove(3, true);
-			break;
-
-		case 'r':
-		case 'R':
-			// Reload
-		{
-			m_BulletCount = 30;
-			m_Player->ActiveReload();
-		}
-		break;
-
-		case VK_SHIFT:
-		{
-			m_Player->ActiveRoll();
-		}
-		break;
-		}
-		break;
-
-	case WM_KEYUP:
-		switch (Wparam)
-		{
-		case 'w':
-		case 'W':
-			m_Player->ActiveMove(0, false);
-			break;
-
-		case 's':
-		case 'S':
-			m_Player->ActiveMove(1, false);
-			break;
-
-		case 'a':
-		case 'A':
-			m_Player->ActiveMove(2, false);
-			break;
-
-		case 'd':
-		case 'D':
-			m_Player->ActiveMove(3, false);
+			}
 			break;
 		}
-		break;
+	}
+	break;
+
+	case STATE_MAIN:
+	{
+		switch (MessageIndex)
+		{
+		case WM_KEYDOWN:
+			switch (Wparam)
+			{
+			case 'w':
+			case 'W':
+				m_Player->ActiveMove(0, true);
+				break;
+
+			case 's':
+			case 'S':
+				m_Player->ActiveMove(1, true);
+				break;
+
+			case 'a':
+			case 'A':
+				m_Player->ActiveMove(2, true);
+				break;
+
+			case 'd':
+			case 'D':
+				m_Player->ActiveMove(3, true);
+				break;
+
+			case 'r':
+			case 'R':
+			{
+				if (m_BulletCount != 30) m_Player->ActiveReload();
+			}
+			break;
+
+			case VK_SHIFT:
+			{
+				m_Player->ActiveRoll();
+			}
+			break;
+
+			// 테스트를 위한 키 입력
+			case '1':
+			{
+				float x, z = 0;
+				std::cin >> x;
+				std::cin >> z;
+
+				m_Player->SetPosition(DirectX::XMFLOAT3(x, 0.f, z));
+			}
+			break;
+
+			}
+			break;
+
+		case WM_KEYUP:
+			switch (Wparam)
+			{
+			case 'w':
+			case 'W':
+				m_Player->ActiveMove(0, false);
+				break;
+
+			case 's':
+			case 'S':
+				m_Player->ActiveMove(1, false);
+				break;
+
+			case 'a':
+			case 'A':
+				m_Player->ActiveMove(2, false);
+				break;
+
+			case 'd':
+			case 'D':
+				m_Player->ActiveMove(3, false);
+				break;
+
+			}
+			break;
+		}
+	}
+	break;
 	}
 }
 
 void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 {
-	switch (MessageIndex)
+	switch (m_State) {
+	case STATE_TITLE:
 	{
-	case WM_LBUTTONDOWN:
+
+	}
+	break;
+
+	case STATE_MAIN:
 	{
-		SetCapture(Hwnd);
-		SetCursor(NULL);
-		GetCursorPos(&m_PreviousPos);
+		switch (MessageIndex)
+		{
+		case WM_LBUTTONDOWN:
+		{
+			SetCapture(Hwnd);
+			SetCursor(NULL);
+			GetCursorPos(&m_PreviousPos);
 
-		// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
-		if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL && m_Player->GetCurrentAnimationTrackIndex() != P_RELOAD && m_BulletCount > 0) { // 구르기 도중에는 공격할 수 없음
-			--m_BulletCount;
-			m_Player->ActiveShoot();
+			// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
+			if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL && m_BulletCount > 0) {
+				--m_BulletCount;
+				m_Player->ActiveShoot();
 
-			// 총구 불꽃 활성화
-			GameObject* PlayerWeapon = m_Player->GetFrame(25);
+				// 총구 불꽃 활성화
+				GameObject* PlayerWeapon = m_Player->GetFrame(25);
 
-			// Weapon의 모델 좌표를 저장
-			DirectX::XMFLOAT4X4 WeaponPos = PlayerWeapon->GetTransformPos();
+				// Weapon의 모델 좌표를 저장
+				DirectX::XMFLOAT4X4 WeaponPos = PlayerWeapon->GetTransformPos();
 
-			// 플레이어의 현재 위치 정보를 통해 Weapon의 월드 좌표를 구함
-			DirectX::XMFLOAT4X4 WeaponWorldPos{};
-			DirectX::XMStoreFloat4x4(&WeaponWorldPos, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&WeaponPos), DirectX::XMLoadFloat4x4(&m_Player->GetWorldPos())));
+				// 플레이어의 현재 위치 정보를 통해 Weapon의 월드 좌표를 구함
+				DirectX::XMFLOAT4X4 WeaponWorldPos{};
+				DirectX::XMStoreFloat4x4(&WeaponWorldPos, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&WeaponPos), DirectX::XMLoadFloat4x4(&m_Player->GetWorldPos())));
 
-			// Weapon의 월드 좌표를 넘겨줌
-			m_Spark->ActiveEffect(WeaponWorldPos);
+				// Weapon의 월드 좌표를 넘겨줌
+				m_Spark->ActiveEffect(WeaponWorldPos);
 
-			// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
-			Camera* GetCamera = m_Player->GetCamera();
-			DirectX::XMFLOAT3 StartPosition = m_Player->GetPosition();
-			DirectX::XMFLOAT3 EndPosition{};
-			DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&GetCamera->GetLook())));
+				// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
+				Camera* GetCamera = m_Player->GetCamera();
+				DirectX::XMFLOAT3 StartPosition = m_Player->GetPosition();
+				DirectX::XMFLOAT3 EndPosition{};
+				DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&GetCamera->GetLook())));
 
-			int MonsterType = -1;
-			int CollisionMonsterIndex = 0;
+				int MonsterType = -1;
+				int CollisionMonsterIndex = 0;
 
-			GameObject *CollisionMonster = new GameObject();
-			GameObject *ResultMonster = new GameObject();
+				GameObject *CollisionMonster = new GameObject();
+				GameObject *ResultMonster = new GameObject();
 
-			float MaxDistance = 800.f;
+				float MaxDistance = 800.f;
 
-			for (int i = 0; i < m_WeakOrcs.size(); ++i) {
-				CollisionMonster = m_WeakOrcs[i]->CheckCollision(StartPosition, EndPosition);
+				for (int i = 0; i < m_WeakOrcs.size(); ++i) {
+					CollisionMonster = m_WeakOrcs[i]->CheckCollision(StartPosition, EndPosition);
 
-				// 플레이어 공격에 피격된 몬스터가 있으면 충돌 처리를 수행해야 함
-				if (CollisionMonster != nullptr) {
-					// 몬스터의 충돌 거리가 최대 사거리보다 작으면 충돌 처리
-					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
-						// 충돌된 몬스터 중, 가장 가까운 거리의 몬스터만 충돌 처리를 수행
-						ResultMonster = CollisionMonster;
-						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
-						CollisionMonsterIndex = i;
-						MonsterType = 0;
+					// 플레이어 공격에 피격된 몬스터가 있으면 충돌 처리를 수행해야 함
+					if (CollisionMonster != nullptr) {
+						// 몬스터의 충돌 거리가 최대 사거리보다 작으면 충돌 처리
+						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+							// 충돌된 몬스터 중, 가장 가까운 거리의 몬스터만 충돌 처리를 수행
+							ResultMonster = CollisionMonster;
+							MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+							CollisionMonsterIndex = i;
+							MonsterType = 0;
+						}
 					}
 				}
-			}
 
-			// 다른 타입의 몬스터도 같은 방식으로 충돌 처리를 수행
-			for (int i = 0; i < m_StrongOrcs.size(); ++i) {
-				CollisionMonster = m_StrongOrcs[i]->CheckCollision(StartPosition, EndPosition);
-				if (CollisionMonster != nullptr) {
-					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
-						ResultMonster = CollisionMonster;
-						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
-						CollisionMonsterIndex = i;
-						MonsterType = 1;
+				// 다른 타입의 몬스터도 같은 방식으로 충돌 처리를 수행
+				for (int i = 0; i < m_StrongOrcs.size(); ++i) {
+					CollisionMonster = m_StrongOrcs[i]->CheckCollision(StartPosition, EndPosition);
+					if (CollisionMonster != nullptr) {
+						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+							ResultMonster = CollisionMonster;
+							MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+							CollisionMonsterIndex = i;
+							MonsterType = 1;
+						}
 					}
 				}
-			}
 
-			for (int i = 0; i < m_ShamanOrcs.size(); ++i) {
-				CollisionMonster = m_ShamanOrcs[i]->CheckCollision(StartPosition, EndPosition);
-				if (CollisionMonster != nullptr) {
-					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
-						ResultMonster = CollisionMonster;
-						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
-						CollisionMonsterIndex = i;
-						MonsterType = 2;
+				for (int i = 0; i < m_ShamanOrcs.size(); ++i) {
+					CollisionMonster = m_ShamanOrcs[i]->CheckCollision(StartPosition, EndPosition);
+					if (CollisionMonster != nullptr) {
+						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+							ResultMonster = CollisionMonster;
+							MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+							CollisionMonsterIndex = i;
+							MonsterType = 2;
+						}
 					}
 				}
-			}
 
-			for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) {
-				CollisionMonster = m_WolfRiderOrcs[i]->CheckCollision(StartPosition, EndPosition);
-				if (CollisionMonster != nullptr) {
-					if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
-						ResultMonster = CollisionMonster;
-						MaxDistance = CollisionMonster->GetCollisionMeshDistance();
-						CollisionMonsterIndex = i;
-						MonsterType = 3;
+				for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) {
+					CollisionMonster = m_WolfRiderOrcs[i]->CheckCollision(StartPosition, EndPosition);
+					if (CollisionMonster != nullptr) {
+						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
+							ResultMonster = CollisionMonster;
+							MaxDistance = CollisionMonster->GetCollisionMeshDistance();
+							CollisionMonsterIndex = i;
+							MonsterType = 3;
+						}
 					}
 				}
-			}
 
-			// 가장 가까운 거리에서 공격 당한 몬스터만 피격 애니메이션을 수행
-			switch (MonsterType) {
-			case 0:
-			{
-				m_WeakOrcs[CollisionMonsterIndex]->ActiveDamaged();
-			}
-			break;
+				// 가장 가까운 거리에서 공격 당한 몬스터만 피격 애니메이션을 수행
+				switch (MonsterType) {
+				case 0:
+				{
+					m_WeakOrcs[CollisionMonsterIndex]->ActiveDamaged();
+				}
+				break;
 
-			case 1:
-			{
-				m_StrongOrcs[CollisionMonsterIndex]->ActiveDamaged();
-			}
-			break;
+				case 1:
+				{
+					m_StrongOrcs[CollisionMonsterIndex]->ActiveDamaged();
+				}
+				break;
 
-			case 2:
-			{
-				m_ShamanOrcs[CollisionMonsterIndex]->ActiveDamaged();
-			}
-			break;
+				case 2:
+				{
+					m_ShamanOrcs[CollisionMonsterIndex]->ActiveDamaged();
+				}
+				break;
 
-			case 3:
-			{
-				m_WolfRiderOrcs[CollisionMonsterIndex]->ActiveDamaged();
+				case 3:
+				{
+					m_WolfRiderOrcs[CollisionMonsterIndex]->ActiveDamaged();
+				}
+				break;
+				}
 			}
-			break;
-			}
+		}
+		break;
 		}
 	}
 	break;

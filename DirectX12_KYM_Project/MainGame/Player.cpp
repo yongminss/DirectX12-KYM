@@ -93,8 +93,11 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	}
 
 	if (true == GetChangeState()) {
+		if (m_State == STATE_RELOAD) m_CompletedReload = true;
+
 		SetChangeState(false), m_State = STATE_NONE;
 		m_CheckDamagedTime = 0.f;
+		m_Camera->SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -75.f));
 	}
 
 	if (m_Hp <= 0) m_State = STATE_DEATH;
@@ -314,6 +317,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	case STATE_DAMAGED:
 	{
 		if (P_DAMAGED != GetCurrentAnimationTrackIndex()) {
+			m_Camera->SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -30.f));
 			SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
 			if (0.f == m_CheckDamagedTime) SetDamaged(0x02), m_Hp -= 5;
 		}
@@ -325,7 +329,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 
 	case STATE_DEATH:
 	{
-		SetAnimationTrack(P_DEATH, ANIMATION_TYPE_LOOP);
+		if (P_DEATH != GetCurrentAnimationTrackIndex()) SetAnimationTrack(P_DEATH, ANIMATION_TYPE_ONCE);
 	}
 	break;
 	}

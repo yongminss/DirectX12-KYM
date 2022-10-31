@@ -35,7 +35,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 	case T_SKYBOX: // Skybox
 	{
-		SkyboxShader *UsingShader = new SkyboxShader();
+		MultipleTextureShader *UsingShader = new MultipleTextureShader();
 		UsingShader->CreateShader(Device, RootSignature);
 		SetShader(UsingShader);
 
@@ -45,8 +45,44 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
+	case T_TREE: // Multiple Texture Tree
+	{
+		MultipleTextureShader *UsingShader = new MultipleTextureShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 4, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
 	// 여기부터 UI로 사용하는 Texture
-	case T_HPBAR: // Bar
+	case T_TITLESCREEN: // Title Screen
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case T_SELECTION: // Selection
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case T_HPBAR: // Hp Bar
 	{
 		UserInterfaceShader *UsingShader = new UserInterfaceShader();
 		UsingShader->CreateShader(Device, RootSignature);
@@ -86,6 +122,18 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	{
 		UserInterfaceShader *UsingShader = new UserInterfaceShader();
 		UsingShader->CreateShader(Device, RootSignature);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		SetTexture(UsingTexture);
+	}
+	break;
+
+	case T_GAMEOVER: // GameOver Screen
+	{
+		UserInterfaceShader *UsingShader = new UserInterfaceShader();
+		UsingShader->CreateShader(Device, RootSignature, 1);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();

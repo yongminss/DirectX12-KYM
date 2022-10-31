@@ -117,6 +117,27 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
+		case T_TREE: // Multiple Texture Tree
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Tree.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_TITLESCREEN: // Title Screen
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Title.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_SELECTION: // Selection
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
 		case T_HPBAR: // Hp Bar
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
@@ -145,14 +166,21 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
-		case T_GRASS: // Grass
+		case T_GAMEOVER: // GameOver Screen
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Gameover.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_BILLBOARDGRASS: // Grass
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Grass.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 
-		case T_TREE: // Tree
+		case T_BILLBOARDTREE: // Tree
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Tree.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
