@@ -24,31 +24,14 @@ TextureVertex::TextureVertex()
 
 }
 
-TextureVertex::TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv)
-{
-	m_Position = Position;
-	m_Uv = Uv;
-}
-
-TextureVertex::~TextureVertex()
-{
-
-}
-
-// --------------------
-BillboardVertex::BillboardVertex()
-{
-
-}
-
-BillboardVertex::BillboardVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv, int Kind)
+TextureVertex::TextureVertex(DirectX::XMFLOAT3 Position, DirectX::XMFLOAT2 Uv, int Kind)
 {
 	m_Position = Position;
 	m_Uv = Uv;
 	m_Kind = Kind;
 }
 
-BillboardVertex::~BillboardVertex()
+TextureVertex::~TextureVertex()
 {
 
 }

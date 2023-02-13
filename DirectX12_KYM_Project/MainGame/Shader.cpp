@@ -15,9 +15,9 @@ Shader::~Shader()
 	if (m_PixelBlob != nullptr) m_PixelBlob->Release();
 }
 
-void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Type)
+void Shader::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Kind)
 {
-	m_Type = Type;
+	m_Kind = Kind;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipelineStateDesc;
 	ZeroMemory(&GraphicsPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -142,31 +142,26 @@ void Shader::Render(ID3D12GraphicsCommandList* CommandList)
 }
 
 // --------------------
-D3D12_INPUT_LAYOUT_DESC UserInterfaceShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC TextureShader::CreateInputLayout()
 {
-	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
+	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[3];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	InputElementDesc[2] = { "KIND", 0, DXGI_FORMAT_R32_UINT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
 	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
 	InputLayoutDesc.pInputElementDescs = InputElementDesc;
-	InputLayoutDesc.NumElements = 2;
+	InputLayoutDesc.NumElements = 3;
 
 	return InputLayoutDesc;
 }
 
-D3D12_BLEND_DESC UserInterfaceShader::CreateBlendState()
+D3D12_BLEND_DESC TextureShader::CreateBlendState()
 {
-	switch (m_Type) {
-	case 0:
-	{
-		return Shader::CreateBlendState();
-	}
-	break;
-
-	// Blending을 하는 UserInterface에서 사용
-	case 1:
+	switch (m_Kind) {
+	case T_SMOKE:
+	case T_GAMEOVER:
 	{
 		D3D12_BLEND_DESC BlendDesc;
 		ZeroMemory(&BlendDesc, sizeof(D3D12_BLEND_DESC));
@@ -186,61 +181,18 @@ D3D12_BLEND_DESC UserInterfaceShader::CreateBlendState()
 		return BlendDesc;
 	}
 	break;
-	}
-}
 
-D3D12_SHADER_BYTECODE UserInterfaceShader::CreateVertexShader()
-{
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "UserInterfaceVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
-
-	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
-
-	return ShaderByteCode;
-}
-
-D3D12_SHADER_BYTECODE UserInterfaceShader::CreatePixelShader()
-{
-	switch (m_Type) {
-	case 0:
+	default:
 	{
-		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
-	}
-	break;
-
-	case 1:
-	{
-		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "BlendTexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+		return Shader::CreateBlendState();
 	}
 	break;
 	}
-
-	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
-
-	return ShaderByteCode;
 }
 
-// --------------------
-D3D12_INPUT_LAYOUT_DESC MultipleTextureShader::CreateInputLayout()
+D3D12_DEPTH_STENCIL_DESC TextureShader::CreateDepthStencilState()
 {
-	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
-	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-
-	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
-	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
-	InputLayoutDesc.pInputElementDescs = InputElementDesc;
-	InputLayoutDesc.NumElements = 2;
-
-	return InputLayoutDesc;
-}
-
-D3D12_DEPTH_STENCIL_DESC MultipleTextureShader::CreateDepthStencilState()
-{
-	switch (m_Type) {
+	switch (m_Kind) {
 	case T_SKYBOX:
 	{
 		D3D12_DEPTH_STENCIL_DESC DepthStencilDesc;
@@ -272,30 +224,102 @@ D3D12_DEPTH_STENCIL_DESC MultipleTextureShader::CreateDepthStencilState()
 	}
 }
 
-D3D12_SHADER_BYTECODE MultipleTextureShader::CreateVertexShader()
+D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+	switch (m_Kind) {
+	case T_TITLESCREEN:
+	case T_SELECTION:
+	case T_HPBAR:
+	case T_HPGAUGE:
+	case T_AIM:
+	case T_NUMBERS:
+	case T_GAMEOVER:
+	case T_ENTERFIRE:
+	case T_ENTERMONSTER:
+	case T_GUIDEAREA:
+	case T_GUIDENONE:
+	case T_GUIDEFIRE:
+	case T_GUIDEMONSTER:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "UserInterfaceVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
-	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
+		D3D12_SHADER_BYTECODE ShaderByteCode;
+		ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
+		ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
 
-	return ShaderByteCode;
+		return ShaderByteCode;
+	}
+	break;
+
+	case T_SKYBOX:
+	case T_TREE:
+	case T_FLAME:
+	case T_SMOKE:
+	case T_SPARK:
+	case T_SIGNAL:
+	case T_FIREBALL:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+
+		D3D12_SHADER_BYTECODE ShaderByteCode;
+		ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
+		ShaderByteCode.BytecodeLength = m_VertexBlob->GetBufferSize();
+
+		return ShaderByteCode;
+	}
+	break;
+	}
 }
 
-D3D12_SHADER_BYTECODE MultipleTextureShader::CreatePixelShader()
+D3D12_SHADER_BYTECODE TextureShader::CreatePixelShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	switch (m_Kind) {
+	case T_SKYBOX:
+	case T_TREE:
+	case T_FLAME:
+	case T_SPARK:
+	case T_SIGNAL:
+	case T_FIREBALL:
+	case T_TITLESCREEN:
+	case T_SELECTION:
+	case T_HPBAR:
+	case T_HPGAUGE:
+	case T_AIM:
+	case T_NUMBERS:
+	case T_ENTERFIRE:
+	case T_ENTERMONSTER:
+	case T_GUIDEAREA:
+	case T_GUIDENONE:
+	case T_GUIDEFIRE:
+	case T_GUIDEMONSTER:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
 
-	D3D12_SHADER_BYTECODE ShaderByteCode;
-	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
-	ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+		D3D12_SHADER_BYTECODE ShaderByteCode;
+		ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
+		ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
 
-	return ShaderByteCode;
+		return ShaderByteCode;
+	}
+	break;
+
+	case T_SMOKE:
+	case T_GAMEOVER:
+	{
+		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "BlendTexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+
+		D3D12_SHADER_BYTECODE ShaderByteCode;
+		ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
+		ShaderByteCode.BytecodeLength = m_PixelBlob->GetBufferSize();
+
+		return ShaderByteCode;
+	}
+	break;
+	}
 }
 
 // --------------------
-D3D12_INPUT_LAYOUT_DESC EffectShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC FlameShader::CreateInputLayout()
 {
 	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[2];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -309,9 +333,9 @@ D3D12_INPUT_LAYOUT_DESC EffectShader::CreateInputLayout()
 	return InputLayoutDesc;
 }
 
-D3D12_SHADER_BYTECODE EffectShader::CreateVertexShader()
+D3D12_SHADER_BYTECODE FlameShader::CreateVertexShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "FlameVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();
@@ -320,9 +344,9 @@ D3D12_SHADER_BYTECODE EffectShader::CreateVertexShader()
 	return ShaderByteCode;
 }
 
-D3D12_SHADER_BYTECODE EffectShader::CreatePixelShader()
+D3D12_SHADER_BYTECODE FlameShader::CreatePixelShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "FlamePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_PixelBlob->GetBufferPointer();
@@ -390,7 +414,7 @@ D3D12_INPUT_LAYOUT_DESC LoadedShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE LoadedShader::CreateVertexShader()
 {
-	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "LoadedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
+	D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "LoadedVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr); 
 
 	D3D12_SHADER_BYTECODE ShaderByteCode;
 	ShaderByteCode.pShaderBytecode = m_VertexBlob->GetBufferPointer();

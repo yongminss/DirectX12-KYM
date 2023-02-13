@@ -13,11 +13,6 @@ InstancingModel::InstancingModel()
 InstancingModel::~InstancingModel()
 {
 	if (m_InstanceBuffer != nullptr) m_InstanceBuffer->Release();
-
-	/*for (std::vector<GameObject*>::iterator Iter = m_InstancingObject.begin(); Iter != m_InstancingObject.end(); ++Iter) {
-		delete *Iter;
-		Iter = m_InstancingObject.erase(Iter);
-	}*/
 }
 
 void InstancingModel::CreateInstanceBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, int ModelCount)
@@ -148,8 +143,6 @@ void InstancingSkinnedModel::CreateModel(ID3D12Device* Device, ID3D12GraphicsCom
 	for (int i = 0; i < ModelCount; ++i) {
 		m_InstancingObject.emplace_back(new GameObject());
 		m_InstancingObject.back()->SetChild(UsingGameObject);
-		m_InstancingObject.back()->SetScale(DirectX::XMFLOAT3(25.f, 25.f, 25.f));
-		m_InstancingObject.back()->SetRotate(DirectX::XMFLOAT3(-90.f, 0.f, 0.f));
 		m_InstancingObject.back()->SetPosition(DirectX::XMFLOAT3(0.f + (i * 200.f), 0.f, 100.f + (Kind * 200.f)));
 	}
 	CreateInstanceBuffer(Device, CommandList, ModelCount);

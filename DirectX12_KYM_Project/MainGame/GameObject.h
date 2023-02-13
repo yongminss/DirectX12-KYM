@@ -48,13 +48,13 @@ public:
 	void SetScale(DirectX::XMFLOAT3 Size);
 	void SetRotate(DirectX::XMFLOAT3 Angle);
 
+	void SetChangeTexcoords(DirectX::XMFLOAT4 ChangeTexcoords);
+
 	void SetFrameName(char* FrameName) { memcpy(m_FrameName, FrameName, sizeof(m_FrameName)); }
 
 	void SetChild(GameObject* Child);
 	void SetMeshBoneFrame(GameObject* RootFrame);
 	
-	void SetDamaged(int Damaged);
-
 	void SetAnimationTrack(int Index, int Type, bool Conversion = false);
 	void SetChangeState(bool ChangeState);
 

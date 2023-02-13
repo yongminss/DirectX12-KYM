@@ -13,9 +13,24 @@ Effect::Effect(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 	m_Kind = Kind;
 
 	switch (Kind) {
-	case T_SIGNAL:
+	case T_FLAME:
 	{
-		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(3.5f, 10.5f, 0.f), 0);
+		m_Active = true;
+
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(200.f, 100.f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
+		SetMesh(UsingMesh);
+
+		Material *UsingMaterial = new Material();
+		UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, Kind);
+		SetMaterial(UsingMaterial);
+	}
+	break;
+
+	case T_SMOKE:
+	{
+		m_Active = true;
+
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(50.f, 200.f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
 		SetMesh(UsingMesh);
 
 		Material *UsingMaterial = new Material();
@@ -26,7 +41,18 @@ Effect::Effect(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3
 
 	case T_SPARK:
 	{
-		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(20.f, 20.f, 0.f), 0);
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(20.f, 20.f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
+		SetMesh(UsingMesh);
+
+		Material *UsingMaterial = new Material();
+		UsingMaterial->CreateMaterial(Device, CommandList, RootSignature, Kind);
+		SetMaterial(UsingMaterial);
+	}
+	break;
+
+	case T_SIGNAL:
+	{
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(3.5f, 10.5f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
 		SetMesh(UsingMesh);
 
 		Material *UsingMaterial = new Material();
@@ -44,32 +70,22 @@ Effect::~Effect()
 
 void Effect::Animate(float ElapsedTime)
 {
-	// 타입에 따른 명령 처리 (ex. 몬스터의 플레이어 인식 or 플레이어의 공격 등)
 	switch (m_Kind) {
-	case T_SIGNAL: // 몬스터 피격 시의 효과
+	case T_FLAME: // Fire Area의 불꽃 효과
 	{
-		if (true == m_Active) {
-			if (0.f == m_AnimateTime) {
-				m_TransformPos = m_TargetTransformPos;
-
-				// Target의 월드 좌표로 Signal의 월드 좌표 계산
-				DirectX::XMFLOAT3 Position{};
-				DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), +5.f)));
-				m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y + 80.f, m_TransformPos._43 = Position.z;
-
-				m_TransformPos._11 = -m_TargetTransformPos._11, m_TransformPos._12 = -m_TargetTransformPos._12, m_TransformPos._13 = -m_TargetTransformPos._13;
-				m_TransformPos._31 = -m_TargetTransformPos._31, m_TransformPos._32 = -m_TargetTransformPos._32, m_TransformPos._33 = -m_TargetTransformPos._33;
-
-				UpdateTransform(nullptr);
-			}
-			m_AnimateTime += ElapsedTime;
-
-			if (m_AnimateTime >= 0.5f) m_AnimateTime = 0.f, m_Active = false;
-		}
+		UpdateTransform(nullptr);
 	}
 	break;
 
-	case T_SPARK: // 플레이어 공격 시의 효과
+	case T_SMOKE: // Fire Area의 연기 효과
+	{
+		m_AnimateTime += ElapsedTime * 0.25f;
+
+		SetChangeTexcoords(DirectX::XMFLOAT4(0.f, m_AnimateTime, 0.f, 0.f));
+	}
+	break;
+
+	case T_SPARK: // 플레이어의 총알 불꽃
 	{
 		if (true == m_Active) {
 			if (0.f == m_AnimateTime) {
@@ -96,6 +112,29 @@ void Effect::Animate(float ElapsedTime)
 			m_AnimateTime += ElapsedTime;
 
 			if (m_AnimateTime >= 0.025f) m_AnimateTime = 0.f, m_Active = false;
+		}
+	}
+	break;
+
+	case T_SIGNAL: // 몬스터 피격을 표현하는 신호
+	{
+		if (true == m_Active) {
+			if (0.f == m_AnimateTime) {
+				m_TransformPos = m_TargetTransformPos;
+
+				// Target의 월드 좌표로 Signal의 월드 좌표 계산
+				DirectX::XMFLOAT3 Position{};
+				DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), +5.f)));
+				m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y + 80.f, m_TransformPos._43 = Position.z;
+
+				m_TransformPos._11 = -m_TargetTransformPos._11, m_TransformPos._12 = -m_TargetTransformPos._12, m_TransformPos._13 = -m_TargetTransformPos._13;
+				m_TransformPos._31 = -m_TargetTransformPos._31, m_TransformPos._32 = -m_TargetTransformPos._32, m_TransformPos._33 = -m_TargetTransformPos._33;
+
+				UpdateTransform(nullptr);
+			}
+			m_AnimateTime += ElapsedTime;
+
+			if (m_AnimateTime >= 0.5f) m_AnimateTime = 0.f, m_Active = false;
 		}
 	}
 	break;

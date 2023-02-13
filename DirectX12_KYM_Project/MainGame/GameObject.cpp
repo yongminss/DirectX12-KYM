@@ -276,6 +276,14 @@ void GameObject::SetRotate(DirectX::XMFLOAT3 Angle)
 	UpdateTransform(nullptr);
 }
 
+void GameObject::SetChangeTexcoords(DirectX::XMFLOAT4 ChangeTexcoords)
+{
+	if (m_Material != nullptr) m_Material->SetChangeTexcoords(ChangeTexcoords);
+
+	if (m_Sibling != nullptr) m_Sibling->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Child != nullptr) m_Child->SetChangeTexcoords(ChangeTexcoords);
+}
+
 void GameObject::SetChild(GameObject* Child)
 {
 	if (m_Child != nullptr) {
@@ -295,14 +303,6 @@ void GameObject::SetMeshBoneFrame(GameObject* RootFrame)
 	}
 	if (m_Sibling != nullptr) m_Sibling->SetMeshBoneFrame(RootFrame);
 	if (m_Child != nullptr) m_Child->SetMeshBoneFrame(RootFrame);
-}
-
-void GameObject::SetDamaged(int Damaged)
-{
-	if (m_Material != nullptr) m_Material->SetDamaged(Damaged);
-
-	if (m_Sibling != nullptr) m_Sibling->SetDamaged(Damaged);
-	if (m_Child != nullptr) m_Child->SetDamaged(Damaged);
 }
 
 void GameObject::SetAnimationTrack(int Index, int Type, bool Conversion)

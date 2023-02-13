@@ -23,6 +23,8 @@ private:
 	int m_ObjectsCount = 0;
 	DirectX::XMFLOAT4X4 *m_ObjectsWorldPos = nullptr;
 
+	DirectX::XMFLOAT4 m_ChangeTexcoords = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+
 public:
 	Billboard();
 	~Billboard();
@@ -35,6 +37,14 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	D3D12_SHADER_BYTECODE CreateGeometryShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+
+	void SetChangeTexcoords(DirectX::XMFLOAT4 ChangeTexcoords)
+	{
+		if (ChangeTexcoords.x != -1.f) m_ChangeTexcoords.x = ChangeTexcoords.x;
+		if (ChangeTexcoords.y != -1.f) m_ChangeTexcoords.y = ChangeTexcoords.y;
+		if (ChangeTexcoords.z != -1.f) m_ChangeTexcoords.z = ChangeTexcoords.z;
+		if (ChangeTexcoords.w != -1.f) m_ChangeTexcoords.w = ChangeTexcoords.w;
+	}
 	 
 	DirectX::XMFLOAT4X4 *GetObjectsWorldPos() { return m_ObjectsWorldPos; }
 

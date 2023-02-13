@@ -58,7 +58,7 @@ MultipleTexture::MultipleTexture(ID3D12Device* Device, ID3D12GraphicsCommandList
 			}
 			break;
 			}
-			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, i);
+			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, DirectX::XMFLOAT2(1.f, 1.f), Kind, i);
 			SetMesh(i, UsingMesh);
 		}
 	}
@@ -97,7 +97,54 @@ MultipleTexture::MultipleTexture(ID3D12Device* Device, ID3D12GraphicsCommandList
 			}
 			break;
 			}
-			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, i);
+			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, DirectX::XMFLOAT2(1.f, 1.f), Kind, i);
+			SetMesh(i, UsingMesh);
+		}
+	}
+	break;
+
+	case T_FIREBALL:
+	{
+		m_TextureCount = 5;
+		m_MultiMesh = new Mesh*[m_TextureCount];
+
+		for (int i = 0; i < m_TextureCount; ++i) {
+			TextureMesh *UsingMesh = nullptr;
+			DirectX::XMFLOAT3 MeshPosition{};
+			switch (i) {
+			case 0:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+3.f, +3.f, -14.f);
+			}
+			break;
+
+			case 1:
+			{
+				MeshPosition = DirectX::XMFLOAT3(-0.f, +3.f, +15.f);
+			}
+			break;
+
+			case 2:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+0.f, +3.f, +15.f);
+			}
+			break;
+
+			case 3:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+3.f, +0.f, +15.f);
+			}
+			break;
+
+			case 4:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+3.f, +0.f, +15.f);
+			}
+			break;
+			}
+			int MeshIndex = i + 6;
+
+			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, DirectX::XMFLOAT2(1.f, 1.f), Kind, MeshIndex);
 			SetMesh(i, UsingMesh);
 		}
 	}
@@ -117,7 +164,19 @@ MultipleTexture::~MultipleTexture()
 
 void MultipleTexture::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)
 {
-	SetPosition(Position);
+	switch (m_Kind) {
+	case T_FIREBALL:
+	{
+
+	}
+	break;
+
+	default:
+	{
+		SetPosition(Position);
+	}
+	break;
+	}
 }
 
 void MultipleTexture::Render(ID3D12GraphicsCommandList* CommandList)

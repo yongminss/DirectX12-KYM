@@ -22,7 +22,8 @@ private:
 	
 	float m_AnimateTime = 0.f;
 
-	int m_Hp = 100;
+	int m_Hp = 0;
+	int m_Power = 0;
 
 public:
 	Monster(int Type);

@@ -108,10 +108,16 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	{
 		if (GetCurrentAnimationTrackIndex() != P_ROLL) SetAnimationTrack(P_ROLL, ANIMATION_TYPE_ONCE);
 
+		DirectX::XMFLOAT3 TempPosition = GetPosition();
+
 		float RollSpeed = m_ElapsedTime * 250.f;
 		DirectX::XMFLOAT3 Position{};
 		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), RollSpeed)));
 		m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y, m_TransformPos._43 = Position.z;
+
+		// 맵의 범위 밖으로 벗어나면 이전 위치로 돌아감
+		if (0 + 50.f >= m_TransformPos._41 || MAP_SIZE + 50.f <= m_TransformPos._41 || 0 + 50.f >= m_TransformPos._43 || MAP_SIZE + 50.f <= m_TransformPos._43)
+			SetPosition(TempPosition);
 
 		m_RollDistance += RollSpeed;
 
@@ -261,6 +267,8 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		break;
 		}
 
+		DirectX::XMFLOAT3 TempPosition = GetPosition();
+
 		// Set Position - ActiveMove : 0(앞), 1(뒤), 2(좌), 3(우)
 		if (m_ActiveMove[0] == true) {
 			DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetLook()), +Speed)));
@@ -278,6 +286,9 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 			DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetRight()), +Speed)));
 			m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y, m_TransformPos._43 = Position.z;
 		}
+		// 맵의 범위 밖으로 벗어나면 이전 위치로 돌아감
+		if (0 + 50.f >= m_TransformPos._41 || MAP_SIZE + 50.f <= m_TransformPos._41 || 0 + 50.f >= m_TransformPos._43 || MAP_SIZE + 50.f <= m_TransformPos._43)
+			SetPosition(TempPosition);
 	}
 	// 움직이지 않는 상태일 때의 애니메이션을 결정
 	else {
@@ -319,9 +330,9 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		if (P_DAMAGED != GetCurrentAnimationTrackIndex()) {
 			m_Camera->SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -30.f));
 			SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
-			if (0.f == m_CheckDamagedTime) SetDamaged(0x02), m_Hp -= 5;
+			if (0.f == m_CheckDamagedTime) SetChangeTexcoords(DirectX::XMFLOAT4(1.f, -1.f, -1.f, -1.f)), m_Hp -= 5;
 		}
-		if (m_CheckDamagedTime > 0.15f) SetDamaged(0x00);
+		if (m_CheckDamagedTime > 0.15f) SetChangeTexcoords(DirectX::XMFLOAT4(0.f, -1.f, -1.f, -1.f));
 
 		m_CheckDamagedTime += m_ElapsedTime;
 	}

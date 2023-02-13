@@ -135,109 +135,145 @@ TextureMesh::~TextureMesh()
 
 }
 
-TextureMesh::TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 Size, int Kind, int NumbersIndex)
+TextureMesh::TextureMesh(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, DirectX::XMFLOAT3 ModelSize, DirectX::XMFLOAT2 UvSize, int Kind, int Type)
 {
 	TextureVertex MeshVertex[6];
 
 	m_VertexCount = 6;
 	unsigned int ByteSize = sizeof(TextureVertex) * m_VertexCount;
 
-	switch (Kind) {
-	case 0:
+	switch (Type) {
+	case 0: // 정면
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 1:
+	case 1: // 후면
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 2:
+	case 2: // 좌측면
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 3:
+	case 3: // 우측면
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(Size.x, -Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(Size.x, +Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 4:
+	case 4: // 위쪽
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 5:
+	case 5: // 아래쪽
 	{
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 0.f));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(1.f, 1.f));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 1.f));
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, -Size.z), DirectX::XMFLOAT2(0.f, 1.f));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(0.f, 0.f));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, Size.y, +Size.z), DirectX::XMFLOAT2(1.f, 0.f));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
-	case 6: // UV 값을 다르게 설정할 텍스처에 사용 (ex. Numbers)
+	case 6: // z축 음의 방향
 	{
-		const float UvX = 0.25f, UvY = 0.32f;
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
 
-		if (NumbersIndex > 9) NumbersIndex -= 10;
-
-		float AddX = 0.f, AddY = 0.f;
-
-		AddX = UvX * (NumbersIndex % 4);
-
-		if (NumbersIndex >= 4 && NumbersIndex < 8) AddY = UvY * 1.f;
-		else if (NumbersIndex >= 8) AddY = UvY * 2.f;
-
-		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, 0.f + AddY));
-		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, UvY + AddY));
-		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, UvY + AddY));
-
-		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-Size.x, -Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, UvY + AddY));
-		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(0.f + AddX, 0.f + AddY));
-		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+Size.x, +Size.y, Size.z), DirectX::XMFLOAT2(UvX + AddX, 0.f + AddY));
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, -ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, +ModelSize.y, ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
 	}
 	break;
 
+	case 7: // x축 음의 방향
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+	}
+	break;
+
+	case 8: // x축 양의 방향
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, -ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(ModelSize.x, +ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+	}
+	break;
+
+	case 9: // y축 양의 방향
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+	}
+	break;
+
+	case 10: // y축 음의 방향
+	{
+		MeshVertex[0] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+		MeshVertex[1] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, UvSize.y), Kind);
+		MeshVertex[2] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+
+		MeshVertex[3] = TextureVertex(DirectX::XMFLOAT3(-ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, UvSize.y), Kind);
+		MeshVertex[4] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, -ModelSize.z), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+		MeshVertex[5] = TextureVertex(DirectX::XMFLOAT3(+ModelSize.x, ModelSize.y, +ModelSize.z), DirectX::XMFLOAT2(UvSize.x, 0.f), Kind);
+	}
+	break;
 	}
 	m_VertexBuffer = CreateBuffer(Device, CommandList, MeshVertex, ByteSize, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
@@ -656,9 +692,9 @@ void SkinnedMesh::UpdateShaderBuffer(ID3D12GraphicsCommandList* CommandList)
 			DirectX::XMStoreFloat4x4(&m_BoneTransform[i], DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_BoneFrame[i]->GetWorldPos())));
 		}
 		D3D12_GPU_VIRTUAL_ADDRESS BoneOffsetGpuVirtualAddress = m_BoneOffsetBuffer->GetGPUVirtualAddress();
-		CommandList->SetGraphicsRootConstantBufferView(5, BoneOffsetGpuVirtualAddress);
+		CommandList->SetGraphicsRootConstantBufferView(9, BoneOffsetGpuVirtualAddress);
 		D3D12_GPU_VIRTUAL_ADDRESS BoneTransformGpuVirtualAddress = m_BoneTransformBuffer->GetGPUVirtualAddress();
-		CommandList->SetGraphicsRootConstantBufferView(6, BoneTransformGpuVirtualAddress);
+		CommandList->SetGraphicsRootConstantBufferView(10, BoneTransformGpuVirtualAddress);
 	}
 }
 

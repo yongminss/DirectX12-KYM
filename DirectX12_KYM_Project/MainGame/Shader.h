@@ -14,13 +14,13 @@ protected:
 	ID3DBlob *m_VertexBlob = nullptr;
 	ID3DBlob *m_PixelBlob = nullptr;
 
-	int m_Type = 0;
+	int m_Kind = 0;
 
 public:
 	Shader();
 	~Shader();
 
-	void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Type = 0);
+	void CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature, int Kind);
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -33,40 +33,27 @@ public:
 	void Render(ID3D12GraphicsCommandList* CommandList);
 };
 
-// UI에 사용할 Shader
-class UserInterfaceShader : public Shader
+// Texture가 있는 오브젝트가 사용할 Shader
+class TextureShader : public Shader
 {
 public:
-	UserInterfaceShader() { }
-	~UserInterfaceShader() { }
+	TextureShader() { }
+	~TextureShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_BLEND_DESC CreateBlendState();
-
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
-};
-
-// 여러 개의 텍스처에 사용할 Shader
-class MultipleTextureShader : public Shader
-{
-public:
-	MultipleTextureShader() { }
-	~MultipleTextureShader() { }
-
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 };
 
-// ---
-class EffectShader : public Shader
+// 불꽃 효과에 사용할 Shader
+class FlameShader : public Shader
 {
 public:
-	EffectShader() { }
-	~EffectShader() { }
+	FlameShader() { }
+	~FlameShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
@@ -91,8 +78,8 @@ public:
 class LoadedShader : public Shader
 {
 public:
-	LoadedShader() {}
-	~LoadedShader() {}
+	LoadedShader() { }
+	~LoadedShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 
@@ -104,8 +91,8 @@ public:
 class SkinnedShader : public LoadedShader
 {
 public:
-	SkinnedShader() {}
-	~SkinnedShader() {}
+	SkinnedShader() { }
+	~SkinnedShader() { }
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 

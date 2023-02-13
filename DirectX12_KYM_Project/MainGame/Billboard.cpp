@@ -50,18 +50,22 @@ void Billboard::CreateShader(ID3D12Device* Device, ID3D12RootSignature* RootSign
 
 void Billboard::CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, Terrain* SceneTerrain, int Kind, int ObjectsCount)
 {
-	// Create Billboard Model (Grass) - Create Mesh & Texture
-	BillboardVertex ModelVertex[1];
-	ModelVertex[0] = BillboardVertex(DirectX::XMFLOAT3(0.f, 0.f, 0.f), DirectX::XMFLOAT2(0.f, 0.f), Kind);
+	// Create Billboard Model - Create Mesh & Texture
+	TextureVertex ModelVertex[1];
+	ModelVertex[0] = TextureVertex(DirectX::XMFLOAT3(0.f, 0.f, 0.f), DirectX::XMFLOAT2(0.f, 0.f), Kind);
 
-	m_VertexBuffer = CreateBuffer(Device, CommandList, ModelVertex, sizeof(BillboardVertex), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
+	m_VertexBuffer = CreateBuffer(Device, CommandList, ModelVertex, sizeof(TextureVertex), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_UploadVertexBuffer);
 
 	m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
-	m_VertexBufferView.StrideInBytes = sizeof(BillboardVertex);
-	m_VertexBufferView.SizeInBytes = sizeof(BillboardVertex);
+	m_VertexBufferView.StrideInBytes = sizeof(TextureVertex);
+	m_VertexBufferView.SizeInBytes = sizeof(TextureVertex);
+
+	int TextureKind = Kind;
+
+	if (Kind >= T_WALL && Kind < T_WALL + 4) TextureKind = T_WALL;
 
 	m_Texture = new Texture();
-	m_Texture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+	m_Texture->CreateTexture(Device, CommandList, nullptr, TextureKind, 1, 3);
 
 	// Set Instancing Objects Information
 	m_ObjectsCount = ObjectsCount;
@@ -71,37 +75,92 @@ void Billboard::CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList*
 	float ObjectX = 0.f, ObjectY = 0.f, ObjectZ = 0.f;
 
 	int ObjectsCountSquareRoot = sqrt(ObjectsCount);
-	
-	for (int z = 0; z < ObjectsCountSquareRoot; ++z) {
-		for (int x = 0; x < ObjectsCountSquareRoot; ++x) {
-			ObjectX = (200.f * x) + rand() % 50;
-			ObjectZ = (200.f * z) + rand() % 50;
 
-			int GetHeightMapX = int(ObjectX) / MAP_SCALE, GetHeightMapZ = int(ObjectZ) / MAP_SCALE;
+	// 오브젝트의 종류에 맞게 월드 좌표를 설정
+	switch (Kind) {
+	case T_BILLBOARDGRASS:
+	case T_BILLBOARDTREE:
+	{
+		for (int z = 0; z < ObjectsCountSquareRoot; ++z) {
+			for (int x = 0; x < ObjectsCountSquareRoot; ++x) {
+				ObjectX = 150.f + rand() % 70 + (190.f * x);
+				ObjectZ = 150.f + rand() % 70 + (190.f * z);
 
-			switch (Kind)
+				int GetHeightMapX = int(ObjectX) / MAP_SCALE, GetHeightMapZ = int(ObjectZ) / MAP_SCALE;
+
+				switch (Kind)
+				{
+				case T_BILLBOARDGRASS:
+				{
+					ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 2.5f;
+				}
+				break;
+
+				case T_BILLBOARDTREE:
+				{
+					ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 80.f;
+				}
+				break;
+				}
+				m_ObjectsWorldPos[ObjectIndex++] = DirectX::XMFLOAT4X4(
+					1.f, 0.f, 0.f, 0.f,
+					0.f, 1.f, 0.f, 0.f,
+					0.f, 0.f, 1.f, 0.f,
+					ObjectX, ObjectY, ObjectZ, 1.f);
+			}
+		}
+	}
+	break;
+
+	case T_WALL:
+	case T_WALL + 1:
+	case T_WALL + 2:
+	case T_WALL + 3:
+	{
+		for (int i = 0; i < m_ObjectsCount; ++i) {
+			switch (Kind) {
+			case T_WALL: // x : 0 - 5000, z : 5000
 			{
-			case T_BILLBOARDGRASS:
-			{
-				ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 2.5f;
+				ObjectX = 150.f + (200.f * i), ObjectY = 150.f, ObjectZ = 5050.f;
+				if (i > 24) ObjectX -= 5000.f, ObjectY += 200.f;
+				if (i > 49) ObjectX -= 5000.f, ObjectY += 200.f;
 			}
 			break;
 
-			case T_BILLBOARDTREE:
+			case T_WALL + 1: // x : 0 - 5000, z : 0
 			{
-				ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 80.f;
+				ObjectX = 150.f + (200.f * i), ObjectY = 150.f, ObjectZ = 50.f;
+				if (i > 24) ObjectX -= 5000.f, ObjectY += 200.f;
+				if (i > 49) ObjectX -= 5000.f, ObjectY += 200.f;
+			}
+			break;
+
+			case T_WALL + 2: // x : 0, z : 0 - 5000
+			{
+				ObjectX = 50.f, ObjectY = 150.f, ObjectZ = 150.f + (200.f * i);
+				if (i > 24) ObjectZ -= 5000.f, ObjectY += 200.f;
+				if (i > 49) ObjectZ -= 5000.f, ObjectY += 200.f;
+			}
+			break;
+
+			case T_WALL + 3: // x : 5000, z : 0 - 5000
+			{
+				ObjectX = 5050.f, ObjectY = 150.f, ObjectZ = 150.f + (200.f * i);
+				if (i > 24) ObjectZ -= 5000.f, ObjectY += 200.f;
+				if (i > 49) ObjectZ -= 5000.f, ObjectY += 200.f;
 			}
 			break;
 			}
-
-			m_ObjectsWorldPos[ObjectIndex++] = DirectX::XMFLOAT4X4(
+			m_ObjectsWorldPos[i] = DirectX::XMFLOAT4X4(
 				1.f, 0.f, 0.f, 0.f,
 				0.f, 1.f, 0.f, 0.f,
 				0.f, 0.f, 1.f, 0.f,
 				ObjectX, ObjectY, ObjectZ, 1.f);
 		}
 	}
-
+	break;
+	}
+	
 	// Create Instance Buffer
 	m_InstanceBuffer = CreateBuffer(Device, CommandList, nullptr, sizeof(MAPPING_INSTANCE) * m_ObjectsCount, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
 	m_InstanceBuffer->Map(0, nullptr, (void**)&m_MappingInstanceData);
@@ -166,6 +225,8 @@ D3D12_SHADER_BYTECODE Billboard::CreatePixelShader()
 void Billboard::Render(ID3D12GraphicsCommandList* CommandList)
 {
 	Shader::Render(CommandList);
+
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_ChangeTexcoords, 32);
 
 	if (m_Texture != nullptr) m_Texture->Render(CommandList, 0);
 

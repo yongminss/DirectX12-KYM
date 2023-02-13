@@ -20,156 +20,102 @@ Material::~Material()
 
 void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, int Kind)
 {
+	m_Kind = Kind;
+
 	switch (Kind) {
-	case T_TERRAIN: // Terrain
+	case T_TERRAIN:
 	{
 		TerrainShader *UsingShader = new TerrainShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 2, 3);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 2, 7);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	case T_SKYBOX: // Skybox
+	case T_SKYBOX:
 	{
-		MultipleTextureShader *UsingShader = new MultipleTextureShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		TextureShader *UsingShader = new TextureShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 6, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 6, 3);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	case T_TREE: // Multiple Texture Tree
+	case T_TREE:
 	{
-		MultipleTextureShader *UsingShader = new MultipleTextureShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		TextureShader *UsingShader = new TextureShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 4, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 4, 3);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	// 여기부터 UI로 사용하는 Texture
-	case T_TITLESCREEN: // Title Screen
+	case T_FLAME:
 	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		FlameShader *UsingShader = new FlameShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 3, 4);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	case T_SELECTION: // Selection
+	case T_FIREBALL:
 	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		TextureShader *UsingShader = new TextureShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 5, 3);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	case T_HPBAR: // Hp Bar
+	// 2D Texture - Count 1, Root Parameter Index 3 (ex. UserInterface, Effect)
+	case T_SMOKE:
+	case T_SPARK:
+	case T_SIGNAL:
+	case T_TITLESCREEN:
+	case T_SELECTION:
+	case T_HPBAR:
+	case T_HPGAUGE:
+	case T_AIM:
+	case T_NUMBERS:
+	case T_GAMEOVER:
+	case T_ENTERFIRE:
+	case T_ENTERMONSTER:
+	case T_GUIDEAREA:
+	case T_GUIDENONE:
+	case T_GUIDEFIRE:
+	case T_GUIDEMONSTER:
 	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
+		TextureShader *UsingShader = new TextureShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 
 		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 3);
 		SetTexture(UsingTexture);
 	}
 	break;
 
-	case T_HPGAUGE: // Hp Gauge
-	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
-	case T_AIM: // Aim
-	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
-	case T_NUMBERS: // Numbers
-	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
-	case T_GAMEOVER: // GameOver Screen
-	{
-		UserInterfaceShader *UsingShader = new UserInterfaceShader();
-		UsingShader->CreateShader(Device, RootSignature, 1);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
-	case T_SIGNAL: // Signal
-	{
-		EffectShader *UsingShader = new EffectShader();
-		UsingShader->CreateShader(Device, RootSignature);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
-	case T_SPARK: // Spark
-	{
-		EffectShader *UsingShader = new EffectShader();
-		UsingShader->CreateShader(Device, RootSignature);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 1, 2);
-		SetTexture(UsingTexture);
-	}
-	break;
-
+	// Texture를 사용하지 않는 오브젝트
 	default:
 	{
 		Shader *UsingShader = new Shader();
-		UsingShader->CreateShader(Device, RootSignature);
+		UsingShader->CreateShader(Device, RootSignature, Kind);
 		SetShader(UsingShader);
 	}
 	break;
@@ -182,10 +128,10 @@ Shader* Material::m_SkinnedShader = nullptr;
 void Material::PrepareShader(ID3D12Device* Device, ID3D12RootSignature* RootSignature)
 {
 	m_LoadedShader = new LoadedShader();
-	m_LoadedShader->CreateShader(Device, RootSignature);
+	m_LoadedShader->CreateShader(Device, RootSignature, 0);
 
 	m_SkinnedShader = new SkinnedShader();
-	m_SkinnedShader->CreateShader(Device, RootSignature);
+	m_SkinnedShader->CreateShader(Device, RootSignature, 0);
 }
 
 void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, ID3D12RootSignature* RootSignature, FILE* File, GameObject* ParentFrame, int Type, Shader* InstanceShader)
@@ -230,7 +176,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 				case 0:
 				{
 					UsingShader = new InstancingLoadedModel();
-					UsingShader->CreateShader(Device, RootSignature);
+					UsingShader->CreateShader(Device, RootSignature, 0);
 					SetShader(UsingShader);
 				}
 				break;
@@ -238,7 +184,7 @@ void Material::LoadMaterialInfo(ID3D12Device* Device, ID3D12GraphicsCommandList*
 				case 1:
 				{
 					UsingShader = new InstancingSkinnedModel();
-					UsingShader->CreateShader(Device, RootSignature);
+					UsingShader->CreateShader(Device, RootSignature, 0);
 					SetShader(UsingShader);
 				}
 				break;
@@ -339,7 +285,7 @@ void Material::LoadTextureInfo(ID3D12Device* Device, ID3D12GraphicsCommandList* 
 
 			// Texture를 생성
 			Texture *UsingTexture = new Texture();
-			UsingTexture->CreateTexture(Device, CommandList, FrameTextureName, -1, 1, 4);
+			UsingTexture->CreateTexture(Device, CommandList, FrameTextureName, -1, 1, 8);
 			SetTexture(UsingTexture);
 
 			delete[] FrameTextureName;
@@ -369,7 +315,7 @@ void Material::MappingTexture(ID3D12GraphicsCommandList* CommandList, int Index)
 	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Specular, 24);
 	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_Emissive, 28);
 
-	CommandList->SetGraphicsRoot32BitConstants(1, 1, &m_Damaged, 32);
+	CommandList->SetGraphicsRoot32BitConstants(1, 4, &m_ChangeTexcoords, 32);
 
 	if (m_Texture != nullptr) m_Texture->Render(CommandList, Index);
 }

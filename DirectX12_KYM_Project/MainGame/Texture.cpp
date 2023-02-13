@@ -49,7 +49,21 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		bool ActiveCubeMap = false;
 
 		switch (Kind) {
-		case T_TERRAIN: // Terrain
+		case T_TITLESCREEN:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Title.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_SELECTION:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_TERRAIN:
 		{
 			switch (i) {
 			case 0:
@@ -69,7 +83,7 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
-		case T_SKYBOX: // Skybox
+		case T_SKYBOX:
 		{
 			switch (i) {
 			case 0:
@@ -117,86 +131,178 @@ void Texture::CreateTextureBuffer(ID3D12Device* Device, ID3D12GraphicsCommandLis
 		}
 		break;
 
-		case T_TREE: // Multiple Texture Tree
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Tree.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_TITLESCREEN: // Title Screen
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Title.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_SELECTION: // Selection
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_HPBAR: // Hp Bar
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_HPGAUGE: // Hp Gauge
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_HpGauge.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_AIM: // Aim
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Aim.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_NUMBERS: // Numbers
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Numbers.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_GAMEOVER: // GameOver Screen
-		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Gameover.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
-				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
-		}
-		break;
-
-		case T_BILLBOARDGRASS: // Grass
+		case T_BILLBOARDGRASS:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Grass.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 
-		case T_BILLBOARDTREE: // Tree
+		case T_BILLBOARDTREE:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Tree.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 
-		case T_SIGNAL: // Signal
+		case T_WALL:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Wall.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_TREE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Billboard_Tree.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_FLAME:
+		{
+			switch (i) {
+			case 0:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Flame_Fire.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 1:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Flame_Noise.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 2:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Flame_Alpha.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+			}
+		}
+		break;
+
+		case T_SMOKE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Smoke.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_SPARK:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Spark.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_SIGNAL:
 		{
 			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Signal.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;
 
-		case T_SPARK: // Spark
+		case T_FIREBALL:
 		{
-			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_Spark.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+			switch (i) {
+			case 0:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_FireBallFront.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			{
+				DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/Effect_FireBall.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+					TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+			}
+			break;
+			}
+		}
+		break;
+
+		case T_HPBAR:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Bar.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_HPGAUGE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_HpGauge.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_AIM:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Aim.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_NUMBERS:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Numbers.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GAMEOVER:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_Gameover.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_ENTERFIRE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_EnterFire.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_ENTERMONSTER:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_EnterMonster.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GUIDEAREA:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_GuideArea.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GUIDENONE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_GuideNone.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GUIDEFIRE:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_GuideFire.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
+				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
+		}
+		break;
+
+		case T_GUIDEMONSTER:
+		{
+			DirectX::LoadDDSTextureFromFileEx(Device, L"Texture/UI_GuideMonster.dds", 0, D3D12_RESOURCE_FLAG_NONE, DirectX::DDS_LOADER_DEFAULT, &m_TextureBuffer[i],
 				TextureFileData, SubresourceData, &TextureFileAlphaMode, &ActiveCubeMap);
 		}
 		break;

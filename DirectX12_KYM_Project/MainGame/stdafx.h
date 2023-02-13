@@ -51,24 +51,34 @@ static SIZE_T DescriptorHandleIncrementSize = 0;
 // Texture Kinds
 enum TEXTURE_KIND
 {
-	// 0 ~ 1 - Geometry Shader Texture (ex. Billboard Texture)
-	T_BILLBOARDGRASS,
-	T_BILLBOARDTREE,
-	// 2 - Terrain Texture
-	T_TERRAIN,
-	// 3 ~ 9 - UserInterface Texture
+	// 1. Title State Texture
 	T_TITLESCREEN,
 	T_SELECTION,
+	// 2. Map Texture
+	T_TERRAIN,
+	T_SKYBOX,
+	T_BILLBOARDGRASS,
+	T_BILLBOARDTREE,
+	T_WALL,
+	T_TREE,
+	// 3. Effect Texture
+	T_FLAME,
+	T_SMOKE,
+	T_SPARK,
+	T_SIGNAL,
+	T_FIREBALL,
+	// 4. UI Texture
 	T_HPBAR,
 	T_HPGAUGE,
 	T_AIM,
 	T_NUMBERS,
 	T_GAMEOVER,
-	// 10 ~ - Use World Position Texture
-	T_SKYBOX,
-	T_TREE,
-	T_SIGNAL,
-	T_SPARK
+	T_ENTERFIRE,
+	T_ENTERMONSTER,
+	T_GUIDEAREA,
+	T_GUIDENONE,
+	T_GUIDEFIRE,
+	T_GUIDEMONSTER
 };
 
 // Monster Kinds

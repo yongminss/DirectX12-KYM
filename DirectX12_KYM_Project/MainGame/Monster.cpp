@@ -7,7 +7,36 @@
 
 Monster::Monster(int Type) : m_Type(Type)
 {
+	// Monster Type에 따라 능력치를 설정
+	switch (m_Type) {
+	case M_WEAKORC:
+	{
+		m_Hp = 50;
+		m_Power = 5;
+	}
+	break;
 
+	case M_STRONGORC:
+	{
+		m_Hp = 100;
+		m_Power = 10;
+	}
+	break;
+
+	case M_SHAMANORC:
+	{
+		m_Hp = 100;
+		m_Power = 10;
+	}
+	break;
+
+	case M_WOLFRIDERORC:
+	{
+		m_Hp = 1000;
+		m_Power = 20;
+	}
+	break;
+	}
 }
 
 Monster::~Monster()
@@ -36,8 +65,6 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransfor
 		if (true == m_ActiveDamaged && m_State != 3) {
 			if (0.f == m_HitTime) {
 				m_State = 0;
-				SetDamaged(0x02); // 피격된 것을 직관적으로 보여주기 위해 색상을 변경
-
 				// 첫 피격일 경우 Signal을 이용하여 몬스터가 플레이어를 인식했다는 것을 보여줌
 				if (false == m_FirstHit) {
 					Signal->ActiveEffect(m_TransformPos), m_FirstHit = true;
@@ -45,7 +72,7 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransfor
 
 				// 몬스터의 피격 애니메이션 수행 - Shaman은 애니메이션의 인덱스가 다르므로 타입에 따른 결정
 				switch (m_Type) {
-				case 2:
+				case M_SHAMANORC:
 				{
 					if (GetCurrentAnimationTrackIndex() != M_DAMAGED - 1) {
 						SetAnimationTrack(M_DAMAGED - 1, ANIMATION_TYPE_ONCE);
@@ -68,7 +95,10 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransfor
 
 			// 일정 시간이 지나면 원래 색상으로 돌아옴
 			if (m_HitTime >= 0.15f) {
-				SetDamaged(0x00);
+				SetChangeTexcoords(DirectX::XMFLOAT4(0.f, -1.f, -1.f, -1.f));
+			}
+			else {
+				SetChangeTexcoords(DirectX::XMFLOAT4(1.f, -1.f, -1.f, -1.f)); // 피격된 것을 직관적으로 보여주기 위해 색상을 변경
 			}
 
 			// 피격 애니메이션의 시간 0.6667초가 지나면 몬스터의 다음 행동을 결정
@@ -155,13 +185,12 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransfor
 					}
 					SetAnimationTrack(M_ATTACK_A, ANIMATION_TYPE_ONCE);
 				}
-
 				m_AnimateTime += ElapsedTime;
 
 				// 타입 별로 애니메이션의 시간이 다르므로 분류
 				switch (m_Type) {
-				case 0:
-				case 1:
+				case M_WEAKORC:
+				case M_STRONGORC:
 				{
 					// 무기를 휘둘렀을 때, 플레이어가 범위 내에 있으면 공격 성공처리
 					if (false == m_SuccessAttack && m_AnimateTime > 0.3f && (60.f * 60.f) > (Distance * Distance)) m_SuccessAttack = true;
@@ -194,8 +223,8 @@ void Monster::MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransfor
 				m_AnimateTime += ElapsedTime;
 
 				switch (m_Type) {
-				case 0:
-				case 1:
+				case M_WEAKORC:
+				case M_STRONGORC:
 				{
 					// Weak & Strong : A (1.83334), B (1.6667)
 					if (m_AnimateTime >= 1.799f) m_AnimateTime = 0.f, m_Death = true;
