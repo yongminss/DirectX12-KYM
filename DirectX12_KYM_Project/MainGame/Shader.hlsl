@@ -1,4 +1,4 @@
-// 조명과 오브젝트의 재질을 계산하여 오브젝트의 색상을 결정
+// 조명 계산에 사용하는 모델의 재질
 struct MATERIAL
 {
     float4 m_Ambient;
@@ -23,7 +23,9 @@ cbuffer GameObject : register(b1)
     float4 ChangeTexcoords : packoffset(c8);
 };
 
-// 게임 내에서 사용되는 조명을 생성 (ex. 구조체, 버퍼)
+// 조명 계산에 사용하는 구조체와 버퍼 생성
+#define LIGHT_MAX 16
+
 #define DIRECTIONAL_LIGHT 0
 #define SPOT_LIGHT 1
 #define POINT_LIGHT 2
@@ -35,23 +37,58 @@ struct LIGHT
     float4 m_Specular;
     float4 m_Emissive;
     float3 m_Direction;
+    float m_Range;
+    float3 m_Position;
     int m_Type;
     bool m_Active;
+    float3 m_Attenuation;
 };
 
 cbuffer Lighting : register(b2)
 {
-    LIGHT Lights : packoffset(c0);
+    LIGHT Lights[LIGHT_MAX];
+    int LightCount;
 };
 
 // 게임 내에서 태양 빛으로 사용되는 방향성 조명
-float4 DirectionalLight(float3 oNormal)
+float4 DirectionalLight(int Index, float3 oNormal)
 {
-    float3 ToLight = Lights.m_Direction;
+    float3 ToLight = Lights[Index].m_Direction;
+    float DiffuseFactor = dot(ToLight, oNormal);
+        
+    // 색 결정을 위해 조명의 재질과 오브젝트의 재질을 곱함
+        float4 Color =
+    (Lights[Index].m_Ambient * Material.m_Ambient) +
+    (Lights[Index].m_Diffuse * DiffuseFactor * Material.m_Diffuse) +
+    (Lights[Index].m_Specular * Material.m_Specular) +
+    (Lights[Index].m_Emissive * Material.m_Emissive);
+    
+    return Color;
+}
+
+// 태양 빛 외의 다른 오브젝트의 조명 효과 (ex. 불꽃 효과 or 그림자 등)
+float4 PointLight(int Index, float3 oPosition, float3 oNormal)
+{
+    float3 ToLight = Lights[Index].m_Position - oPosition;
+    float Distance = length(ToLight);
+    ToLight /= Distance;
     float DiffuseFactor = dot(ToLight, oNormal);
     
-    // 색 결정을 위해 조명의 재질과 오브젝트의 재질을 곱함
-    float4 Color = (Lights.m_Ambient * Material.m_Ambient) + (Lights.m_Diffuse * DiffuseFactor * Material.m_Diffuse) + (Lights.m_Specular * Material.m_Specular) + (Lights.m_Emissive * Material.m_Emissive);
+    float4 Color = float4(0.f, 0.f, 0.f, 0.f);
+    
+    if (Distance <= Lights[Index].m_Range)
+    {
+        Color =
+    (Lights[Index].m_Ambient * Material.m_Ambient) +
+    (Lights[Index].m_Diffuse * DiffuseFactor * Material.m_Diffuse) +
+    (Lights[Index].m_Specular * Material.m_Specular) +
+    (Lights[Index].m_Emissive * Material.m_Emissive);
+        
+        // 거리에 따른 감쇄 값 설정
+        float AttenuationFactor = 1.f / dot(Lights[Index].m_Attenuation, float3(1.f, Distance, Distance * Distance));
+        
+        Color *= AttenuationFactor;
+    }
     
     return Color;
 }
@@ -59,18 +96,22 @@ float4 DirectionalLight(float3 oNormal)
 // 조명의 종류에 따라 오브젝트의 재질과 계산하여 색상을 결정
 float4 CalLighting(float3 oPosition, float3 oNormal)
 {
-    float3 CamerawPosition = float3(CamwPos.x, CamwPos.y, CamwPos.z);
-    
     float4 Color = float4(0.f, 0.f, 0.f, 0.f);
     
-    if (Lights.m_Active == true)
+    for (int i = 0; i < LightCount; ++i)
     {
-        if (Lights.m_Type == DIRECTIONAL_LIGHT)
+        if (Lights[i].m_Active == true)
         {
-            Color += DirectionalLight(oNormal);
+            if (Lights[i].m_Type == DIRECTIONAL_LIGHT)
+            {
+                Color += DirectionalLight(i, oNormal);
+            }
+            else if (Lights[i].m_Type == POINT_LIGHT)
+            {
+                Color += PointLight(i, oPosition, oNormal);
+            }
         }
     }
-    
     return Color;
 }
 
@@ -154,12 +195,12 @@ float4 TexturePS(TextureVS_Output Input) : SV_TARGET
     
     if (0.f != ChangeTexcoords.z)
     {
-        float ChangeRange = ChangeTexcoords.z;
-        Color -= float4(ChangeRange / 2.f, ChangeRange, ChangeRange, 0.f);
+        float ChangeRange = ChangeTexcoords.z / 2.f;
+        Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     if (0.f != ChangeTexcoords.w)
     {
-        float ChangeRange = ChangeTexcoords.w;
+        float ChangeRange = ChangeTexcoords.w / 2.f;
         Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     clip(Color.a - 0.1f);
@@ -173,7 +214,10 @@ float4 BlendTexturePS(TextureVS_Output Input) : SV_TARGET
     
     switch (Input.kind)
     {
-        case 17: // GameOver Screen
+        case 9: // Smoke
+            break;
+        
+        case 16: // GameOver Screen
             Color.w = ChangeTexcoords.x / 1000.f;
             break;
     }
@@ -231,11 +275,7 @@ void BillboardGS(point InstancingTextureVS_Output Input[1], inout TriangleStream
     uint kind = Input[0].kind;
     
     switch (kind)
-    {
-        case 4: // Grass
-            Width = 100.f, Height = 10.f;
-            break;
-        
+    {        
         case 5: // Tree
             Width = 75.f, Height = 100.f;
             break;
@@ -253,7 +293,6 @@ void BillboardGS(point InstancingTextureVS_Output Input[1], inout TriangleStream
         
     switch (kind)
     {
-        case 4:
         case 5:
             MeshVertex[0] = float4(Input[0].position + (Width * Right) - (Height * Up), 1.f);
             MeshVertex[1] = float4(Input[0].position + (Width * Right) + (Height * Up), 1.f);
@@ -316,12 +355,12 @@ float4 InstancingTexturePS(InstancingTextureGS_Output Input) : SV_TARGET
     
     if (0.f != ChangeTexcoords.z)
     {
-        float ChangeRange = ChangeTexcoords.z;
-        Color -= float4(ChangeRange / 2.f, ChangeRange, ChangeRange, 0.f);
+        float ChangeRange = ChangeTexcoords.z / 2.f;
+        Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     if (0.f != ChangeTexcoords.w)
     {
-        float ChangeRange = ChangeTexcoords.w;
+        float ChangeRange = ChangeTexcoords.w / 2.f;
         Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     clip(Color.a - 0.1f);
@@ -399,7 +438,7 @@ FlameVS_Output FlameVS(FlameVS_Input Input)
 }
 
 float4 FlamePS(FlameVS_Output Input) : SV_TARGET
-{    
+{
     float4 Noise1 = NoiseTexture.Sample(Sampler, Input.texCoords1);
     float4 Noise2 = NoiseTexture.Sample(Sampler, Input.texCoords2);
     float4 Noise3 = NoiseTexture.Sample(Sampler, Input.texCoords3);
@@ -441,26 +480,26 @@ struct TerrainVS_Input
     float3 position : POSITION;
     float2 uv0 : UV0;
     float2 uv1 : UV1;
-    float4 color : COLOR;
 };
 
 struct TerrainVS_Output
 {
     float4 position : SV_Position;
+    float3 positionw : POSITION;
     float2 uv0 : UV0;
     float2 uv1 : UV1;
-    float4 color : COLOR;
 };
 
 TerrainVS_Output TerrainVS(TerrainVS_Input Input)
 {
     TerrainVS_Output Output;
     
-    Output.position = mul(mul(mul(float4(Input.position, 1.f), WorldPos), CameraPos), ProjectionPos);
+    Output.positionw = mul(float4(Input.position, 1.f), WorldPos).xyz;
     Output.uv0 = Input.uv0;
     Output.uv1 = Input.uv1;
-    Output.color = Input.color;
     
+    Output.position = mul(mul(float4(Output.positionw, 1.f), CameraPos), ProjectionPos);
+
     return Output;
 }
 
@@ -469,20 +508,25 @@ float4 TerrainPS(TerrainVS_Output Input) : SV_TARGET
     float4 BaseUv = BaseTexture.Sample(Sampler, Input.uv0);
     float4 DetailUv = DetailTexture.Sample(Sampler, Input.uv1);
     
+    float4 Color = saturate(BaseUv + DetailUv);
+    
     if (0.f != ChangeTexcoords.z)
     {
-        float ChangeRange = ChangeTexcoords.z * 2.f;
-        Input.color -= float4(ChangeRange / 2.f, ChangeRange, ChangeRange, 0.f);
+        float ChangeRange = ChangeTexcoords.z;
+        Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     if (0.f != ChangeTexcoords.w)
     {
-        float ChangeRange = ChangeTexcoords.w * 2.f;
-        Input.color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
+        float ChangeRange = ChangeTexcoords.w;
+        Color -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     
-    float4 Color = Input.color * saturate((BaseUv * 0.5f) + (DetailUv * 0.5f));
+    float3 Normalw = float3(BaseUv.x, BaseUv.y, BaseUv.z);
+    normalize(Normalw);
     
-    return Color;
+    float4 Illumination = CalLighting(Input.positionw, Normalw);
+    
+    return lerp(Color, Illumination, 0.5f);
 }
 // -----
 
@@ -552,14 +596,11 @@ float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
     // 3-2. Normal Map이 없으면 VS에서 읽어온 normal 값으로 설정
     float3 Normalw = normalize(Input.normal);
     
-    // 4. Scene의 방향성 조명과 모델의 재질 정보를 사용하여 조명 값을 계산
-    float4 Illumination = CalLighting(Input.positionw, Normalw);
-    
-    // 입장한 지역에 따라 색상을 변화
+    // 4. 특정 지역(ex. Fire, Monster Area)에 입장한 경우, 텍스처 색상 변경
     if (0.f != ChangeTexcoords.z)
     {
         float ChangeRange = ChangeTexcoords.z;
-        AlbedoTexture -= float4(ChangeRange / 2.f, ChangeRange, ChangeRange, 0.f);
+        AlbedoTexture -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     if (0.f != ChangeTexcoords.w)
     {
@@ -567,11 +608,13 @@ float4 LoadedPS(LoadedVS_Output Input) : SV_TARGET
         AlbedoTexture -= float4(ChangeRange, ChangeRange, ChangeRange, 0.f);
     }
     
-    // 오브젝트의 피격 시에 색상을 변경
-    if (1.f == ChangeTexcoords.x)
-        AlbedoTexture.x = 1.f;
+    // 5. 조명과 모델 재질에 따라 텍스처 색상 변경
+    float4 Illumination = CalLighting(Input.positionw, Normalw);
     
-    // 5. 모델의 텍스처와 조명 값을 적용해서 모델의 색상을 결정
+    // 6. 피격 시, 색상 변화
+    if (1.f == ChangeTexcoords.x) AlbedoTexture.x = 1.f;
+    
+    // 7. 텍스처의 최종 결과 계산
     return lerp(AlbedoTexture, Illumination, 0.5f);
 }
 

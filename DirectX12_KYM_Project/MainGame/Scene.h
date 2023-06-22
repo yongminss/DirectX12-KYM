@@ -1,5 +1,11 @@
 #pragma once
 
+#define LIGHT_MAX 16
+
+#define DIRECTIONAL_LIGHT 0
+#define SPOT_LIGHT 1
+#define POINT_LIGHT 2
+
 // Scene에서 사용할 각 조명의 정보 (ex. 색상, 방향, 종류 등)
 struct LIGHT
 {
@@ -8,14 +14,18 @@ struct LIGHT
 	DirectX::XMFLOAT4 m_Specular;
 	DirectX::XMFLOAT4 m_Emissive;
 	DirectX::XMFLOAT3 m_Direction;
+	float m_Range;
+	DirectX::XMFLOAT3 m_Position;
 	int m_Type;
 	bool m_Active;
+	DirectX::XMFLOAT3 m_Attenuation;
 };
 
-// 조명 버퍼에서 사용할 조명들 - 아직까진 햇빛으로 사용하는 방향성 조명 1개만 존재
+// 조명 버퍼에서 사용할 조명들
 struct MAPPING_LIGHT
 {
-	LIGHT m_Light;
+	LIGHT m_Lights[LIGHT_MAX];
+	int m_LightCount;
 };
 
 // 불꽃 효과에 사용하는 Constant Buffer 생성 (ex. Noise Buffer, Distortion Buffer)
@@ -72,7 +82,8 @@ private:
 	static D3D12_CPU_DESCRIPTOR_HANDLE m_CpuDescriptorNextHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE m_GpuDescriptorNextHandle;
 
-	LIGHT m_Light{};
+	LIGHT *m_Lights = nullptr;
+	int m_LightCount = 0;
 	MAPPING_LIGHT *m_MappingLight = nullptr;
 	ID3D12Resource *m_LightBuffer = nullptr;
 
@@ -87,22 +98,21 @@ private:
 	// Title State에서 사용하는 오브젝트
 	UserInterface *m_TitleScreen = nullptr;
 	UserInterface *m_Selection = nullptr;
+	UserInterface *m_GameManual = nullptr;
 
 	// Main State에서 사용하는 오브젝트
 	Player *m_Player = nullptr;
 
 	Terrain *m_Terrain = nullptr;
 	MultipleTexture *m_Skybox = nullptr;
-	Billboard *m_BillboardGrass = nullptr;
 	Billboard *m_BillboardTree = nullptr;
 	Billboard **m_Walls = nullptr;
 	std::vector<MultipleTexture*> m_Tree{};
 
 	std::vector<Effect*> m_Flames{};
-	Effect *m_Smoke = nullptr;
+	std::vector<Effect*> m_Smokes{};
 	Effect *m_Spark = nullptr;
 	Effect *m_Signal = nullptr;
-	MultipleTexture *m_FireBall = nullptr;
 
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
@@ -142,6 +152,7 @@ public:
 	void CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 
 	void UpdateConstantBuffer(ID3D12GraphicsCommandList* CommandList);
+	void UpdateNoneArea(float ElapsedTime);
 	void UpdateFireArea(float ElapsedTime);
 	void UpdateMonsterArea(float ElapsedTime);
 	void Animate(float ElapsedTime, HWND Hwnd);

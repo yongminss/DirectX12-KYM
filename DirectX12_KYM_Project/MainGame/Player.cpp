@@ -92,6 +92,7 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 		SetPosition(Position);
 	}
 
+	// 플레이어의 애니메이션이 수행이 완료된 경우 초기화 수행
 	if (true == GetChangeState()) {
 		if (m_State == STATE_RELOAD) m_CompletedReload = true;
 
@@ -328,9 +329,32 @@ void Player::Move(HWND Hwnd, POINT PreviousPos, float MapY)
 	case STATE_DAMAGED:
 	{
 		if (P_DAMAGED != GetCurrentAnimationTrackIndex()) {
-			m_Camera->SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -30.f));
+			// 피격 효과 - 피격 애니메이션, 일시적으로 카메라의 오프셋과 텍스처 색상 변경, 체력 감소
 			SetAnimationTrack(P_DAMAGED, ANIMATION_TYPE_ONCE);
-			if (0.f == m_CheckDamagedTime) SetChangeTexcoords(DirectX::XMFLOAT4(1.f, -1.f, -1.f, -1.f)), m_Hp -= 5;
+			m_Camera->SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -30.f));
+			if (0.f == m_CheckDamagedTime) {
+				SetChangeTexcoords(DirectX::XMFLOAT4(1.f, -1.f, -1.f, -1.f));
+				switch (m_HitMonsterKind) {
+				case M_WEAKORC:
+				{
+					m_Hp -= 5;
+				}
+				break;
+
+				case M_STRONGORC:
+				case M_SHAMANORC:
+				{
+					m_Hp -= 10;
+				}
+				break;
+
+				case M_WOLFRIDERORC:
+				{
+					m_Hp -= 20;
+				}
+				break;
+				}
+			}
 		}
 		if (m_CheckDamagedTime > 0.15f) SetChangeTexcoords(DirectX::XMFLOAT4(0.f, -1.f, -1.f, -1.f));
 

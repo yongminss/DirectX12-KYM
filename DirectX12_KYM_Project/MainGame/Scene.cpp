@@ -8,15 +8,15 @@
 #include "Billboard.h"
 #include "Effect.h"
 #include "Monster.h"
-#include "InstancingModel.h"
 #include "Camera.h"
 
 #include "Material.h"
 #include "Texture.h"
 
-#define DIRECTIONAL_LIGHT 0
-#define SPOT_LIGHT 1
-#define POINT_LIGHT 2
+
+#define AREA_NONE 0
+#define AREA_FIRE 1
+#define AREA_MONSTER 2
 
 
 ID3D12DescriptorHeap* Scene::m_CbvSrvDescriptorHeap = nullptr;
@@ -39,26 +39,25 @@ Scene::~Scene()
 
 	if (m_CbvSrvDescriptorHeap != nullptr) m_CbvSrvDescriptorHeap->Release();
 
-	if (m_LightBuffer != nullptr) m_LightBuffer->Release();
-	if (m_NoiseBuffer != nullptr) m_NoiseBuffer->Release();
-	if (m_DistortionBuffer != nullptr) m_DistortionBuffer->Release();
+	if (m_LightBuffer != nullptr) { m_LightBuffer->Unmap(0, nullptr), m_LightBuffer->Release(); }
+	if (m_NoiseBuffer != nullptr) { m_NoiseBuffer->Unmap(0, nullptr), m_NoiseBuffer->Release(); }
+	if (m_DistortionBuffer != nullptr) { m_DistortionBuffer->Unmap(0, nullptr), m_DistortionBuffer->Release(); }
 
 	if (m_TitleScreen != nullptr) delete m_TitleScreen;
 	if (m_Selection != nullptr) delete m_Selection;
+	if (m_GameManual != nullptr) delete m_GameManual;
 
 	if (m_Player != nullptr) delete m_Player;
 	if (m_Terrain != nullptr) delete m_Terrain;
 	if (m_Skybox != nullptr) delete m_Skybox;
-	if (m_BillboardGrass != nullptr) delete m_BillboardGrass;
 	if (m_BillboardTree != nullptr) delete m_BillboardTree;
 	for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) delete m_Walls[i];
 	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) delete m_Tree[i];
 
 	for (int i = 0; i < m_Flames.size(); ++i) if (m_Flames[i] != nullptr) delete m_Flames[i];
-	if (m_Smoke != nullptr) delete m_Smoke;
+	for (int i = 0; i < m_Smokes.size(); ++i) if (m_Smokes[i] != nullptr) delete m_Smokes[i];
 	if (m_Spark != nullptr) delete m_Spark;
 	if (m_Signal != nullptr) delete m_Signal;
-	if (m_FireBall != nullptr) delete m_FireBall;
 
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
@@ -79,7 +78,7 @@ Scene::~Scene()
 void Scene::CreateRootSignature(ID3D12Device* Device)
 {
 	D3D12_DESCRIPTOR_RANGE DescriptorRange[4];
-	ZeroMemory(&DescriptorRange, sizeof(DescriptorRange));
+	ZeroMemory(DescriptorRange, sizeof(DescriptorRange));
 	// Texture Count : 1
 	DescriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	DescriptorRange[0].BaseShaderRegister = 0;
@@ -259,26 +258,51 @@ void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture
 
 void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
-	// Scene에서 사용하는 조명 값을 설정
-	m_Light.m_Ambient = DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.f);
-	m_Light.m_Diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.f);
-	m_Light.m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	m_Light.m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	m_Light.m_Direction = DirectX::XMFLOAT3(-0.24f, 0.f, -0.43f);
-	m_Light.m_Type = DIRECTIONAL_LIGHT;
-	m_Light.m_Active = true;
+	// HLSL에서 사용하는 MAPPING_LIGHT의 값을 설정
+	m_LightCount = 3;
+	m_Lights = new LIGHT[m_LightCount];
+	ZeroMemory(m_Lights, sizeof(LIGHT) * m_LightCount);
 
-	UINT BufferSize = sizeof(MAPPING_LIGHT) + 12; // 84 + 12
+	// 게임에서 태양 빛으로 사용되는 직접 조명을 설정
+	m_Lights[0].m_Ambient = DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.f);
+	m_Lights[0].m_Diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.f);
+	m_Lights[0].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	m_Lights[0].m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	m_Lights[0].m_Direction = DirectX::XMFLOAT3(-0.24f, 0.f, -0.43f);
+	m_Lights[0].m_Type = DIRECTIONAL_LIGHT;
+	m_Lights[0].m_Active = true;
 
-	m_LightBuffer = CreateBuffer(Device, CommandList, nullptr, BufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
+	// 불꽃 효과에 사용하는 점 조명을 설정
+	m_Lights[1].m_Ambient = DirectX::XMFLOAT4(1.5f, 0.5f, 0.5f, 1.f);
+	m_Lights[1].m_Diffuse = DirectX::XMFLOAT4(0.5f, 0.f, 0.f, 1.f);
+	m_Lights[1].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	m_Lights[1].m_Position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+	m_Lights[1].m_Range = 250.f;
+	m_Lights[1].m_Type = POINT_LIGHT;
+	m_Lights[1].m_Active = true;
+	m_Lights[1].m_Attenuation = DirectX::XMFLOAT3(1.f, 0.001f, 0.0001f);
+
+	// 플레이어의 원형 그림자 표현에 사용되는 점 조명을 설정
+	m_Lights[2].m_Ambient = DirectX::XMFLOAT4(-0.5f, -0.5f, -0.5f, 1.f);
+	m_Lights[2].m_Diffuse = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	m_Lights[2].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	m_Lights[2].m_Position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+	m_Lights[2].m_Range = 10.f;
+	m_Lights[2].m_Type = POINT_LIGHT;
+	m_Lights[2].m_Active = true;
+	m_Lights[2].m_Attenuation = DirectX::XMFLOAT3(1.f, 0.01f, 0.001f);
+
+	UINT LightBufferSize = ((sizeof(MAPPING_LIGHT) + 255) & ~255);
+
+	m_LightBuffer = CreateBuffer(Device, CommandList, nullptr, LightBufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
 	m_LightBuffer->Map(0, nullptr, (void**)&m_MappingLight);
 
-	// 불꽃 효과에 사용하는 Noise && Distortion 값을 설정
 	m_Noise.m_FrameTime = 0.f;
 	m_Noise.m_ScrollSpeed = DirectX::XMFLOAT3(1.3f, 2.1f, 2.3f);
 	m_Noise.m_Scale = DirectX::XMFLOAT3(1.f, 2.f, 3.f);
 
-	UINT NoiseBufferSize = sizeof(MAPPING_NOISE) + 4; // 28 + 4
+	// 불꽃 효과에 사용하는 Noise && Distortion 값을 설정
+	UINT NoiseBufferSize = ((sizeof(MAPPING_NOISE) + 255) & ~255);
 
 	m_NoiseBuffer = CreateBuffer(Device, CommandList, nullptr, NoiseBufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
 	m_NoiseBuffer->Map(0, nullptr, (void**)&m_MappingNoise);
@@ -289,7 +313,7 @@ void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList
 	m_Distortion.m_Scale = 0.5f;
 	m_Distortion.m_Bias = 0.8f;
 
-	UINT DistortionBufferSize = sizeof(MAPPING_DISTORTION); // 32
+	UINT DistortionBufferSize = ((sizeof(MAPPING_DISTORTION) + 255) & ~255);
 
 	m_DistortionBuffer = CreateBuffer(Device, CommandList, nullptr, DistortionBufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
 	m_DistortionBuffer->Map(0, nullptr, (void**)&m_MappingDistortion);
@@ -301,7 +325,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	CreateRootSignature(Device);
 
 	// 오브젝트 별로 ConstantBuffer View or ShaderResource View를 사용하면 Set의 호출이 너무 많아지므로 한 번에 사용
-	CreateCbvSrvDescriptorHeap(Device, 0, 1200);
+	CreateCbvSrvDescriptorHeap(Device, 0, 1024);
 
 	// Loaded & Skinned Model이 사용할 Shader를 Frame 별로 생성하면 메모리 사용이 많아지므로 미리 생성한 하나의 Shader를 사용
 	Material::PrepareShader(Device, m_RootSignature);
@@ -315,12 +339,15 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 
 	// Title State에서 플레이어가 어떤 행동을 할지 고르는 선택창
 	m_Selection = new UserInterface(Device, CommandList, m_RootSignature, T_SELECTION);
-	m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.125f, 0.f));
+	m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.05f, 0.f));
+
+	m_GameManual = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEMANUAL);
+	m_GameManual->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
 	// Camera를 가지고 있으며 플레이어가 직접 조종하는 오브젝트인 Player 생성
 	m_Player = new Player(Device, CommandList, m_RootSignature);
 	m_Player->SetScale(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f));
-	m_Player->SetPosition(DirectX::XMFLOAT3(MAP_SIZE / 2.f, 0.f, (MAP_SIZE / 2.f) - 300.f));
+	m_Player->SetPosition(DirectX::XMFLOAT3(2050.f, 0.f, 1150.f));
 
 	// 각 정점 마다 높낮이가 다른 지형(Terrain) 생성
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
@@ -328,20 +355,12 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 게임의 배경 역할을 하는 Skybox 생성
 	m_Skybox = new MultipleTexture(Device, CommandList, m_RootSignature, T_SKYBOX);
 
-	// Scene에 등장하는 Billboard (ex. Grass, Tree ... etc)를 생성
-	m_BillboardGrass = new Billboard();
-	m_BillboardGrass->CreateShader(Device, m_RootSignature);
-	m_BillboardGrass->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_BILLBOARDGRASS, 400);
-
+	// Scene에 등장하는 빌보드 이미지를 생성 (ex. 나무)
 	m_BillboardTree = new Billboard();
 	m_BillboardTree->CreateShader(Device, m_RootSignature);
 	m_BillboardTree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_BILLBOARDTREE, 625);
 
-	// Billboard Tree -> Tree 변환을 위해 Billboard Tree의 Index를 저장
-	int BillTreeIndex = 0;
-	for (int z = 0; z < 25; ++z) for (int x = 0; x < 25; ++x) m_SaveBillboardTreeIndex[x][z] = BillTreeIndex++;
-
-	// Player가 Map 밖으로 이동하는 것을 방지하는 Wall 생성
+	// 플레이어가 맵 밖으로 이동하는 것을 방지하는 벽 생성
 	m_Walls = new Billboard*[4];
 	for (int i = 0; i < 4; ++i) {
 		m_Walls[i] = new Billboard();
@@ -349,60 +368,96 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_Walls[i]->CreateBillboard(Device, CommandList, m_RootSignature, nullptr, T_WALL + i, 75);
 	}
 
-	// Player에게 가까운 Billboard Tree를 여러 개의 Mesh를 가진 Tree로 바꾸기 위해 생성
+	// 플레이어와 거리가 가까워지는 빌보드 이미지를 객체로 변환하기 위해 빌보드 이미지의 Index 저장
+	int BillTreeIndex = 0;
+	for (int z = 0; z < 25; ++z) for (int x = 0; x < 25; ++x) m_SaveBillboardTreeIndex[x][z] = BillTreeIndex++;
+
+	// 빌보드 이미지에서 변환되는 여러 개의 Mesh를 가진 Tree 생성
 	int TreeCount = 9;
 	m_Tree.reserve(TreeCount);
 	for (int i = 0; i < TreeCount; ++i) m_Tree.emplace_back(new MultipleTexture(Device, CommandList, m_RootSignature, T_TREE));
 
-	// Scene에 등장하는 Effect 생성
-	int FlameCount = 1;
+	// 불꽃 효과를 표현하는 Flame 객체를 생성 - 1개의 불꽃 효과는 1개의 점 조명과 4개의 텍스처를 사용
+	int FlameCount = 4 * 5;
 	m_Flames.reserve(FlameCount);
-	DirectX::XMFLOAT3 FlamePos{};
+
+	// 불꽃 효과의 월드 좌표(x, z)를 배열에 저장
+	float FlamePos[10] = { 312.f, 4489.f, 2197.f, 4335.f, 1399.f, 3648.f, 228.f, 2805.f, 2348.f, 2773.f };
+	int PosCount = -1;
 
 	// FireArea Pos = x (0 - 2500), z (2500 - 5000)
 	for (int i = 0; i < FlameCount; ++i) {
 		m_Flames.emplace_back(new Effect(Device, CommandList, m_RootSignature, T_FLAME));
-		m_Flames.back()->SetPosition(DirectX::XMFLOAT3(1500.f, 200.f, 3000.f));
+
+		// 1개의 불꽃 효과는 4개의 텍스처를 사용하므로 i % 4 == 0 일 때마다 월드 좌표 값을 변경
+		if (i % 4 == 0) ++PosCount;
+		else m_Flames.back()->SetRotate(DirectX::XMFLOAT3(0.f, 90.f * (i % 4), 0.f)); // 월드 좌표 값을 변경하지 않으면 텍스처를 y축 회전
+
+		// 불꽃 효과의 월드 좌표를 설정
+		float XPos = FlamePos[PosCount * 2], ZPos = FlamePos[(PosCount * 2) + 1];
+		// 설정된 x, z좌표 값으로 Terrain Map에 맞는 월드 좌표 y를 설정
+		int GetHeightMapX = int(XPos) / MAP_SCALE, GetHeightMapZ = int(ZPos) / MAP_SCALE;
+		float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 50.f;
+
+		m_Flames.back()->SetPosition(DirectX::XMFLOAT3(XPos, GetHeightMapY, ZPos));
 	}
 
-	m_Smoke = new Effect(Device, CommandList, m_RootSignature, T_SMOKE);
-	m_Smoke->SetPosition(DirectX::XMFLOAT3(m_Player->GetPosition().x, 250.f, m_Player->GetPosition().z));
+	// 불꽃 효과와 함께 사용할 연기 생성 - 1개의 불꽃 효과는 3개의 연기 사용
+	int SmokeCount = 3 * 5;
+	m_Smokes.reserve(SmokeCount);
+	PosCount = -4;
 
+	for (int i = 0; i < SmokeCount; ++i) {
+		m_Smokes.emplace_back(new Effect(Device, CommandList, m_RootSignature, T_SMOKE));
+
+		if (i % 3 == 0) PosCount += 4;
+		m_Smokes.back()->SetPosition(m_Flames[PosCount]->GetPosition());
+	}
+
+	// 플레이어의 공격 시 발생하는 총의 불꽃
 	m_Spark = new Effect(Device, CommandList, m_RootSignature, T_SPARK);
 
+	// 몬스터가 플레이어에게 피격 됐을 때 발생하는 신호
 	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
 
-	m_FireBall = new MultipleTexture(Device, CommandList, m_RootSignature, T_FIREBALL);
-
-	//Scene에 등장하는 UI 생성
+	// 플레이어의 최대 체력을 나타내는 UI
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
 	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
 
+	// 플레이어의 현재 체력을 나타내는 UI
 	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, T_HPGAUGE);
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(0.f, 0.9f, 0.f));
 
+	// 플레이어의 공격 목표를 결정하는 UI
 	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
 	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
+	// 현재 남은 총알의 십의 자리 수
 	m_Numbers = new UserInterface*[2];
 	m_Numbers[0] = new UserInterface(Device, CommandList, m_RootSignature, T_NUMBERS);
 	m_Numbers[0]->SetPosition(DirectX::XMFLOAT3(0.725f, -0.85f, 0.f));
 
+	// 현재 남은 총알의 일의 자리 수
 	m_Numbers[1] = new UserInterface(Device, CommandList, m_RootSignature, T_NUMBERS);
 	m_Numbers[1]->SetPosition(DirectX::XMFLOAT3(0.85f, -0.85f, 0.f));
 
+	// 플레이어가 사망했을 때 발생하는 화면
 	m_GameOverScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEOVER);
 	m_GameOverScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
+	// 플레이어가 Fire Area에 입장했을 때 발생하는 안내 문구
 	m_EnterFire = new UserInterface(Device, CommandList, m_RootSignature, T_ENTERFIRE);
 	m_EnterFire->SetPosition(DirectX::XMFLOAT3(-0.5f, -0.75f, 0.f));
 
+	// 플레이어가 Monster Area에 입장했을 때 발생하는 안내 문구
 	m_EnterMonster = new UserInterface(Device, CommandList, m_RootSignature, T_ENTERMONSTER);
 	m_EnterMonster->SetPosition(DirectX::XMFLOAT3(-0.5f, -0.75f, 0.f));
 
+	// 현재 플레이어의 위치가 어떤 Area인지 안내하는 문구
 	m_GuideArea = new UserInterface(Device, CommandList, m_RootSignature, T_GUIDEAREA);
 	m_GuideArea->SetPosition(DirectX::XMFLOAT3(0.375f, 0.875f, 0.f));
 
+	// 현재 플레이어의 위치가 어떤 Area인지 안내하는 문구
 	m_GuidePos = new UserInterface*[3];
 	for (int i = 0; i < 3; ++i) {
 		m_GuidePos[i] = new UserInterface(Device, CommandList, m_RootSignature, T_GUIDENONE + i);
@@ -410,6 +465,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		else m_GuidePos[i]->SetPosition(DirectX::XMFLOAT3(0.675f, 0.875f, 0.f));
 	}
 
+	// Fire, Monster Area 외의 지역에서 등장하는 일반 오크 몬스터
 	int WeakOrcCount = 50;
 	m_WeakOrcs.reserve(WeakOrcCount);
 	DirectX::XMFLOAT3 WeakOrcPos{};
@@ -424,7 +480,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_WeakOrcs.back()->SetPosition(WeakOrcPos);
 	}
 
-	// MonsterArea Pos = x (2500 - 5000), z (2500 - 5000)
+	// Monster Area( x (2500 - 5000), z (2500 - 5000) ) 에서 등장하는 몬스터들 (ex. Strong Orc, Shaman Orc, WolfRider Orc)
 	int StrongOrcCount = 10;
 	m_StrongOrcs.reserve(StrongOrcCount);
 	DirectX::XMFLOAT3 StrongOrcPos{};
@@ -471,11 +527,19 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_WolfRiderOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
 		m_WolfRiderOrcs.back()->SetPosition(DirectX::XMFLOAT3(4700.f, 0.f, 4700.f));
 	}
+	// Monster Area에 등장하는 몬스터들의 색상을 어둡게 연출
+	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, 0.f, 0.25f);
+
+	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
+	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
+	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
 }
 
 void Scene::UpdateConstantBuffer(ID3D12GraphicsCommandList* CommandList)
 {
-	memcpy(&(m_MappingLight->m_Light), &m_Light, sizeof(LIGHT));
+	memcpy(m_MappingLight->m_Lights, m_Lights, sizeof(LIGHT) * m_LightCount);
+	memcpy(&(m_MappingLight->m_LightCount), &m_LightCount, sizeof(int));
+
 	D3D12_GPU_VIRTUAL_ADDRESS LightGpuVirtualAddress = m_LightBuffer->GetGPUVirtualAddress();
 	CommandList->SetGraphicsRootConstantBufferView(2, LightGpuVirtualAddress);
 
@@ -488,53 +552,81 @@ void Scene::UpdateConstantBuffer(ID3D12GraphicsCommandList* CommandList)
 	CommandList->SetGraphicsRootConstantBufferView(6, DistortionGpuVirtualAddress);
 }
 
+void Scene::UpdateNoneArea(float ElapsedTime)
+{
+	// 다른 지역의 오브젝트를 비활성화
+	if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
+	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
+
+	// Fire, Monster Area에서 변경된 오브젝트들의 텍스처 색상을 원래 색상으로 변경
+	if (0.f <= m_ChangeColorTime) m_ChangeColorTime -= ElapsedTime * 0.125f;
+
+	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime);
+
+	if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(ChangeTexcoords);
+	if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(ChangeTexcoords);
+	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Player != nullptr) m_Player->SetChangeTexcoords(ChangeTexcoords);
+}
+
 void Scene::UpdateFireArea(float ElapsedTime)
 {
-	// 1. 오른쪽 상단에 입장한 구역을 표시
-	m_ActiveGuidePosIndex = 1;
-
-	// 2. 어떤 구역에 입장했는지 텍스트를 통해 알려줌
-	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
+	// 입장 문구 호출
 	if (m_EnterFire != nullptr) m_EnterFire->Animate(ElapsedTime, 1);
+	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
 
-	// 3. 입장 시기에 맵, 구조물 등의 색상을 변경
+	// Fire Area에 입장 시에 오브젝트들의 텍스처 색상을 어둡게 변경
 	if (0.25f >= m_ChangeColorTime) m_ChangeColorTime += ElapsedTime * 0.125f;
 
-	// 3-1. Map Object
-	if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	if (m_BillboardGrass != nullptr) m_BillboardGrass->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) m_Walls[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
-	// 3-2. Model Object
-	if (m_Player != nullptr) m_Player->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f));
+	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f);
+
+	if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(ChangeTexcoords);
+	if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(ChangeTexcoords);
+	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Player != nullptr) m_Player->SetChangeTexcoords(ChangeTexcoords);
+
+	// 플레이어와 불꽃 효과 간의 거리를 구하기 위해 불꽃 효과의 월드 좌표 x, z를 가져옴
+	float ToDistance[5]{};
+	DirectX::XMFLOAT2 FlamePos[5]{};
+	DirectX::XMFLOAT2 PlayerPos = DirectX::XMFLOAT2(m_Player->GetPosition().x, m_Player->GetPosition().z);
+	for (int i = 0; i < 5; ++i) {
+		FlamePos[i].x = m_Flames[i * 4]->GetPosition().x;
+		FlamePos[i].y = m_Flames[i * 4]->GetPosition().z;
+
+		ToDistance[i] = sqrt(((PlayerPos.x - FlamePos[i].x) * (PlayerPos.x - FlamePos[i].x)) + ((PlayerPos.y - FlamePos[i].y) * (PlayerPos.y - FlamePos[i].y)));
+	}
+	// 플레이어와 가장 가까운 화염 효과의 위치를 탐색
+	int NearIndex = 0;
+	float NearDistance = 0.f;
+	for (int i = 0; i < 5; ++i) {
+		if (i == 0) NearDistance = ToDistance[i], NearIndex = i;
+		else {
+			if (ToDistance[i] < NearDistance) NearDistance = ToDistance[i], NearIndex = i;
+		}
+	}
+	// 플레이어와 가장 가까운 거리의 화염 효과를 점 조명의 위치로 설정
+	m_Lights[1].m_Position = m_Flames[NearIndex * 4]->GetPosition();
 }
 
 void Scene::UpdateMonsterArea(float ElapsedTime)
 {
-	// 1. 오른쪽 상단에 입장한 구역을 표시
-	m_ActiveGuidePosIndex = 2;
-
-	// 2. 어떤 구역에 입장했는지 텍스트를 통해 알려줌
-	if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
+	// 입장 문구 호출
 	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(ElapsedTime, 1);
+	if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
 
-	// 3. 입장 시기에 맵, 구조물 등의 색상을 변경
+	// Monster Area에 입장 시에 오브젝트들의 텍스처 색상을 어둡게 변경
 	if (0.25f >= m_ChangeColorTime) m_ChangeColorTime += ElapsedTime * 0.125f;
 
+	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime);
+
 	// 3-1. Map Object
-	if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	if (m_BillboardGrass != nullptr) m_BillboardGrass->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) m_Walls[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	// 3-2. Model Object
-	if (m_Player != nullptr) m_Player->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
-	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime));
+	if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(ChangeTexcoords);
+	if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(ChangeTexcoords);
+	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(ChangeTexcoords);
+	if (m_Player != nullptr) m_Player->SetChangeTexcoords(ChangeTexcoords);
 }
 
 void Scene::Animate(float ElapsedTime, HWND Hwnd)
@@ -548,62 +640,65 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 	case STATE_MAIN:
 	{
-		if (m_Player != nullptr) {
-			// 1. Terrain의 위치에 따라 Player의 월드 좌표 y값을 설정
-			float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
+		float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
 
+		if (nullptr != m_Player) {
+			// 1. Terrain의 Height Map에 따라 플레이어의 월드 좌표 y 좌표 설정
 			int GetHeightMapX = int(PlayerxPos) / MAP_SCALE, GetHeightMapZ = int(PlayerzPos) / MAP_SCALE;
 			float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
 
-			// 2. Player의 애니메이션 수행
+			// 2. 플레이어의 회전, 이동, 애니메이션을 수행 - 카메라 또한 플레이어와 함께 변경
 			m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
 			m_Player->UpdateTransform(nullptr);
 
-			// 2-1. 장전 애니메이션 수행의 완료 시에 총알 개수 최대 설정
-			if (true == m_Player->GetCompletedReload()) {
-				m_BulletCount = 30;
-				m_Player->SetCompletedReload(false);
-			}
+			// 3. 특정 애니메이션의 수행이 완료되면 초기화 및 비활성화 (ex. 장전 애니메이션 수행 - 총알 개수 최대, 애니메이션 비활성화)
+			if (true == m_Player->GetCompletedReload()) m_BulletCount = 30, m_Player->SetCompletedReload(false);
 		}
 
-		// 플레이어의 현재 위치에 따라 Area (None, Fire, Monster) 설정
-		float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
-		// 1. Fire Area - ( x [0 - 2500], z [2500 - 5000] )
-		if ((0 <= PlayerxPos && 2500 > PlayerxPos) && (2500 <= PlayerzPos/* && 5000 > PlayerzPos*/)) {
+		// 현재 플레이어의 월드 좌표에 따라 지역을 활성화
+		if ((PlayerxPos < 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_FIRE;
+		else if ((PlayerxPos >= 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_MONSTER;
+		else m_ActiveGuidePosIndex = AREA_NONE;
+
+		// 활성화된 지역의 함수 수행 - 지역에 따라 오브젝트의 활성화 및 텍스처 색상 변경
+		switch (m_ActiveGuidePosIndex) {
+		case AREA_NONE:
+		{
+			UpdateNoneArea(ElapsedTime);
+		}
+		break;
+
+		case AREA_FIRE:
+		{
 			UpdateFireArea(ElapsedTime);
 		}
-		// 2. Monster Area - ( x [2500 - 5000], z [2500 - 5000] )
-		else if ((2500 <= PlayerxPos /*&& 5000 > PlayerxPos*/) && (2500 <= PlayerzPos /*&& 5000 > PlayerzPos*/)) {
+		break;
+
+		case AREA_MONSTER:
+		{
 			UpdateMonsterArea(ElapsedTime);
 		}
-		// 3. None Area - 나머지 구역
-		else {
-			m_ActiveGuidePosIndex = 0;
-
-			if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
-			if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
-
-			if (0.f <= m_ChangeColorTime) m_ChangeColorTime -= ElapsedTime * 0.125f;
-
-			// 맵과 모델 오브젝트의 색상을 원래대로 변경
-			if (m_Terrain != nullptr) m_Terrain->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			if (m_Skybox != nullptr) m_Skybox->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			if (m_BillboardGrass != nullptr) m_BillboardGrass->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			if (m_BillboardTree != nullptr) m_BillboardTree->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) m_Walls[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
-			if (m_Player != nullptr) m_Player->SetChangeTexcoords(DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime));
+		break;
 		}
 
-		// 플레이어와 몬스터 간의 충돌 처리 애니메이션 수행 (ex. 몬스터의 플레이어 인식, 공격 등)
+		// 불꽃 효과를 표현하기 위해 Noise Buffer의 Frame Time을 증가
+		m_Noise.m_FrameTime += ElapsedTime * 0.5f;
+		if (m_Noise.m_FrameTime > 1000.f) m_Noise.m_FrameTime = 0.f;
+
+		DirectX::XMFLOAT3 ShadowPos = m_Player->GetPosition();
+		ShadowPos.y -= 20.f;
+		m_Lights[2].m_Position = ShadowPos;
+
+		// 몬스터 오브젝트들의 애니메이션 수행 - 플레이어 추격, 공격, 사망 등의 애니메이션과 상호작용 등
 		bool PlayerHit = false;
+		int HitMonsterKind = 0;
 
 		for (int i = 0; i < m_WeakOrcs.size(); ++i)
 			if (m_WeakOrcs[i] != nullptr) {
 				m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 				m_WeakOrcs[i]->UpdateTransform(nullptr);
 
-				if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WeakOrcs[i]->SetSuccessAttack(false);
+				if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WEAKORC, m_WeakOrcs[i]->SetSuccessAttack(false);
 			}
 
 		for (int i = 0; i < m_StrongOrcs.size(); ++i)
@@ -611,7 +706,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 				m_StrongOrcs[i]->UpdateTransform(nullptr);
 
-				if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_StrongOrcs[i]->SetSuccessAttack(false);
+				if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_STRONGORC, m_StrongOrcs[i]->SetSuccessAttack(false);
 			}
 
 		for (int i = 0; i < m_ShamanOrcs.size(); ++i)
@@ -619,7 +714,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 				m_ShamanOrcs[i]->UpdateTransform(nullptr);
 
-				if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_ShamanOrcs[i]->SetSuccessAttack(false);
+				if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_SHAMANORC, m_ShamanOrcs[i]->SetSuccessAttack(false);
 			}
 
 		for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
@@ -627,50 +722,52 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
 				m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
 
-				if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
+				if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WOLFRIDERORC, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
 			}
 
-		// 몬스터의 공격이 성공하면 플레이어의 상태 변경
-		if (true == PlayerHit) m_Player->ActiveDamaged();
+		if (true == PlayerHit) m_Player->ActiveDamaged(HitMonsterKind);
 
-		// 플레이어와 가까운 Billboard Tree를 여러 개의 텍스처를 가진 Tree로 변경
-		int x = int(PlayerxPos / 200), z = int(PlayerzPos / 200);
+		// 플레이어와 근접한 빌보드 이미지를 여러 개의 메쉬를 가진 오브젝트로 변경
 		DirectX::XMFLOAT4X4 *GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
+		int NearX = int(PlayerxPos / 200), NearZ = int(PlayerzPos / 200);
 
-		for (int RangeX = -1, i = 0; RangeX < 2; ++RangeX) {
+		// 가장 근접한 나무를 기준으로 3x3개의 빌보드 이미지를 오브젝트로 변경
+		for (int i = 0, RangeX = -1; RangeX < 2; ++RangeX) {
 			for (int RangeZ = -1; RangeZ < 2; ++RangeZ, ++i) {
-				// 플레이어와 가까운 Billboard Tree의 좌표를 Tree에 대입
-				int xIndex = x + RangeX, zIndex = z + RangeZ;
-				// 범위 밖의 Index에 접근할 수 있으므로 예외처리 수행
-				if (xIndex < 0) xIndex = 0;
-				if (xIndex > 24) xIndex = 24;
-				if (zIndex < 0) zIndex = 0;
-				if (zIndex > 24) zIndex = 24;
+				int TreeXIndex = NearX + RangeX, TreeZIndex = NearZ + RangeZ;
 
-				if (m_Tree[i] != nullptr) m_Tree[i]->SetPosition(DirectX::XMFLOAT3(GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._41,
-					GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._42, GetBillboardTreePos[m_SaveBillboardTreeIndex[xIndex][zIndex]]._43));
+				// 최소, 최대 범위 밖의 배열 접근 방지
+				if (TreeXIndex < 0 || TreeXIndex > 24 || TreeZIndex < 0 || TreeZIndex > 24) continue;
+
+				DirectX::XMFLOAT4X4 NearBillboardTree = GetBillboardTreePos[m_SaveBillboardTreeIndex[TreeXIndex][TreeZIndex]];
+
+				if (m_Tree[i] != nullptr) m_Tree[i]->SetPosition(DirectX::XMFLOAT3(NearBillboardTree._41, NearBillboardTree._42, NearBillboardTree._43));
 			}
 		}
 
-		// Fire Area의 설정은 미완성이므로 임시 상태
-		m_Noise.m_FrameTime += ElapsedTime * 0.5f;
-		if (m_Noise.m_FrameTime > 1000.f) m_Noise.m_FrameTime = 0.f;
-		for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Animate(ElapsedTime);
+		// 카메라의 월드 좌표 Right, Up, Look에 따라 불꽃 효과와 연기 효과의 월드 좌표 설정
+		Camera* GetCamera = m_Player->GetCamera();
+		int PosCount = -4;
 
-		if (m_Smoke != nullptr) m_Smoke->Animate(ElapsedTime);
+		for (int i = 0; i < m_Smokes.size(); ++i) {
+			DirectX::XMFLOAT4X4 Target{};
+			Target._11 = GetCamera->GetRight().x, Target._12 = GetCamera->GetRight().y, Target._13 = GetCamera->GetRight().z;
+			Target._21 = GetCamera->GetUp().x, Target._22 = GetCamera->GetUp().y, Target._23 = GetCamera->GetUp().z;
+			Target._31 = GetCamera->GetLook().x, Target._32 = GetCamera->GetLook().y, Target._33 = GetCamera->GetLook().z;
+
+			if (i % 3 == 0) PosCount += 4;
+			Target._41 = m_Flames[PosCount]->GetPosition().x, Target._42 = m_Flames[PosCount]->GetPosition().y, Target._43 = m_Flames[PosCount]->GetPosition().z;
+
+			m_Smokes[i]->ActiveEffect(Target);
+			m_Smokes[i]->Animate(ElapsedTime);
+		}
+
 		if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
 		if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
 
 		if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
 		for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(i, m_BulletCount);
-
-		// 플레이어의 사망 시 게임 오버 화면 출력
-		if (m_Player->GetCurrentAnimationTrackIndex() == P_DEATH) {
-			if (m_GameOverScreen != nullptr) {
-				m_GameOverScreen->SetActive(true);
-				m_GameOverScreen->Animate(ElapsedTime, 0);
-			}
-		}
+		if (P_DEATH == m_Player->GetCurrentAnimationTrackIndex()) if (m_GameOverScreen != nullptr) m_GameOverScreen->Animate(ElapsedTime, 0);
 
 		if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	}
@@ -693,6 +790,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 		CommandList->RSSetViewports(1, &Viewport);
 		CommandList->RSSetScissorRects(1, &ScissorRect);
 
+		if (m_GameManual != nullptr) m_GameManual->Render(CommandList);
 		if (m_Selection != nullptr) m_Selection->Render(CommandList);
 		if (m_TitleScreen != nullptr) m_TitleScreen->Render(CommandList);
 	}
@@ -713,13 +811,12 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 		for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) m_Walls[i]->Render(CommandList);
 
 		// 2. Rendering Effect
-		for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Render(CommandList);
 		if (m_Spark != nullptr) m_Spark->Render(CommandList);
 		if (m_Signal != nullptr) m_Signal->Render(CommandList);
-		if (m_FireBall != nullptr) m_FireBall->Render(CommandList);
 
 		// 3. Rendering Objects
-		if (m_BillboardGrass != nullptr) m_BillboardGrass->Render(CommandList);
+		for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Render(CommandList);
+
 		if (m_BillboardTree != nullptr) m_BillboardTree->Render(CommandList);
 		for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->Render(CommandList);
 
@@ -742,7 +839,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 		for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Render(CommandList);
 
 		// 5. Rendering Blending Objects
-		if (m_Smoke != nullptr) m_Smoke->Render(CommandList);
+		for (int i = 0; i < m_Smokes.size(); ++i) m_Smokes[i]->Render(CommandList);
 
 		// 6. Rendering Depth Mask-Zero Objects
 		if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -763,20 +860,26 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			{
 			case VK_UP:
 			{
-				m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.125f, 0.f));
+				float GetSelectionY = m_Selection->GetPosition().y;
+				if (-0.68f == GetSelectionY) m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.365f, 0.f));
+				else m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.05f, 0.f));
 			}
 			break;
 
 			case VK_DOWN:
 			{
-				m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.45f, 0.f));
+				float GetSelectionY = m_Selection->GetPosition().y;
+				if (-0.05f == GetSelectionY) m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.365f, 0.f));
+				else m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.68f, 0.f));
 			}
 			break;
 
 			case VK_RETURN:
 			{
-				if (m_Selection->GetPosition().y == -0.125f) m_State = STATE_MAIN;
-				else if (m_Selection->GetPosition().y == -0.45f) PostQuitMessage(0);
+				float GetSelectionY = m_Selection->GetPosition().y;
+				if (-0.05f == GetSelectionY) { m_GameManual->SetActive(false), m_State = STATE_MAIN; }
+				else if (-0.365f == GetSelectionY) { if (true == m_GameManual->GetActive()) m_GameManual->SetActive(false); else m_GameManual->SetActive(true); }
+				else PostQuitMessage(0);
 			}
 			break;
 			}
@@ -828,11 +931,7 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			// 테스트를 위한 키 입력
 			case '1':
 			{
-				float x, z = 0;
-				std::cin >> x;
-				std::cin >> z;
 
-				m_Player->SetPosition(DirectX::XMFLOAT3(x, 0.f, z));
 			}
 			break;
 			}

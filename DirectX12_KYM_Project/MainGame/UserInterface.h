@@ -13,6 +13,8 @@ public:
 	~UserInterface();
 
 	void SetActive(bool Active) { m_Active = Active; }
+	
+	bool GetActive() { return m_Active; }
 
 	virtual void Animate(float ElapsedTime, int Hp);
 	virtual void Render(ID3D12GraphicsCommandList* CommandList);

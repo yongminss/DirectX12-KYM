@@ -78,7 +78,6 @@ void Billboard::CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList*
 
 	// 오브젝트의 종류에 맞게 월드 좌표를 설정
 	switch (Kind) {
-	case T_BILLBOARDGRASS:
 	case T_BILLBOARDTREE:
 	{
 		for (int z = 0; z < ObjectsCountSquareRoot; ++z) {
@@ -90,12 +89,6 @@ void Billboard::CreateBillboard(ID3D12Device* Device, ID3D12GraphicsCommandList*
 
 				switch (Kind)
 				{
-				case T_BILLBOARDGRASS:
-				{
-					ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 2.5f;
-				}
-				break;
-
 				case T_BILLBOARDTREE:
 				{
 					ObjectY = SceneTerrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 80.f;

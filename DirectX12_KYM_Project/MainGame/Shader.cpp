@@ -229,6 +229,7 @@ D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 	switch (m_Kind) {
 	case T_TITLESCREEN:
 	case T_SELECTION:
+	case T_GAMEMANUAL:
 	case T_HPBAR:
 	case T_HPGAUGE:
 	case T_AIM:
@@ -253,11 +254,9 @@ D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 
 	case T_SKYBOX:
 	case T_TREE:
-	case T_FLAME:
 	case T_SMOKE:
 	case T_SPARK:
 	case T_SIGNAL:
-	case T_FIREBALL:
 	{
 		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
@@ -276,12 +275,11 @@ D3D12_SHADER_BYTECODE TextureShader::CreatePixelShader()
 	switch (m_Kind) {
 	case T_SKYBOX:
 	case T_TREE:
-	case T_FLAME:
 	case T_SPARK:
 	case T_SIGNAL:
-	case T_FIREBALL:
 	case T_TITLESCREEN:
 	case T_SELECTION:
+	case T_GAMEMANUAL:
 	case T_HPBAR:
 	case T_HPGAUGE:
 	case T_AIM:
@@ -358,16 +356,15 @@ D3D12_SHADER_BYTECODE FlameShader::CreatePixelShader()
 // --------------------
 D3D12_INPUT_LAYOUT_DESC TerrainShader::CreateInputLayout()
 {
-	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[4];
+	D3D12_INPUT_ELEMENT_DESC *InputElementDesc = new D3D12_INPUT_ELEMENT_DESC[3];
 	InputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	InputElementDesc[1] = { "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	InputElementDesc[2] = { "UV", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	InputElementDesc[3] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC InputLayoutDesc;
 	ZeroMemory(&InputLayoutDesc, sizeof(D3D12_INPUT_LAYOUT_DESC));
 	InputLayoutDesc.pInputElementDescs = InputElementDesc;
-	InputLayoutDesc.NumElements = 4;
+	InputLayoutDesc.NumElements = 3;
 
 	return InputLayoutDesc;
 }

@@ -15,7 +15,7 @@ private:
 	int m_MaterialCount = 0;
 
 	DirectX::XMFLOAT4 m_Ambient = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.f);
-	DirectX::XMFLOAT4 m_Diffuse = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	DirectX::XMFLOAT4 m_Diffuse = DirectX::XMFLOAT4(0.4f, 0.4f, 0.4f, 1.f);
 	DirectX::XMFLOAT4 m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 	DirectX::XMFLOAT4 m_Emissive = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 

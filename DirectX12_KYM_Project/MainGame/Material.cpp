@@ -71,24 +71,13 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
-	case T_FIREBALL:
-	{
-		TextureShader *UsingShader = new TextureShader();
-		UsingShader->CreateShader(Device, RootSignature, Kind);
-		SetShader(UsingShader);
-
-		Texture *UsingTexture = new Texture();
-		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 5, 3);
-		SetTexture(UsingTexture);
-	}
-	break;
-
 	// 2D Texture - Count 1, Root Parameter Index 3 (ex. UserInterface, Effect)
 	case T_SMOKE:
 	case T_SPARK:
 	case T_SIGNAL:
 	case T_TITLESCREEN:
 	case T_SELECTION:
+	case T_GAMEMANUAL:
 	case T_HPBAR:
 	case T_HPGAUGE:
 	case T_AIM:

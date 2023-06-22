@@ -21,6 +21,7 @@ private:
 	bool m_CompletedReload = false;
 	float m_Speed = 0.f;
 	float m_RollDistance = 0.f;
+	int m_HitMonsterKind = 0;
 	float m_CheckDamagedTime = 0.f;
 
 	int m_State = STATE_NONE;
@@ -45,7 +46,7 @@ public:
 	void ActiveShoot() { m_State = STATE_SHOOT; }
 	void ActiveReload() { m_State = STATE_RELOAD; }
 	void ActiveRoll() { m_State = STATE_ROLL; }
-	void ActiveDamaged() { m_State = STATE_DAMAGED; }
+	void ActiveDamaged(int MonsterKind) { m_State = STATE_DAMAGED, m_HitMonsterKind = MonsterKind; }
 
 	void SetCompletedReload(bool CompletedReload) { m_CompletedReload = CompletedReload; }
 

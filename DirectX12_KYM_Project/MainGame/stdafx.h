@@ -27,6 +27,8 @@
 #include <vector>
 #include <chrono>
 
+#include <math.h>
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -54,10 +56,10 @@ enum TEXTURE_KIND
 	// 1. Title State Texture
 	T_TITLESCREEN,
 	T_SELECTION,
+	T_GAMEMANUAL,
 	// 2. Map Texture
 	T_TERRAIN,
 	T_SKYBOX,
-	T_BILLBOARDGRASS,
 	T_BILLBOARDTREE,
 	T_WALL,
 	T_TREE,
@@ -66,7 +68,6 @@ enum TEXTURE_KIND
 	T_SMOKE,
 	T_SPARK,
 	T_SIGNAL,
-	T_FIREBALL,
 	// 4. UI Texture
 	T_HPBAR,
 	T_HPGAUGE,

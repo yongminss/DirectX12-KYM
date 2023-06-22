@@ -23,7 +23,16 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 
 	case T_SELECTION:
 	{
-		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.5f, 0.1f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.275f, 0.1f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
+		SetMesh(UsingMesh);
+	}
+	break;
+
+	case T_GAMEMANUAL:
+	{
+		m_Active = false;
+
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.75f, 0.75f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
 		SetMesh(UsingMesh);
 	}
 	break;
@@ -159,6 +168,8 @@ void UserInterface::Animate(float ElapsedTime, int Hp)
 
 	case T_GAMEOVER:
 	{
+		m_Active = true;
+
 		if (5.f > m_AnimateTime) {
 			m_AnimateTime += ElapsedTime;
 			int ScreenBrightness = 500 + int(m_AnimateTime * 100.f);
