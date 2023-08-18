@@ -161,7 +161,9 @@ D3D12_BLEND_DESC TextureShader::CreateBlendState()
 {
 	switch (m_Kind) {
 	case T_SMOKE:
+	case T_POWDER:
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	{
 		D3D12_BLEND_DESC BlendDesc;
 		ZeroMemory(&BlendDesc, sizeof(D3D12_BLEND_DESC));
@@ -235,6 +237,7 @@ D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 	case T_AIM:
 	case T_NUMBERS:
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	case T_ENTERFIRE:
 	case T_ENTERMONSTER:
 	case T_GUIDEAREA:
@@ -254,9 +257,12 @@ D3D12_SHADER_BYTECODE TextureShader::CreateVertexShader()
 
 	case T_SKYBOX:
 	case T_TREE:
+	case T_ITEMHP:
 	case T_SMOKE:
+	case T_POWDER:
 	case T_SPARK:
 	case T_SIGNAL:
+	case T_HEADSHOT:
 	{
 		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "TextureVS", "vs_5_1", 0, 0, &m_VertexBlob, nullptr);
 
@@ -275,8 +281,10 @@ D3D12_SHADER_BYTECODE TextureShader::CreatePixelShader()
 	switch (m_Kind) {
 	case T_SKYBOX:
 	case T_TREE:
+	case T_ITEMHP:
 	case T_SPARK:
 	case T_SIGNAL:
+	case T_HEADSHOT:
 	case T_TITLESCREEN:
 	case T_SELECTION:
 	case T_GAMEMANUAL:
@@ -302,7 +310,9 @@ D3D12_SHADER_BYTECODE TextureShader::CreatePixelShader()
 	break;
 
 	case T_SMOKE:
+	case T_POWDER:
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	{
 		D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "BlendTexturePS", "ps_5_1", 0, 0, &m_PixelBlob, nullptr);
 

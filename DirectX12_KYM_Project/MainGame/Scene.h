@@ -76,11 +76,15 @@ private:
 
 	static ID3D12DescriptorHeap *m_CbvSrvDescriptorHeap;
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE m_CpuDescriptorStartHandle;
-	static D3D12_GPU_DESCRIPTOR_HANDLE m_GpuDescriptorStartHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_CbvCpuDescriptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_CbvGpuDescriptorStartHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_SrvCpuDescriptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_SrvGpuDescriptorStartHandle;
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE m_CpuDescriptorNextHandle;
-	static D3D12_GPU_DESCRIPTOR_HANDLE m_GpuDescriptorNextHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_CbvCpuDescriptorNextHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_CbvGpuDescriptorNextHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE m_SrvCpuDescriptorNextHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE m_SrvGpuDescriptorNextHandle;
 
 	LIGHT *m_Lights = nullptr;
 	int m_LightCount = 0;
@@ -108,17 +112,21 @@ private:
 	Billboard *m_BillboardTree = nullptr;
 	Billboard **m_Walls = nullptr;
 	std::vector<MultipleTexture*> m_Tree{};
+	MultipleTexture* m_ItemHp = nullptr;
 
 	std::vector<Effect*> m_Flames{};
 	std::vector<Effect*> m_Smokes{};
+	std::vector<Effect*> m_Powders{};
 	Effect *m_Spark = nullptr;
 	Effect *m_Signal = nullptr;
+	Effect *m_Headshot = nullptr;
 
 	UserInterface *m_HpBar = nullptr;
 	UserInterface *m_HpGauge = nullptr;
 	UserInterface *m_Aim = nullptr;
 	UserInterface **m_Numbers = nullptr;
 	UserInterface *m_GameOverScreen = nullptr;
+	UserInterface *m_GameEndScreen = nullptr;
 	UserInterface *m_EnterFire = nullptr;
 	UserInterface *m_EnterMonster = nullptr;
 	UserInterface *m_GuideArea = nullptr;
@@ -138,6 +146,9 @@ private:
 
 	int m_BulletCount = 30;
 	int m_ActiveGuidePosIndex = 0;
+	bool m_ActiveGameManual = false;
+	bool m_ActivePowder = false;
+	int m_StackDecreaseFlame = 0;
 
 public:
 	Scene();

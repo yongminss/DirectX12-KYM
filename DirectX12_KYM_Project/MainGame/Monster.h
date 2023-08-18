@@ -14,26 +14,24 @@ private:
 	int m_State = 0;
 
 	bool m_FirstHit = false;
-	float m_HitTime = 0.f;
-
 	bool m_ActiveDamaged = false;
 	bool m_SuccessAttack = false;
 	bool m_Death = false;
-	
+
 	float m_AnimateTime = 0.f;
 
 	int m_Hp = 0;
-	int m_Power = 0;
+	int m_PlayerPower = 0;
 
 public:
 	Monster(int Type);
 	~Monster();
 
-	void SetState(int State) { m_State = State; }
-	void ActiveDamaged() { m_ActiveDamaged = true; }
+	void ActiveDamaged(int PlayerPower) { m_ActiveDamaged = true, m_PlayerPower = PlayerPower; }
 	void SetSuccessAttack(bool SuccessAttack) { m_SuccessAttack = SuccessAttack; }
 
 	bool GetSuccessAttack() { return m_SuccessAttack; }
+	bool GetDeath() { return m_Death; }
 
 	void MoveToPlayer(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Effect* Signal);
 	void Animate(float ElapsedTime, DirectX::XMFLOAT4X4 TargetTransformPos, Terrain* GetTerrain, Effect* Signal);

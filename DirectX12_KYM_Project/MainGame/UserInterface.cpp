@@ -32,7 +32,7 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	{
 		m_Active = false;
 
-		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.75f, 0.75f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
+		TextureMesh *UsingMesh = new TextureMesh(Device, CommandList, DirectX::XMFLOAT3(0.9f, 0.8f, 0.f), DirectX::XMFLOAT2(1.f, 1.f), Kind);
 		SetMesh(UsingMesh);
 	}
 	break;
@@ -66,6 +66,7 @@ UserInterface::UserInterface(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 	break;
 
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	{
 		m_Active = false;
 
@@ -167,6 +168,7 @@ void UserInterface::Animate(float ElapsedTime, int Hp)
 	break;
 
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	{
 		m_Active = true;
 
@@ -175,6 +177,7 @@ void UserInterface::Animate(float ElapsedTime, int Hp)
 			int ScreenBrightness = 500 + int(m_AnimateTime * 100.f);
 			SetChangeTexcoords(DirectX::XMFLOAT4(ScreenBrightness, 0.f, 0.f, 0.f));
 		}
+		else break;
 	}
 	break;
 

@@ -214,10 +214,15 @@ float4 BlendTexturePS(TextureVS_Output Input) : SV_TARGET
     
     switch (Input.kind)
     {
-        case 9: // Smoke
+        case 10: // Smoke
             break;
         
-        case 16: // GameOver Screen
+        case 11: // Powder
+            Color += float4(0.75f, 0.75f, 0.75f, 0.f);
+            break;
+        
+        case 19: // GameOver Screen
+        case 20: // GameEnd Screen
             Color.w = ChangeTexcoords.x / 1000.f;
             break;
     }

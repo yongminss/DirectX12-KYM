@@ -254,6 +254,8 @@ void GameFramework::GameFrameworkLoop()
 {
 	std::chrono::system_clock::time_point LoopStartTime = std::chrono::system_clock::now();
 
+	if (m_Scene) m_Scene->Animate(m_ElapsedTime, m_Hwnd);
+
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
@@ -281,10 +283,8 @@ void GameFramework::GameFrameworkLoop()
 	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
 
 	// Animation & Rendering
-	if (m_Scene) {
-		m_Scene->Animate(m_ElapsedTime, m_Hwnd);
-		m_Scene->Render(m_CommandList);
-	}
+	if (m_Scene) m_Scene->Render(m_CommandList);
+
 	// Rendering에 필요한 명령을 CommandList에 전부 삽입했으니 Resource Barrier의 상태 변경
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // Present를 하여 read 상태로 변경
@@ -311,12 +311,10 @@ void GameFramework::GameFrameworkLoop()
 	m_ElapsedTime = ElapsedTime.count();
 	m_SecondsCounter += m_ElapsedTime;
 
-	if (m_SecondsCounter >= 1.f) {
-		std::cout << "Frame Rate : " << m_FrameRate << "\n";
-		m_SecondsCounter = 0.f;
-		m_FrameRate = 0;
-	}
 	++m_FrameRate;
+
+	// 1초 경과 시에 프레임 레이트를 초기화
+	if (m_SecondsCounter >= 1.f) { m_SecondsCounter = 0.f, m_FrameRate = 0; }
 }
 
 void GameFramework::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)

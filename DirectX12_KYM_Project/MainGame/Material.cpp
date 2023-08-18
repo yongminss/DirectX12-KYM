@@ -59,6 +59,18 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	}
 	break;
 
+	case T_ITEMHP:
+	{
+		TextureShader *UsingShader = new TextureShader();
+		UsingShader->CreateShader(Device, RootSignature, Kind);
+		SetShader(UsingShader);
+
+		Texture *UsingTexture = new Texture();
+		UsingTexture->CreateTexture(Device, CommandList, nullptr, Kind, 2, 3);
+		SetTexture(UsingTexture);
+	}
+	break;
+
 	case T_FLAME:
 	{
 		FlameShader *UsingShader = new FlameShader();
@@ -73,8 +85,10 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 
 	// 2D Texture - Count 1, Root Parameter Index 3 (ex. UserInterface, Effect)
 	case T_SMOKE:
+	case T_POWDER:
 	case T_SPARK:
 	case T_SIGNAL:
+	case T_HEADSHOT:
 	case T_TITLESCREEN:
 	case T_SELECTION:
 	case T_GAMEMANUAL:
@@ -83,6 +97,7 @@ void Material::CreateMaterial(ID3D12Device* Device, ID3D12GraphicsCommandList* C
 	case T_AIM:
 	case T_NUMBERS:
 	case T_GAMEOVER:
+	case T_GAMEEND:
 	case T_ENTERFIRE:
 	case T_ENTERMONSTER:
 	case T_GUIDEAREA:

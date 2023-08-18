@@ -21,11 +21,15 @@
 
 ID3D12DescriptorHeap* Scene::m_CbvSrvDescriptorHeap = nullptr;
 
-D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CpuDescriptorStartHandle{};
-D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_GpuDescriptorStartHandle{};
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CbvCpuDescriptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_CbvGpuDescriptorStartHandle;
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_SrvCpuDescriptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_SrvGpuDescriptorStartHandle;
 
-D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CpuDescriptorNextHandle{};
-D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_GpuDescriptorNextHandle{};
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_CbvCpuDescriptorNextHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_CbvGpuDescriptorNextHandle;
+D3D12_CPU_DESCRIPTOR_HANDLE Scene::m_SrvCpuDescriptorNextHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE Scene::m_SrvGpuDescriptorNextHandle;
 
 
 Scene::Scene()
@@ -48,22 +52,27 @@ Scene::~Scene()
 	if (m_GameManual != nullptr) delete m_GameManual;
 
 	if (m_Player != nullptr) delete m_Player;
+
 	if (m_Terrain != nullptr) delete m_Terrain;
 	if (m_Skybox != nullptr) delete m_Skybox;
 	if (m_BillboardTree != nullptr) delete m_BillboardTree;
 	for (int i = 0; i < 4; ++i) if (m_Walls[i] != nullptr) delete m_Walls[i];
 	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) delete m_Tree[i];
+	if (m_ItemHp != nullptr) delete m_ItemHp;
 
 	for (int i = 0; i < m_Flames.size(); ++i) if (m_Flames[i] != nullptr) delete m_Flames[i];
 	for (int i = 0; i < m_Smokes.size(); ++i) if (m_Smokes[i] != nullptr) delete m_Smokes[i];
+	for (int i = 0; i < m_Powders.size(); ++i) if (m_Powders[i] != nullptr) delete m_Powders[i];
 	if (m_Spark != nullptr) delete m_Spark;
 	if (m_Signal != nullptr) delete m_Signal;
+	if (m_Headshot != nullptr) delete m_Headshot;
 
 	if (m_HpBar != nullptr) delete m_HpBar;
 	if (m_HpGauge != nullptr) delete m_HpGauge;
 	if (m_Aim != nullptr) delete m_Aim;
 	for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) delete m_Numbers[i];
 	if (m_GameOverScreen != nullptr) delete m_GameOverScreen;
+	if (m_GameEndScreen != nullptr) delete m_GameEndScreen;
 	if (m_EnterFire != nullptr) delete m_EnterFire;
 	if (m_EnterMonster != nullptr) delete m_EnterMonster;
 	if (m_GuideArea != nullptr) delete m_GuideArea;
@@ -223,8 +232,11 @@ void Scene::CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferV
 	DescriptorHeapDesc.NodeMask = 0;
 	Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_CbvSrvDescriptorHeap);
 
-	m_CpuDescriptorNextHandle = m_CpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_GpuDescriptorNextHandle = m_GpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	m_CbvCpuDescriptorNextHandle = m_CbvCpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_CbvGpuDescriptorNextHandle = m_CbvGpuDescriptorStartHandle = m_CbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	m_SrvCpuDescriptorNextHandle.ptr = m_SrvCpuDescriptorStartHandle.ptr = m_CbvCpuDescriptorStartHandle.ptr + (DescriptorHandleIncrementSize * ConstantBufferViewCount);
+	m_SrvGpuDescriptorNextHandle.ptr = m_SrvGpuDescriptorStartHandle.ptr = m_CbvGpuDescriptorStartHandle.ptr + (DescriptorHandleIncrementSize * ConstantBufferViewCount);
 }
 
 void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture, int RootParameterIndex)
@@ -248,11 +260,11 @@ void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture
 		ShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
 		ShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.f;
 
-		Device->CreateShaderResourceView(TextureBuffer, &ShaderResourceViewDesc, m_CpuDescriptorNextHandle);
-		m_CpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
+		Device->CreateShaderResourceView(TextureBuffer, &ShaderResourceViewDesc, m_SrvCpuDescriptorNextHandle);
+		m_SrvCpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
 
-		UsingTexture->SetRootArgument(i, RootParameterIndex, m_GpuDescriptorNextHandle);
-		m_GpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
+		UsingTexture->SetRootArgument(i, RootParameterIndex, m_SrvGpuDescriptorNextHandle);
+		m_SrvGpuDescriptorNextHandle.ptr += DescriptorHandleIncrementSize;
 	}
 }
 
@@ -325,7 +337,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	CreateRootSignature(Device);
 
 	// 오브젝트 별로 ConstantBuffer View or ShaderResource View를 사용하면 Set의 호출이 너무 많아지므로 한 번에 사용
-	CreateCbvSrvDescriptorHeap(Device, 0, 1024);
+	CreateCbvSrvDescriptorHeap(Device, 6, 219);
 
 	// Loaded & Skinned Model이 사용할 Shader를 Frame 별로 생성하면 메모리 사용이 많아지므로 미리 생성한 하나의 Shader를 사용
 	Material::PrepareShader(Device, m_RootSignature);
@@ -377,6 +389,10 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	m_Tree.reserve(TreeCount);
 	for (int i = 0; i < TreeCount; ++i) m_Tree.emplace_back(new MultipleTexture(Device, CommandList, m_RootSignature, T_TREE));
 
+	// HP 회복을 할 수 있는 아이템 생성
+	m_ItemHp = new MultipleTexture(Device, CommandList, m_RootSignature, T_ITEMHP);
+	m_ItemHp->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
 	// 불꽃 효과를 표현하는 Flame 객체를 생성 - 1개의 불꽃 효과는 1개의 점 조명과 4개의 텍스처를 사용
 	int FlameCount = 4 * 5;
 	m_Flames.reserve(FlameCount);
@@ -414,11 +430,22 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_Smokes.back()->SetPosition(m_Flames[PosCount]->GetPosition());
 	}
 
+	// 화염 효과를 진압하는 소화기
+	int PowderCount = 5;
+	m_Powders.reserve(PowderCount);
+	for (int i = 0; i < PowderCount; ++i) {
+		m_Powders.emplace_back(new Effect(Device, CommandList, m_RootSignature, T_POWDER, i));
+	}
+
 	// 플레이어의 공격 시 발생하는 총의 불꽃
 	m_Spark = new Effect(Device, CommandList, m_RootSignature, T_SPARK);
 
 	// 몬스터가 플레이어에게 피격 됐을 때 발생하는 신호
 	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
+
+	// 플레이어가 몬스터의 머리를 피격했을 때 발생
+	m_Headshot = new Effect(Device, CommandList, m_RootSignature, T_HEADSHOT);
+	m_Headshot->SetPosition(DirectX::XMFLOAT3(2050.f, 200.f, 1200.f));
 
 	// 플레이어의 최대 체력을 나타내는 UI
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
@@ -444,6 +471,10 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	// 플레이어가 사망했을 때 발생하는 화면
 	m_GameOverScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEOVER);
 	m_GameOverScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+	// 게임 클리어 시에 발생하는 화면
+	m_GameEndScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEEND);
+	m_GameEndScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
 	// 플레이어가 Fire Area에 입장했을 때 발생하는 안내 문구
 	m_EnterFire = new UserInterface(Device, CommandList, m_RootSignature, T_ENTERFIRE);
@@ -527,9 +558,9 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_WolfRiderOrcs.back()->SetAnimationTrack(M_IDLE, ANIMATION_TYPE_LOOP);
 		m_WolfRiderOrcs.back()->SetPosition(DirectX::XMFLOAT3(4700.f, 0.f, 4700.f));
 	}
+
 	// Monster Area에 등장하는 몬스터들의 색상을 어둡게 연출
 	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, 0.f, 0.25f);
-
 	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
 	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
 	for (int i = 0; i < m_WolfRiderOrcs.size(); ++i) if (m_WolfRiderOrcs[i] != nullptr) m_WolfRiderOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
@@ -608,6 +639,32 @@ void Scene::UpdateFireArea(float ElapsedTime)
 	}
 	// 플레이어와 가장 가까운 거리의 화염 효과를 점 조명의 위치로 설정
 	m_Lights[1].m_Position = m_Flames[NearIndex * 4]->GetPosition();
+
+	// 소화기 효과와 화염 효과의 충돌 처리
+	DirectX::XMFLOAT3 NearFlamePos = DirectX::XMFLOAT3(m_Flames[NearIndex * 4]->GetPosition().x, m_Flames[NearIndex * 4]->GetPosition().y, m_Flames[NearIndex * 4]->GetPosition().z);
+	DirectX::XMFLOAT2 PowderPos = DirectX::XMFLOAT2(m_Powders[0]->GetPosition().x, m_Powders[0]->GetPosition().z);
+	float Distance = sqrt(((NearFlamePos.x - PowderPos.x) * (NearFlamePos.x - PowderPos.x)) + ((NearFlamePos.z - PowderPos.y) * (NearFlamePos.z - PowderPos.y)));
+
+	if (25.f >= Distance && false == m_Flames[NearIndex * 4]->GetCollision()) for (int i = 0; i < 4; ++i) m_Flames[(NearIndex * 4) + i]->ActiveCollision();
+
+	// 화염 효과의 크기가 감소한 만큼 충돌 거리와 조명 범위 감소
+	int DecreaseRange = m_Flames[NearIndex * 4]->GetStackDecrease();
+	m_Lights[1].m_Range = 250.f - (DecreaseRange * 50.f);
+
+	// 플레이어와 화염 효과의 충돌 처리
+	int CurrentAnimation = m_Player->GetCurrentAnimationTrackIndex();
+	if (50.f - (DecreaseRange * 10.f) >= NearDistance && P_DAMAGED != CurrentAnimation) m_Player->ActiveDamaged(-1);
+
+	for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Animate(ElapsedTime);
+
+	// 화염 효과 진압 시에 HP 아이템 등장
+	if (true == m_Flames[NearIndex * 4]->GetFlameOffSignal()) m_ItemHp->SetPosition(NearFlamePos), m_Flames[NearIndex * 4]->FalseFlameOffSignal();
+	if (m_ItemHp != nullptr) m_ItemHp->Animate(ElapsedTime, NearFlamePos);
+
+	DirectX::XMFLOAT2 ItemPos = DirectX::XMFLOAT2(m_ItemHp->GetPosition().x, m_ItemHp->GetPosition().z);
+	Distance = sqrt(((ItemPos.x - PlayerPos.x) * (ItemPos.x - PlayerPos.x)) + ((ItemPos.y - PlayerPos.y) * (ItemPos.y - PlayerPos.y)));
+
+	if (0.f == m_ItemHp->GetAnimateTime() && 10.f > Distance) m_ItemHp->ActiveAnimate(), m_Player->ActiveGetHpItem();
 }
 
 void Scene::UpdateMonsterArea(float ElapsedTime)
@@ -699,6 +756,9 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				m_WeakOrcs[i]->UpdateTransform(nullptr);
 
 				if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WEAKORC, m_WeakOrcs[i]->SetSuccessAttack(false);
+
+				// 몬스터 사망 시에 플레이어 강화
+				if (true == m_WeakOrcs[i]->GetDeath()) m_WeakOrcs.erase(m_WeakOrcs.begin() + i), m_Player->SetPower(m_Player->GetPower() + 2);
 			}
 
 		for (int i = 0; i < m_StrongOrcs.size(); ++i)
@@ -723,6 +783,9 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
 
 				if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WOLFRIDERORC, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
+				
+				// 보스 몬스터의 사망 시에 게임 클리어 화면을 활성화
+				if (true == m_WolfRiderOrcs[i]->GetDeath()) if (m_GameEndScreen != nullptr) m_GameEndScreen->Animate(ElapsedTime, 0);
 			}
 
 		if (true == PlayerHit) m_Player->ActiveDamaged(HitMonsterKind);
@@ -762,8 +825,11 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 			m_Smokes[i]->Animate(ElapsedTime);
 		}
 
+		for (int i = 0; i < m_Powders.size(); ++i) { m_Powders[i]->SetTargetTransformPos(m_Player->GetTransformPos()), m_Powders[i]->Animate(ElapsedTime, i); }
+
 		if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
 		if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
+		if (m_Headshot != nullptr) m_Headshot->Animate(ElapsedTime);
 
 		if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
 		for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(i, m_BulletCount);
@@ -813,12 +879,14 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 		// 2. Rendering Effect
 		if (m_Spark != nullptr) m_Spark->Render(CommandList);
 		if (m_Signal != nullptr) m_Signal->Render(CommandList);
+		if (m_Headshot != nullptr) m_Headshot->Render(CommandList);
 
 		// 3. Rendering Objects
 		for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Render(CommandList);
 
 		if (m_BillboardTree != nullptr) m_BillboardTree->Render(CommandList);
 		for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->Render(CommandList);
+		if (m_ItemHp != nullptr) m_ItemHp->Render(CommandList);
 
 		for (int i = 0; i < m_WeakOrcs.size(); ++i) if (m_WeakOrcs[i] != nullptr) m_WeakOrcs[i]->Render(CommandList);
 		for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->Render(CommandList);
@@ -829,6 +897,8 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 
 		// 4. Rendering UserInterface
 		if (m_GameOverScreen != nullptr) m_GameOverScreen->Render(CommandList);
+		if (m_GameEndScreen != nullptr) m_GameEndScreen->Render(CommandList);
+		if (m_GameManual != nullptr) m_GameManual->Render(CommandList);
 		if (m_HpBar != nullptr) m_HpBar->Render(CommandList);
 		if (m_HpGauge != nullptr) m_HpGauge->Render(CommandList);
 		if (m_Aim != nullptr) m_Aim->Render(CommandList);
@@ -840,6 +910,7 @@ void Scene::Render(ID3D12GraphicsCommandList* CommandList)
 
 		// 5. Rendering Blending Objects
 		for (int i = 0; i < m_Smokes.size(); ++i) m_Smokes[i]->Render(CommandList);
+		for (int i = 0; i < m_Powders.size(); ++i) m_Powders[i]->Render(CommandList);
 
 		// 6. Rendering Depth Mask-Zero Objects
 		if (m_Skybox != nullptr) m_Skybox->Render(CommandList);
@@ -897,23 +968,31 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			{
 			case 'w':
 			case 'W':
+			{
 				m_Player->ActiveMove(0, true);
-				break;
+			}
+			break;
 
 			case 's':
 			case 'S':
+			{
 				m_Player->ActiveMove(1, true);
-				break;
+			}
+			break;
 
 			case 'a':
 			case 'A':
+			{
 				m_Player->ActiveMove(2, true);
-				break;
+			}
+			break;
 
 			case 'd':
 			case 'D':
+			{
 				m_Player->ActiveMove(3, true);
-				break;
+			}
+			break;
 
 			case 'r':
 			case 'R':
@@ -922,16 +1001,22 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			}
 			break;
 
-			case VK_SHIFT:
+			case 'q':
+			case 'Q':
 			{
-				m_Player->ActiveRoll();
+				if (m_GameManual != nullptr) m_GameManual->SetActive(true);
 			}
 			break;
 
-			// 테스트를 위한 키 입력
-			case '1':
+			case VK_CONTROL:
 			{
+				m_ActivePowder = true;
+			}
+			break;
 
+			case VK_SHIFT:
+			{
+				if (m_Player->GetCurrentAnimationTrackIndex() != P_DAMAGED) m_Player->ActiveRoll();
 			}
 			break;
 			}
@@ -942,24 +1027,44 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			{
 			case 'w':
 			case 'W':
+			{
 				m_Player->ActiveMove(0, false);
-				break;
+			}
+			break;
 
 			case 's':
 			case 'S':
+			{
 				m_Player->ActiveMove(1, false);
-				break;
+			}
+			break;
 
 			case 'a':
 			case 'A':
+			{
 				m_Player->ActiveMove(2, false);
-				break;
+			}
+			break;
 
 			case 'd':
 			case 'D':
+			{
 				m_Player->ActiveMove(3, false);
-				break;
+			}
+			break;
 
+			case 'q':
+			case 'Q':
+			{
+				if (m_GameManual != nullptr) m_GameManual->SetActive(false);
+			}
+			break;
+
+			case VK_CONTROL:
+			{
+				m_ActivePowder = false;
+			}
+			break;
 			}
 			break;
 		}
@@ -988,7 +1093,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 			GetCursorPos(&m_PreviousPos);
 
 			// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
-			if (m_Player->GetCurrentAnimationTrackIndex() != P_ROLL && m_BulletCount > 0 && m_Player->GetCurrentAnimationTrackIndex() < P_SHOOT) {
+			if (0 < m_BulletCount && m_Player->GetCurrentAnimationTrackIndex() < P_SHOOT && false == m_ActivePowder) {
 				--m_BulletCount;
 				m_Player->ActiveShoot();
 
@@ -1007,7 +1112,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 				// 플레이어의 Look, Position 좌표를 이용하여 몬스터 오브젝트와 충돌처리 수행
 				Camera* GetCamera = m_Player->GetCamera();
-				DirectX::XMFLOAT3 StartPosition = m_Player->GetPosition();
+				DirectX::XMFLOAT3 StartPosition = GetCamera->GetPosition();
 				DirectX::XMFLOAT3 EndPosition{};
 				DirectX::XMStoreFloat3(&EndPosition, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&GetCamera->GetLook())));
 
@@ -1020,6 +1125,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 				for (int i = 0; i < m_WeakOrcs.size(); ++i) {
 					CollisionMonster = m_WeakOrcs[i]->CheckCollision(StartPosition, EndPosition);
+
 					if (CollisionMonster != nullptr) {
 						// 몬스터의 충돌 거리가 최대 사거리보다 작으면 충돌 처리
 						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
@@ -1068,35 +1174,53 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 					}
 				}
 
-
 				if (nullptr != ResultMonster) {
+					// 헤드샷 여부에 따라 데미지 변경 및 효과 표시
+					float ActiveHeadshot = false;
+					int PlayerPower = m_Player->GetPower();
+					if (strstr(ResultMonster->GetFrameName(), "Head")) {
+						ActiveHeadshot = true;
+						PlayerPower *= 2;
+					}
+
 					switch (MonsterType) {
 					case M_WEAKORC:
 					{
-						m_WeakOrcs[CollisionMonsterIndex]->ActiveDamaged();
+						m_WeakOrcs[CollisionMonsterIndex]->ActiveDamaged(PlayerPower);
+						if (ActiveHeadshot) m_Headshot->ActiveEffect(m_WeakOrcs[CollisionMonsterIndex]->GetTransformPos());
 					}
 					break;
 
 					case M_STRONGORC:
 					{
-						m_StrongOrcs[CollisionMonsterIndex]->ActiveDamaged();
+						m_StrongOrcs[CollisionMonsterIndex]->ActiveDamaged(PlayerPower);
+						if (ActiveHeadshot) m_Headshot->ActiveEffect(m_StrongOrcs[CollisionMonsterIndex]->GetTransformPos());
 					}
 					break;
 
-
 					case M_SHAMANORC:
 					{
-						m_ShamanOrcs[CollisionMonsterIndex]->ActiveDamaged();
+						m_ShamanOrcs[CollisionMonsterIndex]->ActiveDamaged(PlayerPower);
+						if (ActiveHeadshot) m_Headshot->ActiveEffect(m_ShamanOrcs[CollisionMonsterIndex]->GetTransformPos());
 					}
 					break;
 
 					case M_WOLFRIDERORC:
 					{
-						m_WolfRiderOrcs[CollisionMonsterIndex]->ActiveDamaged();
+						m_WolfRiderOrcs[CollisionMonsterIndex]->ActiveDamaged(PlayerPower);
+						if (ActiveHeadshot) m_Headshot->ActiveEffect(m_WolfRiderOrcs[CollisionMonsterIndex]->GetTransformPos());
 					}
 					break;
 					}
 				}
+			}
+
+			// 화염 효과를 진압하는 소화기 처리
+			if (true == m_ActivePowder && P_SHOOT > m_Player->GetCurrentAnimationTrackIndex()) {
+				m_Player->ActiveShoot();
+				// 소화기 분말의 애니메이션 효과 활성화
+				for (int i = 0; i < m_Powders.size(); ++i)
+					m_Powders[i]->ActiveEffect(m_Player->GetTransformPos());
 			}
 		}
 		break;

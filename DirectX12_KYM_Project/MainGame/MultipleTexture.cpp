@@ -102,6 +102,33 @@ MultipleTexture::MultipleTexture(ID3D12Device* Device, ID3D12GraphicsCommandList
 		}
 	}
 	break;
+
+	case T_ITEMHP:
+	{
+		m_TextureCount = 2;
+		m_MultiMesh = new Mesh*[m_TextureCount];
+
+		for (int i = 0; i < m_TextureCount; ++i) {
+			TextureMesh *UsingMesh = nullptr;
+			DirectX::XMFLOAT3 MeshPosition{};
+			switch (i) {
+			case 0:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+5.f, +5.f, +0.f);
+			}
+			break;
+
+			case 1:
+			{
+				MeshPosition = DirectX::XMFLOAT3(+5.f, +5.f, +0.f);
+			}
+			break;
+			}
+			UsingMesh = new TextureMesh(Device, CommandList, MeshPosition, DirectX::XMFLOAT2(1.f, 1.f), Kind, i);
+			SetMesh(i, UsingMesh);
+		}
+	}
+	break;
 	}
 
 	Material *UsingMaterial = new Material();
@@ -118,6 +145,25 @@ MultipleTexture::~MultipleTexture()
 void MultipleTexture::Animate(float ElapsedTime, DirectX::XMFLOAT3 Position)
 {
 	switch (m_Kind) {
+	case T_ITEMHP:
+	{
+		if (m_ActiveAnimate) {
+			m_AnimateTime += ElapsedTime;
+
+			float RotateSpeed = 270.f * ElapsedTime;
+			SetRotate(DirectX::XMFLOAT3(0.f, RotateSpeed, 0.f));
+
+			m_TransformPos._42 += ElapsedTime * 20.f;
+
+			if (2.5f < m_AnimateTime) m_ActiveAnimate = false, m_AnimateTime = 0.f, m_TransformPos._41 = 10000.f;
+		}
+		else {
+			float RotateSpeed = 135.f * ElapsedTime;
+			SetRotate(DirectX::XMFLOAT3(0.f, RotateSpeed, 0.f));
+		}
+	}
+	break;
+
 	default:
 	{
 		SetPosition(Position);

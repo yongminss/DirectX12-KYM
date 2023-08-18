@@ -22,9 +22,9 @@ private:
 	DirectX::XMFLOAT3 m_Right = { 1.f, 0.f, 0.f };
 	DirectX::XMFLOAT3 m_Up = { 0.f, 1.f, 0.f };
 	DirectX::XMFLOAT3 m_Look = { 0.f, 0.f, 1.f };
-	DirectX::XMFLOAT3 m_Position{};
+	DirectX::XMFLOAT3 m_Position = { 0.f, 0.f, 0.f };
 
-	D3D12_VIEWPORT m_Viewport = { 0.f, 0.f, Window_Width, Window_Height, 0.f, 1.f };
+	D3D12_VIEWPORT m_Viewport = { 0.f, 0.f, (float)Window_Width, (float)Window_Height, 0.f, 1.f };
 	D3D12_RECT m_ScissorRect = { 0, 0, Window_Width, Window_Height };
 
 	float m_TimeLag = 0.f;
@@ -32,11 +32,13 @@ private:
 	MAPPING_CAMERA *m_MappingCamera = nullptr;
 	ID3D12Resource *m_CameraBuffer = nullptr;
 
+	Player *m_Target = nullptr;
+
 public:
 	Camera();
 	~Camera();
 
-	void CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
+	void CreateCamera(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList, Player* Target);
 
 	void SetOffset(DirectX::XMFLOAT3 Offset) { m_Offset = Offset; }
 
@@ -45,7 +47,7 @@ public:
 	DirectX::XMFLOAT3 GetLook() { return m_Look; }
 	DirectX::XMFLOAT3 GetPosition() { return m_Position; }
 
+	void Update(float ElapsedTime, DirectX::XMFLOAT3 LookAt);
 	void SetViewportAndScissorRect(ID3D12GraphicsCommandList *CommandList);
 	void UpdateShaderCode(ID3D12GraphicsCommandList* CommandList);
-	void Update(ID3D12GraphicsCommandList* CommandList, float ElapsedTime, Player *Target);
 };
