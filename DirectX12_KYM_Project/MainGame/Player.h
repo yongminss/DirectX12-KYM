@@ -6,8 +6,9 @@
 #define STATE_SHOOT 1
 #define STATE_RELOAD 2
 #define STATE_ROLL 3
-#define STATE_DAMAGED 4
-#define STATE_DEATH 5
+#define STATE_JUMP 4
+#define STATE_DAMAGED 5
+#define STATE_DEATH 6
 
 class Camera;
 
@@ -19,12 +20,14 @@ private:
 
 	bool m_ActiveMove[4]{};
 	bool m_CompletedReload = false;
-	bool m_GetHpItem = false;
+	bool m_GetItem = false;
+
 	float m_Speed = 0.f;
-	float m_RollDistance = 0.f;
-	int m_HitMonsterKind = 0;
+
+	float m_AnimateTime = 0.f;
 	float m_CheckDamagedTime = 0.f;
-	float m_BurnTime = 0.f;
+
+	int m_HitMonsterKind = 0;
 
 	int m_State = STATE_NONE;
 
@@ -43,20 +46,14 @@ public:
 	~Player();
 
 	void ActiveMove(int Index, bool Active) { m_ActiveMove[Index] = Active; }
-
-	void ActiveShoot() { m_State = STATE_SHOOT; }
-	void ActiveReload() { m_State = STATE_RELOAD; }
-	void ActiveRoll() { m_State = STATE_ROLL; }
-	void ActiveDamaged(int MonsterKind) { m_State = STATE_DAMAGED, m_HitMonsterKind = MonsterKind; }
+	void ActiveGetHpItem() { m_GetItem = true; }
 
 	void SetCompletedReload(bool CompletedReload) { m_CompletedReload = CompletedReload; }
 	void SetPower(int Power) { m_Power = Power; }
 
-	void SetOffset(DirectX::XMFLOAT3 Offset);
-
 	Camera* GetCamera() { return m_Camera; }
-
 	bool GetCompletedReload() { return m_CompletedReload; }
+	int GetState() { return m_State; }
 	int GetHp() { return m_Hp; }
 	int GetPower() { return m_Power; }
 	
@@ -64,7 +61,9 @@ public:
 	DirectX::XMFLOAT3 GetCameraUp() { return m_CameraUp; }
 	DirectX::XMFLOAT3 GetCameraLook() { return m_CameraLook; }
 
-	void ActiveGetHpItem() { m_GetHpItem = true; }
+	void SetOffset(DirectX::XMFLOAT3 Offset);
+
+	void ChangeState(int State, int MonsterKind = 0);
 
 	void RotateByMessage(HWND Hwnd, POINT PreviousPos);
 	void Move(float ElapsedTime, float MapY);

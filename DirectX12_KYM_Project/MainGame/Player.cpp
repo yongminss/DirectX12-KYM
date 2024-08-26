@@ -27,6 +27,13 @@ void Player::SetOffset(DirectX::XMFLOAT3 Offset)
 	if (m_Camera != nullptr) m_Camera->SetOffset(Offset);
 }
 
+void Player::ChangeState(int State, int MonsterKind)
+{
+	// 상태 변경 명령이 호출되었으니 기존에 사용하던 변수 초기화
+	m_AnimateTime = 0.f;
+	m_State = State, m_HitMonsterKind = MonsterKind;
+}
+
 void Player::RotateByMessage(HWND Hwnd, POINT PreviousPos)
 {
 	// 입력된 마우스의 정보로 플레이어와 카메라의 회전을 결정
@@ -89,8 +96,9 @@ void Player::RotateByMessage(HWND Hwnd, POINT PreviousPos)
 void Player::Move(float ElapsedTime, float MapY)
 {
 	// 1. Terrain Map의 HeightMap에 따라 플레이어의 y좌표 설정
+	// 1-1. 플레이어가 점프 상태일 때는 예외
 	float MapDistance = (m_TransformPos._42 - 15.f) - MapY;
-	if (0.05f <= abs(MapDistance)) {
+	if (0.05f <= abs(MapDistance) && STATE_JUMP != m_State) {
 		DirectX::XMFLOAT3 Pos{};
 		float Speed = ElapsedTime * (MapDistance * 15.f);
 		DirectX::XMStoreFloat3(&Pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetUp()), -Speed)));
@@ -301,7 +309,7 @@ void Player::Move(float ElapsedTime, float MapY)
 		}
 	}
 
-	// 키보드에서 구르기 명령 호출 시 우선적인 처리 수행
+	// 키보드에서 명령 호출 시 우선적인 처리 수행
 	switch (m_State) {
 	case STATE_ROLL:
 	{
@@ -318,10 +326,25 @@ void Player::Move(float ElapsedTime, float MapY)
 		if (0 + 50.f >= m_TransformPos._41 || MAP_SIZE + 50.f <= m_TransformPos._41 || 0 + 50.f >= m_TransformPos._43 || MAP_SIZE + 50.f <= m_TransformPos._43)
 			SetPosition(TempPosition);
 
-		m_RollDistance += RollSpeed;
+		m_AnimateTime += RollSpeed;
 
 		// 일정 거리를 이동했으면 구르기 종료
-		if (m_RollDistance >= 200.f) m_State = STATE_NONE, m_RollDistance = 0.f;
+		if (m_AnimateTime >= 200.f) ChangeState(STATE_NONE);
+	}
+	break;
+
+	case STATE_JUMP:
+	{
+		if (GetCurrentAnimationTrackIndex() != P_IDLE) SetAnimationTrack(P_IDLE, ANIMATION_TYPE_LOOP);
+
+		m_AnimateTime += ElapsedTime * 10.f;
+		float JumpPower = 2.5f - m_AnimateTime;
+
+		DirectX::XMFLOAT3 Position{};
+		DirectX::XMStoreFloat3(&Position, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&GetPosition()), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&GetUp()), JumpPower)));
+		m_TransformPos._41 = Position.x, m_TransformPos._42 = Position.y, m_TransformPos._43 = Position.z;
+
+		if (-2.5f > JumpPower) ChangeState(STATE_NONE);
 	}
 	break;
 	}
@@ -357,11 +380,18 @@ void Player::Move(float ElapsedTime, float MapY)
 			break;
 			}
 		}
-		// 몬스터 외의 피격 효과 (ex. 불꽃 효과)
-		if (-1 == m_HitMonsterKind) {
-			m_BurnTime += 100.f * ElapsedTime;
-			if (m_BurnTime >= 10.f) m_Hp -= 2, m_BurnTime = 0.f;
+
+		// 몬스터의 공격 이외의 피격 효과 처리 (ex. 불꽃 효과 등)
+		switch (m_HitMonsterKind) {
+		case -1:
+		{
+			m_AnimateTime += 10.f * ElapsedTime;
+			if (1.f <= m_AnimateTime) m_Hp -= 2, m_AnimateTime = 0.f;
 		}
+		break;
+		}
+
+		// 플레이어가 피격 당했으므로 일시적으로 텍스처의 색상 변화
 		m_CheckDamagedTime += ElapsedTime;
 
 		if (m_CheckDamagedTime > 0.15f) {
@@ -377,11 +407,12 @@ void Player::Move(float ElapsedTime, float MapY)
 	break;
 	}
 
-	// HP 회복 아이템을 얻었을 경우 효과 적용
-	if (m_GetHpItem) {
-		m_GetHpItem = false;
+	// 아이템을 먹은 경우 효과를 적용
+	if (m_GetItem) {
+		// 현재는 회복 아이템만 존재하는 상태
 		m_Hp += 25;
 		if (100 <= m_Hp) m_Hp = 100;
+		m_GetItem = false;
 	}
 }
 

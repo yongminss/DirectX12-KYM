@@ -653,7 +653,7 @@ void Scene::UpdateFireArea(float ElapsedTime)
 
 	// 플레이어와 화염 효과의 충돌 처리
 	int CurrentAnimation = m_Player->GetCurrentAnimationTrackIndex();
-	if (50.f - (DecreaseRange * 10.f) >= NearDistance && P_DAMAGED != CurrentAnimation) m_Player->ActiveDamaged(-1);
+	if (50.f - (DecreaseRange * 10.f) >= NearDistance && P_DAMAGED != CurrentAnimation) m_Player->ChangeState(STATE_DAMAGED, -1);
 
 	for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Animate(ElapsedTime);
 
@@ -788,7 +788,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				if (true == m_WolfRiderOrcs[i]->GetDeath()) if (m_GameEndScreen != nullptr) m_GameEndScreen->Animate(ElapsedTime, 0);
 			}
 
-		if (true == PlayerHit) m_Player->ActiveDamaged(HitMonsterKind);
+		if (true == PlayerHit) m_Player->ChangeState(STATE_DAMAGED, HitMonsterKind);
 
 		// 플레이어와 근접한 빌보드 이미지를 여러 개의 메쉬를 가진 오브젝트로 변경
 		DirectX::XMFLOAT4X4 *GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
@@ -997,7 +997,7 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			case 'r':
 			case 'R':
 			{
-				if (m_BulletCount != 30) m_Player->ActiveReload();
+				if (m_BulletCount != 30) m_Player->ChangeState(STATE_RELOAD);
 			}
 			break;
 
@@ -1016,7 +1016,13 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 
 			case VK_SHIFT:
 			{
-				if (m_Player->GetCurrentAnimationTrackIndex() != P_DAMAGED) m_Player->ActiveRoll();
+				if (m_Player->GetCurrentAnimationTrackIndex() != P_DAMAGED) m_Player->ChangeState(STATE_ROLL);
+			}
+			break;
+
+			case VK_SPACE:
+			{
+				if (m_Player->GetCurrentAnimationTrackIndex() == P_IDLE && m_Player->GetState() != STATE_JUMP) m_Player->ChangeState(STATE_JUMP);
 			}
 			break;
 			}
@@ -1095,7 +1101,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 			// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
 			if (0 < m_BulletCount && m_Player->GetCurrentAnimationTrackIndex() < P_SHOOT && false == m_ActivePowder) {
 				--m_BulletCount;
-				m_Player->ActiveShoot();
+				m_Player->ChangeState(STATE_SHOOT);
 
 				// 총구 불꽃 활성화
 				GameObject* PlayerWeapon = m_Player->GetFrame(25);
@@ -1217,7 +1223,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 			// 화염 효과를 진압하는 소화기 처리
 			if (true == m_ActivePowder && P_SHOOT > m_Player->GetCurrentAnimationTrackIndex()) {
-				m_Player->ActiveShoot();
+				m_Player->ChangeState(STATE_SHOOT);
 				// 소화기 분말의 애니메이션 효과 활성화
 				for (int i = 0; i < m_Powders.size(); ++i)
 					m_Powders[i]->ActiveEffect(m_Player->GetTransformPos());

@@ -464,7 +464,6 @@ float4 FlamePS(FlameVS_Output Input) : SV_TARGET
     NoiseCoords.xy = (FinalNoise.xy * Perturb) + Input.uv.xy;
     
     float4 FireColor = FireTexture.Sample(FlameSampler, NoiseCoords.xy);
-    
     float4 AlphaColor = AlphaTexture.Sample(FlameSampler, NoiseCoords.xy);
     
     FireColor.a = AlphaColor;
