@@ -115,7 +115,7 @@ void Player::Move(float ElapsedTime, float MapY)
 	}
 
 	// 2-2. 플레이어의 사망 처리
-	if (0 >= m_Hp) m_State = STATE_DEATH;
+	if (0 >= m_Hp && m_State != STATE_DEATH) m_State = STATE_DEATH;
 
 	// 2-3. 키보드와 마우스 입력에 따라 플레이어 이동과 수행할 애니메이션을 결정
 	if (m_ActiveMove[0] == true || m_ActiveMove[1] == true || m_ActiveMove[2] == true || m_ActiveMove[3] == true) {

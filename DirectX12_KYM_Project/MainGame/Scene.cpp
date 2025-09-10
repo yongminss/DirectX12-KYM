@@ -117,8 +117,8 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	ZeroMemory(RootParameter, sizeof(RootParameter));
 	// Camera Buffer
 	RootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[0].Constants.ShaderRegister = 0;
-	RootParameter[0].Constants.RegisterSpace = 0;
+	RootParameter[0].Descriptor.ShaderRegister = 0;
+	RootParameter[0].Descriptor.RegisterSpace = 0;
 	RootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// GameObject Buffer
 	RootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -128,8 +128,8 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Light Buffer
 	RootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[2].Constants.ShaderRegister = 2;
-	RootParameter[2].Constants.RegisterSpace = 0;
+	RootParameter[2].Descriptor.ShaderRegister = 2;
+	RootParameter[2].Descriptor.RegisterSpace = 0;
 	RootParameter[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Descriptor Range 0 - Texture 1
 	RootParameter[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -143,13 +143,13 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	// Noise Buffer
 	RootParameter[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[5].Constants.ShaderRegister = 3;
-	RootParameter[5].Constants.RegisterSpace = 0;
+	RootParameter[5].Descriptor.ShaderRegister = 3;
+	RootParameter[5].Descriptor.RegisterSpace = 0;
 	RootParameter[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Distortion Buffer
 	RootParameter[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[6].Constants.ShaderRegister = 4;
-	RootParameter[6].Constants.RegisterSpace = 0;
+	RootParameter[6].Descriptor.ShaderRegister = 4;
+	RootParameter[6].Descriptor.RegisterSpace = 0;
 	RootParameter[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Descriptor Range 1 - Texture 2 (Terrain)
 	RootParameter[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -163,13 +163,13 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	// Bone Offset Buffer
 	RootParameter[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[9].Constants.ShaderRegister = 5;
-	RootParameter[9].Constants.RegisterSpace = 0;
+	RootParameter[9].Descriptor.ShaderRegister = 5;
+	RootParameter[9].Descriptor.RegisterSpace = 0;
 	RootParameter[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Bone Transform Buffer
 	RootParameter[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	RootParameter[10].Constants.ShaderRegister = 6;
-	RootParameter[10].Constants.RegisterSpace = 0;
+	RootParameter[10].Descriptor.ShaderRegister = 6;
+	RootParameter[10].Descriptor.RegisterSpace = 0;
 	RootParameter[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC SamplerDesc[2];
@@ -227,7 +227,7 @@ void Scene::CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferV
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
 	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	DescriptorHeapDesc.NumDescriptors = ConstantBufferViewCount + ShaderResourceViewCount;
+	DescriptorHeapDesc.NumDescriptors = 1024;//ConstantBufferViewCount + ShaderResourceViewCount;
 	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	DescriptorHeapDesc.NodeMask = 0;
 	Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_CbvSrvDescriptorHeap);
@@ -997,7 +997,10 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			case 'r':
 			case 'R':
 			{
-				if (m_BulletCount != 30) m_Player->ChangeState(STATE_RELOAD);
+				if (m_BulletCount != 30) {
+					PlaySound(L"Sound/Rifle_Reload.wav", 0, SND_FILENAME | SND_ASYNC);
+					m_Player->ChangeState(STATE_RELOAD);
+				}
 			}
 			break;
 
@@ -1100,6 +1103,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 
 			// 플레이어 공격 처리 (ex. 총 발사 애니메이션 or 총 불꽃 활성화 or 몬스터 피격 여부 등)
 			if (0 < m_BulletCount && m_Player->GetCurrentAnimationTrackIndex() < P_SHOOT && false == m_ActivePowder) {
+				PlaySound(L"Sound/Rifle_Shoot.wav", 0, SND_FILENAME | SND_ASYNC);
 				--m_BulletCount;
 				m_Player->ChangeState(STATE_SHOOT);
 
