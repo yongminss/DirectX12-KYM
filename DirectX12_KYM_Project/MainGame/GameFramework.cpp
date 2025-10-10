@@ -95,8 +95,7 @@ void GameFramework::CreateCommandQueueAndList()
 	m_Device->CreateCommandQueue(&CommandQueueDesc, __uuidof(ID3D12CommandQueue), (void**)&m_CommandQueue);
 	m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&m_CommandAllocator);
 	m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator, nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)&m_CommandList);
-
-	m_CommandList->Close();
+	//m_CommandList->Close();
 }
 
 // Double Buffering을 하기 위해 SwapChain을 생성해야 함
@@ -256,6 +255,9 @@ void GameFramework::GameFrameworkLoop()
 
 	if (m_Scene) m_Scene->Animate(m_ElapsedTime, m_Hwnd);
 
+	// CPU와 GPU 작업을 동기화하기 위해 GPU의 작업이 끝날 때까지 대기
+	WaitToCompleteGpu();
+
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
@@ -296,9 +298,6 @@ void GameFramework::GameFrameworkLoop()
 
 	ID3D12CommandList *CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
-
-	// CPU와 GPU 작업을 동기화하기 위해 GPU의 작업이 끝날 때까지 대기
-	WaitToCompleteGpu();
 
 	// Rendering이 끝난 RenderTarget이 화면에 보이도록 Present 호출
 	m_SwapChain->Present(0, 0);

@@ -998,9 +998,14 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			case 'R':
 			{
 				if (m_BulletCount != 30) {
-					PlaySound(L"Sound/Rifle_Reload.wav", 0, SND_FILENAME | SND_ASYNC);
 					m_Player->ChangeState(STATE_RELOAD);
 				}
+			}
+			break;
+
+			case '1':
+			{
+				PlaySound(L"Sound/Rifle_Reload.wav", 0, SND_FILENAME | SND_ASYNC);
 			}
 			break;
 
