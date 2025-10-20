@@ -697,145 +697,148 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 	case STATE_MAIN:
 	{
-		float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
+		if (!m_Pause) {
 
-		if (nullptr != m_Player) {
-			// 1. Terrain의 Height Map에 따라 플레이어의 월드 좌표 y 좌표 설정
-			int GetHeightMapX = int(PlayerxPos) / MAP_SCALE, GetHeightMapZ = int(PlayerzPos) / MAP_SCALE;
-			float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
+			float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
 
-			// 2. 플레이어의 회전, 이동, 애니메이션을 수행 - 카메라 또한 플레이어와 함께 변경
-			m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
-			m_Player->UpdateTransform(nullptr);
+			if (nullptr != m_Player) {
+				// 1. Terrain의 Height Map에 따라 플레이어의 월드 좌표 y 좌표 설정
+				int GetHeightMapX = int(PlayerxPos) / MAP_SCALE, GetHeightMapZ = int(PlayerzPos) / MAP_SCALE;
+				float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
 
-			// 3. 특정 애니메이션의 수행이 완료되면 초기화 및 비활성화 (ex. 장전 애니메이션 수행 - 총알 개수 최대, 애니메이션 비활성화)
-			if (true == m_Player->GetCompletedReload()) m_BulletCount = 30, m_Player->SetCompletedReload(false);
-		}
+				// 2. 플레이어의 회전, 이동, 애니메이션을 수행 - 카메라 또한 플레이어와 함께 변경
+				m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
+				m_Player->UpdateTransform(nullptr);
 
-		// 현재 플레이어의 월드 좌표에 따라 지역을 활성화
-		if ((PlayerxPos < 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_FIRE;
-		else if ((PlayerxPos >= 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_MONSTER;
-		else m_ActiveGuidePosIndex = AREA_NONE;
-
-		// 활성화된 지역의 함수 수행 - 지역에 따라 오브젝트의 활성화 및 텍스처 색상 변경
-		switch (m_ActiveGuidePosIndex) {
-		case AREA_NONE:
-		{
-			UpdateNoneArea(ElapsedTime);
-		}
-		break;
-
-		case AREA_FIRE:
-		{
-			UpdateFireArea(ElapsedTime);
-		}
-		break;
-
-		case AREA_MONSTER:
-		{
-			UpdateMonsterArea(ElapsedTime);
-		}
-		break;
-		}
-
-		// 불꽃 효과를 표현하기 위해 Noise Buffer의 Frame Time을 증가
-		m_Noise.m_FrameTime += ElapsedTime * 0.5f;
-		if (m_Noise.m_FrameTime > 1000.f) m_Noise.m_FrameTime = 0.f;
-
-		DirectX::XMFLOAT3 ShadowPos = m_Player->GetPosition();
-		ShadowPos.y -= 20.f;
-		m_Lights[2].m_Position = ShadowPos;
-
-		// 몬스터 오브젝트들의 애니메이션 수행 - 플레이어 추격, 공격, 사망 등의 애니메이션과 상호작용 등
-		bool PlayerHit = false;
-		int HitMonsterKind = 0;
-
-		for (int i = 0; i < m_WeakOrcs.size(); ++i)
-			if (m_WeakOrcs[i] != nullptr) {
-				m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-				m_WeakOrcs[i]->UpdateTransform(nullptr);
-
-				if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WEAKORC, m_WeakOrcs[i]->SetSuccessAttack(false);
-
-				// 몬스터 사망 시에 플레이어 강화
-				if (true == m_WeakOrcs[i]->GetDeath()) m_WeakOrcs.erase(m_WeakOrcs.begin() + i), m_Player->SetPower(m_Player->GetPower() + 2);
+				// 3. 특정 애니메이션의 수행이 완료되면 초기화 및 비활성화 (ex. 장전 애니메이션 수행 - 총알 개수 최대, 애니메이션 비활성화)
+				if (true == m_Player->GetCompletedReload()) m_BulletCount = 30, m_Player->SetCompletedReload(false);
 			}
 
-		for (int i = 0; i < m_StrongOrcs.size(); ++i)
-			if (m_StrongOrcs[i] != nullptr) {
-				m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-				m_StrongOrcs[i]->UpdateTransform(nullptr);
+			// 현재 플레이어의 월드 좌표에 따라 지역을 활성화
+			if ((PlayerxPos < 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_FIRE;
+			else if ((PlayerxPos >= 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_MONSTER;
+			else m_ActiveGuidePosIndex = AREA_NONE;
 
-				if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_STRONGORC, m_StrongOrcs[i]->SetSuccessAttack(false);
+			// 활성화된 지역의 함수 수행 - 지역에 따라 오브젝트의 활성화 및 텍스처 색상 변경
+			switch (m_ActiveGuidePosIndex) {
+			case AREA_NONE:
+			{
+				UpdateNoneArea(ElapsedTime);
+			}
+			break;
+
+			case AREA_FIRE:
+			{
+				UpdateFireArea(ElapsedTime);
+			}
+			break;
+
+			case AREA_MONSTER:
+			{
+				UpdateMonsterArea(ElapsedTime);
+			}
+			break;
 			}
 
-		for (int i = 0; i < m_ShamanOrcs.size(); ++i)
-			if (m_ShamanOrcs[i] != nullptr) {
-				m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-				m_ShamanOrcs[i]->UpdateTransform(nullptr);
+			// 불꽃 효과를 표현하기 위해 Noise Buffer의 Frame Time을 증가
+			m_Noise.m_FrameTime += ElapsedTime * 0.5f;
+			if (m_Noise.m_FrameTime > 1000.f) m_Noise.m_FrameTime = 0.f;
 
-				if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_SHAMANORC, m_ShamanOrcs[i]->SetSuccessAttack(false);
+			DirectX::XMFLOAT3 ShadowPos = m_Player->GetPosition();
+			ShadowPos.y -= 20.f;
+			m_Lights[2].m_Position = ShadowPos;
+
+			// 몬스터 오브젝트들의 애니메이션 수행 - 플레이어 추격, 공격, 사망 등의 애니메이션과 상호작용 등
+			bool PlayerHit = false;
+			int HitMonsterKind = 0;
+
+			for (int i = 0; i < m_WeakOrcs.size(); ++i)
+				if (m_WeakOrcs[i] != nullptr) {
+					m_WeakOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+					m_WeakOrcs[i]->UpdateTransform(nullptr);
+
+					if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WEAKORC, m_WeakOrcs[i]->SetSuccessAttack(false);
+
+					// 몬스터 사망 시에 플레이어 강화
+					if (true == m_WeakOrcs[i]->GetDeath()) m_WeakOrcs.erase(m_WeakOrcs.begin() + i), m_Player->SetPower(m_Player->GetPower() + 2);
+				}
+
+			for (int i = 0; i < m_StrongOrcs.size(); ++i)
+				if (m_StrongOrcs[i] != nullptr) {
+					m_StrongOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+					m_StrongOrcs[i]->UpdateTransform(nullptr);
+
+					if (true == m_StrongOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_STRONGORC, m_StrongOrcs[i]->SetSuccessAttack(false);
+				}
+
+			for (int i = 0; i < m_ShamanOrcs.size(); ++i)
+				if (m_ShamanOrcs[i] != nullptr) {
+					m_ShamanOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+					m_ShamanOrcs[i]->UpdateTransform(nullptr);
+
+					if (true == m_ShamanOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_SHAMANORC, m_ShamanOrcs[i]->SetSuccessAttack(false);
+				}
+
+			for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
+				if (m_WolfRiderOrcs[i] != nullptr) {
+					m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
+					m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
+
+					if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WOLFRIDERORC, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
+
+					// 보스 몬스터의 사망 시에 게임 클리어 화면을 활성화
+					if (true == m_WolfRiderOrcs[i]->GetDeath()) if (m_GameEndScreen != nullptr) m_GameEndScreen->Animate(ElapsedTime, 0);
+				}
+
+			if (true == PlayerHit) m_Player->ChangeState(STATE_DAMAGED, HitMonsterKind);
+
+			// 플레이어와 근접한 빌보드 이미지를 여러 개의 메쉬를 가진 오브젝트로 변경
+			DirectX::XMFLOAT4X4* GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
+			int NearX = int(PlayerxPos / 200), NearZ = int(PlayerzPos / 200);
+
+			// 가장 근접한 나무를 기준으로 3x3개의 빌보드 이미지를 오브젝트로 변경
+			for (int i = 0, RangeX = -1; RangeX < 2; ++RangeX) {
+				for (int RangeZ = -1; RangeZ < 2; ++RangeZ, ++i) {
+					int TreeXIndex = NearX + RangeX, TreeZIndex = NearZ + RangeZ;
+
+					// 최소, 최대 범위 밖의 배열 접근 방지
+					if (TreeXIndex < 0 || TreeXIndex > 24 || TreeZIndex < 0 || TreeZIndex > 24) continue;
+
+					DirectX::XMFLOAT4X4 NearBillboardTree = GetBillboardTreePos[m_SaveBillboardTreeIndex[TreeXIndex][TreeZIndex]];
+
+					if (m_Tree[i] != nullptr) m_Tree[i]->SetPosition(DirectX::XMFLOAT3(NearBillboardTree._41, NearBillboardTree._42, NearBillboardTree._43));
+				}
 			}
 
-		for (int i = 0; i < m_WolfRiderOrcs.size(); ++i)
-			if (m_WolfRiderOrcs[i] != nullptr) {
-				m_WolfRiderOrcs[i]->Animate(ElapsedTime, m_Player->GetTransformPos(), m_Terrain, m_Signal);
-				m_WolfRiderOrcs[i]->UpdateTransform(nullptr);
+			// 카메라의 월드 좌표 Right, Up, Look에 따라 불꽃 효과와 연기 효과의 월드 좌표 설정
+			Camera* GetCamera = m_Player->GetCamera();
+			int PosCount = -4;
 
-				if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WOLFRIDERORC, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
-				
-				// 보스 몬스터의 사망 시에 게임 클리어 화면을 활성화
-				if (true == m_WolfRiderOrcs[i]->GetDeath()) if (m_GameEndScreen != nullptr) m_GameEndScreen->Animate(ElapsedTime, 0);
+			for (int i = 0; i < m_Smokes.size(); ++i) {
+				DirectX::XMFLOAT4X4 Target{};
+				Target._11 = GetCamera->GetRight().x, Target._12 = GetCamera->GetRight().y, Target._13 = GetCamera->GetRight().z;
+				Target._21 = GetCamera->GetUp().x, Target._22 = GetCamera->GetUp().y, Target._23 = GetCamera->GetUp().z;
+				Target._31 = GetCamera->GetLook().x, Target._32 = GetCamera->GetLook().y, Target._33 = GetCamera->GetLook().z;
+
+				if (i % 3 == 0) PosCount += 4;
+				Target._41 = m_Flames[PosCount]->GetPosition().x, Target._42 = m_Flames[PosCount]->GetPosition().y, Target._43 = m_Flames[PosCount]->GetPosition().z;
+
+				m_Smokes[i]->ActiveEffect(Target);
+				m_Smokes[i]->Animate(ElapsedTime);
 			}
 
-		if (true == PlayerHit) m_Player->ChangeState(STATE_DAMAGED, HitMonsterKind);
+			for (int i = 0; i < m_Powders.size(); ++i) { m_Powders[i]->SetTargetTransformPos(m_Player->GetTransformPos()), m_Powders[i]->Animate(ElapsedTime, i); }
 
-		// 플레이어와 근접한 빌보드 이미지를 여러 개의 메쉬를 가진 오브젝트로 변경
-		DirectX::XMFLOAT4X4 *GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
-		int NearX = int(PlayerxPos / 200), NearZ = int(PlayerzPos / 200);
+			if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
+			if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
+			if (m_Headshot != nullptr) m_Headshot->Animate(ElapsedTime);
 
-		// 가장 근접한 나무를 기준으로 3x3개의 빌보드 이미지를 오브젝트로 변경
-		for (int i = 0, RangeX = -1; RangeX < 2; ++RangeX) {
-			for (int RangeZ = -1; RangeZ < 2; ++RangeZ, ++i) {
-				int TreeXIndex = NearX + RangeX, TreeZIndex = NearZ + RangeZ;
+			if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
+			for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(i, m_BulletCount);
+			if (P_DEATH == m_Player->GetCurrentAnimationTrackIndex()) if (m_GameOverScreen != nullptr) m_GameOverScreen->Animate(ElapsedTime, 0);
 
-				// 최소, 최대 범위 밖의 배열 접근 방지
-				if (TreeXIndex < 0 || TreeXIndex > 24 || TreeZIndex < 0 || TreeZIndex > 24) continue;
-
-				DirectX::XMFLOAT4X4 NearBillboardTree = GetBillboardTreePos[m_SaveBillboardTreeIndex[TreeXIndex][TreeZIndex]];
-
-				if (m_Tree[i] != nullptr) m_Tree[i]->SetPosition(DirectX::XMFLOAT3(NearBillboardTree._41, NearBillboardTree._42, NearBillboardTree._43));
-			}
+			if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 		}
-
-		// 카메라의 월드 좌표 Right, Up, Look에 따라 불꽃 효과와 연기 효과의 월드 좌표 설정
-		Camera* GetCamera = m_Player->GetCamera();
-		int PosCount = -4;
-
-		for (int i = 0; i < m_Smokes.size(); ++i) {
-			DirectX::XMFLOAT4X4 Target{};
-			Target._11 = GetCamera->GetRight().x, Target._12 = GetCamera->GetRight().y, Target._13 = GetCamera->GetRight().z;
-			Target._21 = GetCamera->GetUp().x, Target._22 = GetCamera->GetUp().y, Target._23 = GetCamera->GetUp().z;
-			Target._31 = GetCamera->GetLook().x, Target._32 = GetCamera->GetLook().y, Target._33 = GetCamera->GetLook().z;
-
-			if (i % 3 == 0) PosCount += 4;
-			Target._41 = m_Flames[PosCount]->GetPosition().x, Target._42 = m_Flames[PosCount]->GetPosition().y, Target._43 = m_Flames[PosCount]->GetPosition().z;
-
-			m_Smokes[i]->ActiveEffect(Target);
-			m_Smokes[i]->Animate(ElapsedTime);
-		}
-
-		for (int i = 0; i < m_Powders.size(); ++i) { m_Powders[i]->SetTargetTransformPos(m_Player->GetTransformPos()), m_Powders[i]->Animate(ElapsedTime, i); }
-
-		if (m_Spark != nullptr) m_Spark->Animate(ElapsedTime);
-		if (m_Signal != nullptr) m_Signal->Animate(ElapsedTime);
-		if (m_Headshot != nullptr) m_Headshot->Animate(ElapsedTime);
-
-		if (m_HpGauge != nullptr) m_HpGauge->Animate(ElapsedTime, m_Player->GetHp());
-		for (int i = 0; i < 2; ++i) if (m_Numbers[i] != nullptr) m_Numbers[i]->Animate(i, m_BulletCount);
-		if (P_DEATH == m_Player->GetCurrentAnimationTrackIndex()) if (m_GameOverScreen != nullptr) m_GameOverScreen->Animate(ElapsedTime, 0);
-
-		if (m_Skybox != nullptr) m_Skybox->Animate(ElapsedTime, m_Player->GetPosition());
 	}
 	break;
 	}
@@ -1003,16 +1006,11 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			}
 			break;
 
-			case '1':
-			{
-				PlaySound(L"Sound/Rifle_Reload.wav", 0, SND_FILENAME | SND_ASYNC);
-			}
-			break;
-
 			case 'q':
 			case 'Q':
 			{
 				if (m_GameManual != nullptr) m_GameManual->SetActive(true);
+				m_Pause = true;
 			}
 			break;
 
@@ -1071,6 +1069,7 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 			case 'Q':
 			{
 				if (m_GameManual != nullptr) m_GameManual->SetActive(false);
+				m_Pause = false;
 			}
 			break;
 

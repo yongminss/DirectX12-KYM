@@ -150,6 +150,8 @@ private:
 	bool m_ActivePowder = false;
 	int m_StackDecreaseFlame = 0;
 
+	bool m_Pause = false;
+
 public:
 	Scene();
 	~Scene();
