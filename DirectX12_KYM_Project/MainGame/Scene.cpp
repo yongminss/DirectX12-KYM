@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "Scene.h"
 
 #include "Player.h"
@@ -124,7 +124,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	RootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	RootParameter[1].Constants.ShaderRegister = 1;
 	RootParameter[1].Constants.RegisterSpace = 0;
-	RootParameter[1].Constants.Num32BitValues = 32;
+	RootParameter[1].Constants.Num32BitValues = 36;
 	RootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	// Light Buffer
 	RootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -174,7 +174,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 
 	D3D12_STATIC_SAMPLER_DESC SamplerDesc[2];
 	ZeroMemory(SamplerDesc, sizeof(SamplerDesc));
-	// ÅØ½ºÃ³ÀÇ »ö»óÀ» °áÁ¤ÇÒ ¶§ »ç¿ëÇÏ´Â »ùÇÃ·¯
+	// í…ìŠ¤ì²˜ì˜ ìƒ‰ìƒì„ ê²°ì •í•  ë•Œ ì‚¬ìš©í•˜ëŠ” ìƒ˜í”ŒëŸ¬
 	SamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	SamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	SamplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -187,7 +187,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 	SamplerDesc[0].ShaderRegister = 0;
 	SamplerDesc[0].RegisterSpace = 0;
 	SamplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	// Flame ObjectsÀÇ »ö»óÀ» ¼¯´Â »ùÇÃ·¯
+	// Flame Objectsì˜ ìƒ‰ìƒì„ ì„ëŠ” ìƒ˜í”ŒëŸ¬
 	SamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	SamplerDesc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	SamplerDesc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -203,7 +203,7 @@ void Scene::CreateRootSignature(ID3D12Device* Device)
 
 	D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc;
 	ZeroMemory(&RootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
-	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // ÀÔ·Â-Á¶¸³(IA) ´Ü°è Çã¿ë
+	RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // ì…ë ¥-ì¡°ë¦½(IA) ë‹¨ê³„ í—ˆìš©
 	RootSignatureDesc.pParameters = RootParameter;
 	RootSignatureDesc.NumParameters = _countof(RootParameter);
 	RootSignatureDesc.pStaticSamplers = SamplerDesc;
@@ -223,7 +223,7 @@ void Scene::CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferV
 {
 	DescriptorHandleIncrementSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	// ÅØ½ºÃ³ ¸ÅÇÎ¿¡ ÇÊ¿äÇÑ ShaderResource View¸¦ ¸¸µé±â À§ÇØ Descriptor HeapÀ» »ı¼º
+	// í…ìŠ¤ì²˜ ë§¤í•‘ì— í•„ìš”í•œ ShaderResource Viewë¥¼ ë§Œë“¤ê¸° ìœ„í•´ Descriptor Heapì„ ìƒì„±
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
 	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -241,15 +241,15 @@ void Scene::CreateCbvSrvDescriptorHeap(ID3D12Device* Device, int ConstantBufferV
 
 void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture, int RootParameterIndex)
 {
-	// ¿ÀºêÁ§Æ®°¡ »ç¿ëÇÒ ÅØ½ºÃ³ÀÇ Á¤º¸¸¦ °¡Á®¿È
+	// ì˜¤ë¸Œì íŠ¸ê°€ ì‚¬ìš©í•  í…ìŠ¤ì²˜ì˜ ì •ë³´ë¥¼ ê°€ì ¸ì˜´
 	int TextureCount = UsingTexture->GetTextureCount();
 
 	for (int i = 0; i < TextureCount; ++i) {
-		// Texture°¡ °¡Áö°í ÀÖ´Â Texture Buffer¸¦ °¡Á®¿È
+		// Textureê°€ ê°€ì§€ê³  ìˆëŠ” Texture Bufferë¥¼ ê°€ì ¸ì˜´
 		ID3D12Resource *TextureBuffer = UsingTexture->GetTextureBuffer(i);
 		D3D12_RESOURCE_DESC ResourceDesc = TextureBuffer->GetDesc();
 
-		// ShaderResource View¸¦ »ı¼º
+		// ShaderResource Viewë¥¼ ìƒì„±
 		D3D12_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc;
 		ZeroMemory(&ShaderResourceViewDesc, sizeof(D3D12_SHADER_RESOURCE_VIEW_DESC));
 		ShaderResourceViewDesc.Format = ResourceDesc.Format;
@@ -270,12 +270,12 @@ void Scene::CreateShaderResourceView(ID3D12Device* Device, Texture* UsingTexture
 
 void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
-	// HLSL¿¡¼­ »ç¿ëÇÏ´Â MAPPING_LIGHTÀÇ °ªÀ» ¼³Á¤
+	// HLSLì—ì„œ ì‚¬ìš©í•˜ëŠ” MAPPING_LIGHTì˜ ê°’ì„ ì„¤ì •
 	m_LightCount = 3;
 	m_Lights = new LIGHT[m_LightCount];
 	ZeroMemory(m_Lights, sizeof(LIGHT) * m_LightCount);
 
-	// °ÔÀÓ¿¡¼­ ÅÂ¾ç ºûÀ¸·Î »ç¿ëµÇ´Â Á÷Á¢ Á¶¸íÀ» ¼³Á¤
+	// ê²Œì„ì—ì„œ íƒœì–‘ ë¹›ìœ¼ë¡œ ì‚¬ìš©ë˜ëŠ” ì§ì ‘ ì¡°ëª…ì„ ì„¤ì •
 	m_Lights[0].m_Ambient = DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.f);
 	m_Lights[0].m_Diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.f);
 	m_Lights[0].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
@@ -284,7 +284,7 @@ void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList
 	m_Lights[0].m_Type = DIRECTIONAL_LIGHT;
 	m_Lights[0].m_Active = true;
 
-	// ºÒ²É È¿°ú¿¡ »ç¿ëÇÏ´Â Á¡ Á¶¸íÀ» ¼³Á¤
+	// ë¶ˆê½ƒ íš¨ê³¼ì— ì‚¬ìš©í•˜ëŠ” ì  ì¡°ëª…ì„ ì„¤ì •
 	m_Lights[1].m_Ambient = DirectX::XMFLOAT4(1.5f, 0.5f, 0.5f, 1.f);
 	m_Lights[1].m_Diffuse = DirectX::XMFLOAT4(0.5f, 0.f, 0.f, 1.f);
 	m_Lights[1].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
@@ -294,7 +294,7 @@ void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList
 	m_Lights[1].m_Active = true;
 	m_Lights[1].m_Attenuation = DirectX::XMFLOAT3(1.f, 0.001f, 0.0001f);
 
-	// ÇÃ·¹ÀÌ¾îÀÇ ¿øÇü ±×¸²ÀÚ Ç¥Çö¿¡ »ç¿ëµÇ´Â Á¡ Á¶¸íÀ» ¼³Á¤
+	// í”Œë ˆì´ì–´ì˜ ì›í˜• ê·¸ë¦¼ì í‘œí˜„ì— ì‚¬ìš©ë˜ëŠ” ì  ì¡°ëª…ì„ ì„¤ì •
 	m_Lights[2].m_Ambient = DirectX::XMFLOAT4(-0.5f, -0.5f, -0.5f, 1.f);
 	m_Lights[2].m_Diffuse = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 	m_Lights[2].m_Specular = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
@@ -313,7 +313,7 @@ void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList
 	m_Noise.m_ScrollSpeed = DirectX::XMFLOAT3(1.3f, 2.1f, 2.3f);
 	m_Noise.m_Scale = DirectX::XMFLOAT3(1.f, 2.f, 3.f);
 
-	// ºÒ²É È¿°ú¿¡ »ç¿ëÇÏ´Â Noise && Distortion °ªÀ» ¼³Á¤
+	// ë¶ˆê½ƒ íš¨ê³¼ì— ì‚¬ìš©í•˜ëŠ” Noise && Distortion ê°’ì„ ì„¤ì •
 	UINT NoiseBufferSize = ((sizeof(MAPPING_NOISE) + 255) & ~255);
 
 	m_NoiseBuffer = CreateBuffer(Device, CommandList, nullptr, NoiseBufferSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
@@ -333,46 +333,46 @@ void Scene::CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList
 
 void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
-	// ¸®¼Ò½º¸¦ ±×·¡ÇÈ½º ÆÄÀÌÇÁ¶óÀÎ¿¡ ¿¬°áÇÏ´Â ¿ªÇÒÀ» ÇÏ´Â RootSignature »ı¼º
+	// ë¦¬ì†ŒìŠ¤ë¥¼ ê·¸ë˜í”½ìŠ¤ íŒŒì´í”„ë¼ì¸ì— ì—°ê²°í•˜ëŠ” ì—­í• ì„ í•˜ëŠ” RootSignature ìƒì„±
 	CreateRootSignature(Device);
 
-	// ¿ÀºêÁ§Æ® º°·Î ConstantBuffer View or ShaderResource View¸¦ »ç¿ëÇÏ¸é SetÀÇ È£ÃâÀÌ ³Ê¹« ¸¹¾ÆÁö¹Ç·Î ÇÑ ¹ø¿¡ »ç¿ë
+	// ì˜¤ë¸Œì íŠ¸ ë³„ë¡œ ConstantBuffer View or ShaderResource Viewë¥¼ ì‚¬ìš©í•˜ë©´ Setì˜ í˜¸ì¶œì´ ë„ˆë¬´ ë§ì•„ì§€ë¯€ë¡œ í•œ ë²ˆì— ì‚¬ìš©
 	CreateCbvSrvDescriptorHeap(Device, 6, 219);
 
-	// Loaded & Skinned ModelÀÌ »ç¿ëÇÒ Shader¸¦ Frame º°·Î »ı¼ºÇÏ¸é ¸Ş¸ğ¸® »ç¿ëÀÌ ¸¹¾ÆÁö¹Ç·Î ¹Ì¸® »ı¼ºÇÑ ÇÏ³ªÀÇ Shader¸¦ »ç¿ë
+	// Loaded & Skinned Modelì´ ì‚¬ìš©í•  Shaderë¥¼ Frame ë³„ë¡œ ìƒì„±í•˜ë©´ ë©”ëª¨ë¦¬ ì‚¬ìš©ì´ ë§ì•„ì§€ë¯€ë¡œ ë¯¸ë¦¬ ìƒì„±í•œ í•˜ë‚˜ì˜ Shaderë¥¼ ì‚¬ìš©
 	Material::PrepareShader(Device, m_RootSignature);
 
-	// Light, Noise, DistortionÀÇ Constant Buffer »ı¼º
+	// Light, Noise, Distortionì˜ Constant Buffer ìƒì„±
 	CreateConstantBuffer(Device, CommandList);
 
-	// Title State¿¡¼­ »ç¿ëÇÒ È­¸é (ex. °ÔÀÓ ½ÃÀÛ or ¼³¸í or Á¾·á µî)
+	// Title Stateì—ì„œ ì‚¬ìš©í•  í™”ë©´ (ex. ê²Œì„ ì‹œì‘ or ì„¤ëª… or ì¢…ë£Œ ë“±)
 	m_TitleScreen = new UserInterface(Device, CommandList, m_RootSignature, T_TITLESCREEN);
 	m_TitleScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// Title State¿¡¼­ ÇÃ·¹ÀÌ¾î°¡ ¾î¶² Çàµ¿À» ÇÒÁö °í¸£´Â ¼±ÅÃÃ¢
+	// Title Stateì—ì„œ í”Œë ˆì´ì–´ê°€ ì–´ë–¤ í–‰ë™ì„ í• ì§€ ê³ ë¥´ëŠ” ì„ íƒì°½
 	m_Selection = new UserInterface(Device, CommandList, m_RootSignature, T_SELECTION);
 	m_Selection->SetPosition(DirectX::XMFLOAT3(0.f, -0.05f, 0.f));
 
 	m_GameManual = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEMANUAL);
 	m_GameManual->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// Camera¸¦ °¡Áö°í ÀÖÀ¸¸ç ÇÃ·¹ÀÌ¾î°¡ Á÷Á¢ Á¶Á¾ÇÏ´Â ¿ÀºêÁ§Æ®ÀÎ Player »ı¼º
+	// Cameraë¥¼ ê°€ì§€ê³  ìˆìœ¼ë©° í”Œë ˆì´ì–´ê°€ ì§ì ‘ ì¡°ì¢…í•˜ëŠ” ì˜¤ë¸Œì íŠ¸ì¸ Player ìƒì„±
 	m_Player = new Player(Device, CommandList, m_RootSignature);
 	m_Player->SetScale(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f));
 	m_Player->SetPosition(DirectX::XMFLOAT3(2050.f, 0.f, 1150.f));
 
-	// °¢ Á¤Á¡ ¸¶´Ù ³ô³·ÀÌ°¡ ´Ù¸¥ ÁöÇü(Terrain) »ı¼º
+	// ê° ì •ì  ë§ˆë‹¤ ë†’ë‚®ì´ê°€ ë‹¤ë¥¸ ì§€í˜•(Terrain) ìƒì„±
 	m_Terrain = new Terrain(Device, CommandList, m_RootSignature);
 
-	// °ÔÀÓÀÇ ¹è°æ ¿ªÇÒÀ» ÇÏ´Â Skybox »ı¼º
+	// ê²Œì„ì˜ ë°°ê²½ ì—­í• ì„ í•˜ëŠ” Skybox ìƒì„±
 	m_Skybox = new MultipleTexture(Device, CommandList, m_RootSignature, T_SKYBOX);
 
-	// Scene¿¡ µîÀåÇÏ´Â ºôº¸µå ÀÌ¹ÌÁö¸¦ »ı¼º (ex. ³ª¹«)
+	// Sceneì— ë“±ì¥í•˜ëŠ” ë¹Œë³´ë“œ ì´ë¯¸ì§€ë¥¼ ìƒì„± (ex. ë‚˜ë¬´)
 	m_BillboardTree = new Billboard();
 	m_BillboardTree->CreateShader(Device, m_RootSignature);
 	m_BillboardTree->CreateBillboard(Device, CommandList, m_RootSignature, m_Terrain, T_BILLBOARDTREE, 625);
 
-	// ÇÃ·¹ÀÌ¾î°¡ ¸Ê ¹ÛÀ¸·Î ÀÌµ¿ÇÏ´Â °ÍÀ» ¹æÁöÇÏ´Â º® »ı¼º
+	// í”Œë ˆì´ì–´ê°€ ë§µ ë°–ìœ¼ë¡œ ì´ë™í•˜ëŠ” ê²ƒì„ ë°©ì§€í•˜ëŠ” ë²½ ìƒì„±
 	m_Walls = new Billboard*[4];
 	for (int i = 0; i < 4; ++i) {
 		m_Walls[i] = new Billboard();
@@ -380,24 +380,24 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_Walls[i]->CreateBillboard(Device, CommandList, m_RootSignature, nullptr, T_WALL + i, 75);
 	}
 
-	// ÇÃ·¹ÀÌ¾î¿Í °Å¸®°¡ °¡±î¿öÁö´Â ºôº¸µå ÀÌ¹ÌÁö¸¦ °´Ã¼·Î º¯È¯ÇÏ±â À§ÇØ ºôº¸µå ÀÌ¹ÌÁöÀÇ Index ÀúÀå
+	// í”Œë ˆì´ì–´ì™€ ê±°ë¦¬ê°€ ê°€ê¹Œì›Œì§€ëŠ” ë¹Œë³´ë“œ ì´ë¯¸ì§€ë¥¼ ê°ì²´ë¡œ ë³€í™˜í•˜ê¸° ìœ„í•´ ë¹Œë³´ë“œ ì´ë¯¸ì§€ì˜ Index ì €ì¥
 	int BillTreeIndex = 0;
 	for (int z = 0; z < 25; ++z) for (int x = 0; x < 25; ++x) m_SaveBillboardTreeIndex[x][z] = BillTreeIndex++;
 
-	// ºôº¸µå ÀÌ¹ÌÁö¿¡¼­ º¯È¯µÇ´Â ¿©·¯ °³ÀÇ Mesh¸¦ °¡Áø Tree »ı¼º
+	// ë¹Œë³´ë“œ ì´ë¯¸ì§€ì—ì„œ ë³€í™˜ë˜ëŠ” ì—¬ëŸ¬ ê°œì˜ Meshë¥¼ ê°€ì§„ Tree ìƒì„±
 	int TreeCount = 9;
 	m_Tree.reserve(TreeCount);
 	for (int i = 0; i < TreeCount; ++i) m_Tree.emplace_back(new MultipleTexture(Device, CommandList, m_RootSignature, T_TREE));
 
-	// HP È¸º¹À» ÇÒ ¼ö ÀÖ´Â ¾ÆÀÌÅÛ »ı¼º
+	// HP íšŒë³µì„ í•  ìˆ˜ ìˆëŠ” ì•„ì´í…œ ìƒì„±
 	m_ItemHp = new MultipleTexture(Device, CommandList, m_RootSignature, T_ITEMHP);
 	m_ItemHp->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// ºÒ²É È¿°ú¸¦ Ç¥ÇöÇÏ´Â Flame °´Ã¼¸¦ »ı¼º - 1°³ÀÇ ºÒ²É È¿°ú´Â 1°³ÀÇ Á¡ Á¶¸í°ú 4°³ÀÇ ÅØ½ºÃ³¸¦ »ç¿ë
+	// ë¶ˆê½ƒ íš¨ê³¼ë¥¼ í‘œí˜„í•˜ëŠ” Flame ê°ì²´ë¥¼ ìƒì„± - 1ê°œì˜ ë¶ˆê½ƒ íš¨ê³¼ëŠ” 1ê°œì˜ ì  ì¡°ëª…ê³¼ 4ê°œì˜ í…ìŠ¤ì²˜ë¥¼ ì‚¬ìš©
 	int FlameCount = 4 * 5;
 	m_Flames.reserve(FlameCount);
 
-	// ºÒ²É È¿°úÀÇ ¿ùµå ÁÂÇ¥(x, z)¸¦ ¹è¿­¿¡ ÀúÀå
+	// ë¶ˆê½ƒ íš¨ê³¼ì˜ ì›”ë“œ ì¢Œí‘œ(x, z)ë¥¼ ë°°ì—´ì— ì €ì¥
 	float FlamePos[10] = { 312.f, 4489.f, 2197.f, 4335.f, 1399.f, 3648.f, 228.f, 2805.f, 2348.f, 2773.f };
 	int PosCount = -1;
 
@@ -405,20 +405,20 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 	for (int i = 0; i < FlameCount; ++i) {
 		m_Flames.emplace_back(new Effect(Device, CommandList, m_RootSignature, T_FLAME));
 
-		// 1°³ÀÇ ºÒ²É È¿°ú´Â 4°³ÀÇ ÅØ½ºÃ³¸¦ »ç¿ëÇÏ¹Ç·Î i % 4 == 0 ÀÏ ¶§¸¶´Ù ¿ùµå ÁÂÇ¥ °ªÀ» º¯°æ
+		// 1ê°œì˜ ë¶ˆê½ƒ íš¨ê³¼ëŠ” 4ê°œì˜ í…ìŠ¤ì²˜ë¥¼ ì‚¬ìš©í•˜ë¯€ë¡œ i % 4 == 0 ì¼ ë•Œë§ˆë‹¤ ì›”ë“œ ì¢Œí‘œ ê°’ì„ ë³€ê²½
 		if (i % 4 == 0) ++PosCount;
-		else m_Flames.back()->SetRotate(DirectX::XMFLOAT3(0.f, 90.f * (i % 4), 0.f)); // ¿ùµå ÁÂÇ¥ °ªÀ» º¯°æÇÏÁö ¾ÊÀ¸¸é ÅØ½ºÃ³¸¦ yÃà È¸Àü
+		else m_Flames.back()->SetRotate(DirectX::XMFLOAT3(0.f, 90.f * (i % 4), 0.f)); // ì›”ë“œ ì¢Œí‘œ ê°’ì„ ë³€ê²½í•˜ì§€ ì•Šìœ¼ë©´ í…ìŠ¤ì²˜ë¥¼ yì¶• íšŒì „
 
-		// ºÒ²É È¿°úÀÇ ¿ùµå ÁÂÇ¥¸¦ ¼³Á¤
+		// ë¶ˆê½ƒ íš¨ê³¼ì˜ ì›”ë“œ ì¢Œí‘œë¥¼ ì„¤ì •
 		float XPos = FlamePos[PosCount * 2], ZPos = FlamePos[(PosCount * 2) + 1];
-		// ¼³Á¤µÈ x, zÁÂÇ¥ °ªÀ¸·Î Terrain Map¿¡ ¸Â´Â ¿ùµå ÁÂÇ¥ y¸¦ ¼³Á¤
+		// ì„¤ì •ëœ x, zì¢Œí‘œ ê°’ìœ¼ë¡œ Terrain Mapì— ë§ëŠ” ì›”ë“œ ì¢Œí‘œ yë¥¼ ì„¤ì •
 		int GetHeightMapX = int(XPos) / MAP_SCALE, GetHeightMapZ = int(ZPos) / MAP_SCALE;
 		float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ) + 50.f;
 
 		m_Flames.back()->SetPosition(DirectX::XMFLOAT3(XPos, GetHeightMapY, ZPos));
 	}
 
-	// ºÒ²É È¿°ú¿Í ÇÔ²² »ç¿ëÇÒ ¿¬±â »ı¼º - 1°³ÀÇ ºÒ²É È¿°ú´Â 3°³ÀÇ ¿¬±â »ç¿ë
+	// ë¶ˆê½ƒ íš¨ê³¼ì™€ í•¨ê»˜ ì‚¬ìš©í•  ì—°ê¸° ìƒì„± - 1ê°œì˜ ë¶ˆê½ƒ íš¨ê³¼ëŠ” 3ê°œì˜ ì—°ê¸° ì‚¬ìš©
 	int SmokeCount = 3 * 5;
 	m_Smokes.reserve(SmokeCount);
 	PosCount = -4;
@@ -430,65 +430,65 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_Smokes.back()->SetPosition(m_Flames[PosCount]->GetPosition());
 	}
 
-	// È­¿° È¿°ú¸¦ Áø¾ĞÇÏ´Â ¼ÒÈ­±â
+	// í™”ì—¼ íš¨ê³¼ë¥¼ ì§„ì••í•˜ëŠ” ì†Œí™”ê¸°
 	int PowderCount = 5;
 	m_Powders.reserve(PowderCount);
 	for (int i = 0; i < PowderCount; ++i) {
 		m_Powders.emplace_back(new Effect(Device, CommandList, m_RootSignature, T_POWDER, i));
 	}
 
-	// ÇÃ·¹ÀÌ¾îÀÇ °ø°İ ½Ã ¹ß»ıÇÏ´Â ÃÑÀÇ ºÒ²É
+	// í”Œë ˆì´ì–´ì˜ ê³µê²© ì‹œ ë°œìƒí•˜ëŠ” ì´ì˜ ë¶ˆê½ƒ
 	m_Spark = new Effect(Device, CommandList, m_RootSignature, T_SPARK);
 
-	// ¸ó½ºÅÍ°¡ ÇÃ·¹ÀÌ¾î¿¡°Ô ÇÇ°İ µÆÀ» ¶§ ¹ß»ıÇÏ´Â ½ÅÈ£
+	// ëª¬ìŠ¤í„°ê°€ í”Œë ˆì´ì–´ì—ê²Œ í”¼ê²© ëì„ ë•Œ ë°œìƒí•˜ëŠ” ì‹ í˜¸
 	m_Signal = new Effect(Device, CommandList, m_RootSignature, T_SIGNAL);
 
-	// ÇÃ·¹ÀÌ¾î°¡ ¸ó½ºÅÍÀÇ ¸Ó¸®¸¦ ÇÇ°İÇßÀ» ¶§ ¹ß»ı
+	// í”Œë ˆì´ì–´ê°€ ëª¬ìŠ¤í„°ì˜ ë¨¸ë¦¬ë¥¼ í”¼ê²©í–ˆì„ ë•Œ ë°œìƒ
 	m_Headshot = new Effect(Device, CommandList, m_RootSignature, T_HEADSHOT);
 	m_Headshot->SetPosition(DirectX::XMFLOAT3(2050.f, 200.f, 1200.f));
 
-	// ÇÃ·¹ÀÌ¾îÀÇ ÃÖ´ë Ã¼·ÂÀ» ³ªÅ¸³»´Â UI
+	// í”Œë ˆì´ì–´ì˜ ìµœëŒ€ ì²´ë ¥ì„ ë‚˜íƒ€ë‚´ëŠ” UI
 	m_HpBar = new UserInterface(Device, CommandList, m_RootSignature, T_HPBAR);
 	m_HpBar->SetPosition(DirectX::XMFLOAT3(-0.5f, 0.9f, 0.f));
 
-	// ÇÃ·¹ÀÌ¾îÀÇ ÇöÀç Ã¼·ÂÀ» ³ªÅ¸³»´Â UI
+	// í”Œë ˆì´ì–´ì˜ í˜„ì¬ ì²´ë ¥ì„ ë‚˜íƒ€ë‚´ëŠ” UI
 	m_HpGauge = new UserInterface(Device, CommandList, m_RootSignature, T_HPGAUGE);
 	m_HpGauge->SetPosition(DirectX::XMFLOAT3(0.f, 0.9f, 0.f));
 
-	// ÇÃ·¹ÀÌ¾îÀÇ °ø°İ ¸ñÇ¥¸¦ °áÁ¤ÇÏ´Â UI
+	// í”Œë ˆì´ì–´ì˜ ê³µê²© ëª©í‘œë¥¼ ê²°ì •í•˜ëŠ” UI
 	m_Aim = new UserInterface(Device, CommandList, m_RootSignature, T_AIM);
 	m_Aim->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// ÇöÀç ³²Àº ÃÑ¾ËÀÇ ½ÊÀÇ ÀÚ¸® ¼ö
+	// í˜„ì¬ ë‚¨ì€ ì´ì•Œì˜ ì‹­ì˜ ìë¦¬ ìˆ˜
 	m_Numbers = new UserInterface*[2];
 	m_Numbers[0] = new UserInterface(Device, CommandList, m_RootSignature, T_NUMBERS);
 	m_Numbers[0]->SetPosition(DirectX::XMFLOAT3(0.725f, -0.85f, 0.f));
 
-	// ÇöÀç ³²Àº ÃÑ¾ËÀÇ ÀÏÀÇ ÀÚ¸® ¼ö
+	// í˜„ì¬ ë‚¨ì€ ì´ì•Œì˜ ì¼ì˜ ìë¦¬ ìˆ˜
 	m_Numbers[1] = new UserInterface(Device, CommandList, m_RootSignature, T_NUMBERS);
 	m_Numbers[1]->SetPosition(DirectX::XMFLOAT3(0.85f, -0.85f, 0.f));
 
-	// ÇÃ·¹ÀÌ¾î°¡ »ç¸ÁÇßÀ» ¶§ ¹ß»ıÇÏ´Â È­¸é
+	// í”Œë ˆì´ì–´ê°€ ì‚¬ë§í–ˆì„ ë•Œ ë°œìƒí•˜ëŠ” í™”ë©´
 	m_GameOverScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEOVER);
 	m_GameOverScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// °ÔÀÓ Å¬¸®¾î ½Ã¿¡ ¹ß»ıÇÏ´Â È­¸é
+	// ê²Œì„ í´ë¦¬ì–´ ì‹œì— ë°œìƒí•˜ëŠ” í™”ë©´
 	m_GameEndScreen = new UserInterface(Device, CommandList, m_RootSignature, T_GAMEEND);
 	m_GameEndScreen->SetPosition(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
 
-	// ÇÃ·¹ÀÌ¾î°¡ Fire Area¿¡ ÀÔÀåÇßÀ» ¶§ ¹ß»ıÇÏ´Â ¾È³» ¹®±¸
+	// í”Œë ˆì´ì–´ê°€ Fire Areaì— ì…ì¥í–ˆì„ ë•Œ ë°œìƒí•˜ëŠ” ì•ˆë‚´ ë¬¸êµ¬
 	m_EnterFire = new UserInterface(Device, CommandList, m_RootSignature, T_ENTERFIRE);
 	m_EnterFire->SetPosition(DirectX::XMFLOAT3(-0.5f, -0.75f, 0.f));
 
-	// ÇÃ·¹ÀÌ¾î°¡ Monster Area¿¡ ÀÔÀåÇßÀ» ¶§ ¹ß»ıÇÏ´Â ¾È³» ¹®±¸
+	// í”Œë ˆì´ì–´ê°€ Monster Areaì— ì…ì¥í–ˆì„ ë•Œ ë°œìƒí•˜ëŠ” ì•ˆë‚´ ë¬¸êµ¬
 	m_EnterMonster = new UserInterface(Device, CommandList, m_RootSignature, T_ENTERMONSTER);
 	m_EnterMonster->SetPosition(DirectX::XMFLOAT3(-0.5f, -0.75f, 0.f));
 
-	// ÇöÀç ÇÃ·¹ÀÌ¾îÀÇ À§Ä¡°¡ ¾î¶² AreaÀÎÁö ¾È³»ÇÏ´Â ¹®±¸
+	// í˜„ì¬ í”Œë ˆì´ì–´ì˜ ìœ„ì¹˜ê°€ ì–´ë–¤ Areaì¸ì§€ ì•ˆë‚´í•˜ëŠ” ë¬¸êµ¬
 	m_GuideArea = new UserInterface(Device, CommandList, m_RootSignature, T_GUIDEAREA);
 	m_GuideArea->SetPosition(DirectX::XMFLOAT3(0.375f, 0.875f, 0.f));
 
-	// ÇöÀç ÇÃ·¹ÀÌ¾îÀÇ À§Ä¡°¡ ¾î¶² AreaÀÎÁö ¾È³»ÇÏ´Â ¹®±¸
+	// í˜„ì¬ í”Œë ˆì´ì–´ì˜ ìœ„ì¹˜ê°€ ì–´ë–¤ Areaì¸ì§€ ì•ˆë‚´í•˜ëŠ” ë¬¸êµ¬
 	m_GuidePos = new UserInterface*[3];
 	for (int i = 0; i < 3; ++i) {
 		m_GuidePos[i] = new UserInterface(Device, CommandList, m_RootSignature, T_GUIDENONE + i);
@@ -496,7 +496,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		else m_GuidePos[i]->SetPosition(DirectX::XMFLOAT3(0.675f, 0.875f, 0.f));
 	}
 
-	// Fire, Monster Area ¿ÜÀÇ Áö¿ª¿¡¼­ µîÀåÇÏ´Â ÀÏ¹İ ¿ÀÅ© ¸ó½ºÅÍ
+	// Fire, Monster Area ì™¸ì˜ ì§€ì—­ì—ì„œ ë“±ì¥í•˜ëŠ” ì¼ë°˜ ì˜¤í¬ ëª¬ìŠ¤í„°
 	int WeakOrcCount = 50;
 	m_WeakOrcs.reserve(WeakOrcCount);
 	DirectX::XMFLOAT3 WeakOrcPos{};
@@ -511,7 +511,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_WeakOrcs.back()->SetPosition(WeakOrcPos);
 	}
 
-	// Monster Area( x (2500 - 5000), z (2500 - 5000) ) ¿¡¼­ µîÀåÇÏ´Â ¸ó½ºÅÍµé (ex. Strong Orc, Shaman Orc, WolfRider Orc)
+	// Monster Area( x (2500 - 5000), z (2500 - 5000) ) ì—ì„œ ë“±ì¥í•˜ëŠ” ëª¬ìŠ¤í„°ë“¤ (ex. Strong Orc, Shaman Orc, WolfRider Orc)
 	int StrongOrcCount = 10;
 	m_StrongOrcs.reserve(StrongOrcCount);
 	DirectX::XMFLOAT3 StrongOrcPos{};
@@ -559,7 +559,7 @@ void Scene::CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* Command
 		m_WolfRiderOrcs.back()->SetPosition(DirectX::XMFLOAT3(4700.f, 0.f, 4700.f));
 	}
 
-	// Monster Area¿¡ µîÀåÇÏ´Â ¸ó½ºÅÍµéÀÇ »ö»óÀ» ¾îµÓ°Ô ¿¬Ãâ
+	// Monster Areaì— ë“±ì¥í•˜ëŠ” ëª¬ìŠ¤í„°ë“¤ì˜ ìƒ‰ìƒì„ ì–´ë‘¡ê²Œ ì—°ì¶œ
 	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, 0.f, 0.25f);
 	for (int i = 0; i < m_StrongOrcs.size(); ++i) if (m_StrongOrcs[i] != nullptr) m_StrongOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
 	for (int i = 0; i < m_ShamanOrcs.size(); ++i) if (m_ShamanOrcs[i] != nullptr) m_ShamanOrcs[i]->SetChangeTexcoords(ChangeTexcoords);
@@ -585,11 +585,11 @@ void Scene::UpdateConstantBuffer(ID3D12GraphicsCommandList* CommandList)
 
 void Scene::UpdateNoneArea(float ElapsedTime)
 {
-	// ´Ù¸¥ Áö¿ªÀÇ ¿ÀºêÁ§Æ®¸¦ ºñÈ°¼ºÈ­
+	// ë‹¤ë¥¸ ì§€ì—­ì˜ ì˜¤ë¸Œì íŠ¸ë¥¼ ë¹„í™œì„±í™”
 	if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
 	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
 
-	// Fire, Monster Area¿¡¼­ º¯°æµÈ ¿ÀºêÁ§Æ®µéÀÇ ÅØ½ºÃ³ »ö»óÀ» ¿ø·¡ »ö»óÀ¸·Î º¯°æ
+	// Fire, Monster Areaì—ì„œ ë³€ê²½ëœ ì˜¤ë¸Œì íŠ¸ë“¤ì˜ í…ìŠ¤ì²˜ ìƒ‰ìƒì„ ì›ë˜ ìƒ‰ìƒìœ¼ë¡œ ë³€ê²½
 	if (0.f <= m_ChangeColorTime) m_ChangeColorTime -= ElapsedTime * 0.125f;
 
 	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, m_ChangeColorTime);
@@ -603,11 +603,11 @@ void Scene::UpdateNoneArea(float ElapsedTime)
 
 void Scene::UpdateFireArea(float ElapsedTime)
 {
-	// ÀÔÀå ¹®±¸ È£Ãâ
+	// ì…ì¥ ë¬¸êµ¬ í˜¸ì¶œ
 	if (m_EnterFire != nullptr) m_EnterFire->Animate(ElapsedTime, 1);
 	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(0.f, 0);
 
-	// Fire Area¿¡ ÀÔÀå ½Ã¿¡ ¿ÀºêÁ§Æ®µéÀÇ ÅØ½ºÃ³ »ö»óÀ» ¾îµÓ°Ô º¯°æ
+	// Fire Areaì— ì…ì¥ ì‹œì— ì˜¤ë¸Œì íŠ¸ë“¤ì˜ í…ìŠ¤ì²˜ ìƒ‰ìƒì„ ì–´ë‘¡ê²Œ ë³€ê²½
 	if (0.25f >= m_ChangeColorTime) m_ChangeColorTime += ElapsedTime * 0.125f;
 
 	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, m_ChangeColorTime, 0.f);
@@ -618,7 +618,7 @@ void Scene::UpdateFireArea(float ElapsedTime)
 	for (int i = 0; i < m_Tree.size(); ++i) if (m_Tree[i] != nullptr) m_Tree[i]->SetChangeTexcoords(ChangeTexcoords);
 	if (m_Player != nullptr) m_Player->SetChangeTexcoords(ChangeTexcoords);
 
-	// ÇÃ·¹ÀÌ¾î¿Í ºÒ²É È¿°ú °£ÀÇ °Å¸®¸¦ ±¸ÇÏ±â À§ÇØ ºÒ²É È¿°úÀÇ ¿ùµå ÁÂÇ¥ x, z¸¦ °¡Á®¿È
+	// í”Œë ˆì´ì–´ì™€ ë¶ˆê½ƒ íš¨ê³¼ ê°„ì˜ ê±°ë¦¬ë¥¼ êµ¬í•˜ê¸° ìœ„í•´ ë¶ˆê½ƒ íš¨ê³¼ì˜ ì›”ë“œ ì¢Œí‘œ x, zë¥¼ ê°€ì ¸ì˜´
 	float ToDistance[5]{};
 	DirectX::XMFLOAT2 FlamePos[5]{};
 	DirectX::XMFLOAT2 PlayerPos = DirectX::XMFLOAT2(m_Player->GetPosition().x, m_Player->GetPosition().z);
@@ -628,7 +628,7 @@ void Scene::UpdateFireArea(float ElapsedTime)
 
 		ToDistance[i] = sqrt(((PlayerPos.x - FlamePos[i].x) * (PlayerPos.x - FlamePos[i].x)) + ((PlayerPos.y - FlamePos[i].y) * (PlayerPos.y - FlamePos[i].y)));
 	}
-	// ÇÃ·¹ÀÌ¾î¿Í °¡Àå °¡±î¿î È­¿° È¿°úÀÇ À§Ä¡¸¦ Å½»ö
+	// í”Œë ˆì´ì–´ì™€ ê°€ì¥ ê°€ê¹Œìš´ í™”ì—¼ íš¨ê³¼ì˜ ìœ„ì¹˜ë¥¼ íƒìƒ‰
 	int NearIndex = 0;
 	float NearDistance = 0.f;
 	for (int i = 0; i < 5; ++i) {
@@ -637,27 +637,27 @@ void Scene::UpdateFireArea(float ElapsedTime)
 			if (ToDistance[i] < NearDistance) NearDistance = ToDistance[i], NearIndex = i;
 		}
 	}
-	// ÇÃ·¹ÀÌ¾î¿Í °¡Àå °¡±î¿î °Å¸®ÀÇ È­¿° È¿°ú¸¦ Á¡ Á¶¸íÀÇ À§Ä¡·Î ¼³Á¤
+	// í”Œë ˆì´ì–´ì™€ ê°€ì¥ ê°€ê¹Œìš´ ê±°ë¦¬ì˜ í™”ì—¼ íš¨ê³¼ë¥¼ ì  ì¡°ëª…ì˜ ìœ„ì¹˜ë¡œ ì„¤ì •
 	m_Lights[1].m_Position = m_Flames[NearIndex * 4]->GetPosition();
 
-	// ¼ÒÈ­±â È¿°ú¿Í È­¿° È¿°úÀÇ Ãæµ¹ Ã³¸®
+	// ì†Œí™”ê¸° íš¨ê³¼ì™€ í™”ì—¼ íš¨ê³¼ì˜ ì¶©ëŒ ì²˜ë¦¬
 	DirectX::XMFLOAT3 NearFlamePos = DirectX::XMFLOAT3(m_Flames[NearIndex * 4]->GetPosition().x, m_Flames[NearIndex * 4]->GetPosition().y, m_Flames[NearIndex * 4]->GetPosition().z);
 	DirectX::XMFLOAT2 PowderPos = DirectX::XMFLOAT2(m_Powders[0]->GetPosition().x, m_Powders[0]->GetPosition().z);
 	float Distance = sqrt(((NearFlamePos.x - PowderPos.x) * (NearFlamePos.x - PowderPos.x)) + ((NearFlamePos.z - PowderPos.y) * (NearFlamePos.z - PowderPos.y)));
 
 	if (25.f >= Distance && false == m_Flames[NearIndex * 4]->GetCollision()) for (int i = 0; i < 4; ++i) m_Flames[(NearIndex * 4) + i]->ActiveCollision();
 
-	// È­¿° È¿°úÀÇ Å©±â°¡ °¨¼ÒÇÑ ¸¸Å­ Ãæµ¹ °Å¸®¿Í Á¶¸í ¹üÀ§ °¨¼Ò
+	// í™”ì—¼ íš¨ê³¼ì˜ í¬ê¸°ê°€ ê°ì†Œí•œ ë§Œí¼ ì¶©ëŒ ê±°ë¦¬ì™€ ì¡°ëª… ë²”ìœ„ ê°ì†Œ
 	int DecreaseRange = m_Flames[NearIndex * 4]->GetStackDecrease();
 	m_Lights[1].m_Range = 250.f - (DecreaseRange * 50.f);
 
-	// ÇÃ·¹ÀÌ¾î¿Í È­¿° È¿°úÀÇ Ãæµ¹ Ã³¸®
+	// í”Œë ˆì´ì–´ì™€ í™”ì—¼ íš¨ê³¼ì˜ ì¶©ëŒ ì²˜ë¦¬
 	int CurrentAnimation = m_Player->GetCurrentAnimationTrackIndex();
 	if (50.f - (DecreaseRange * 10.f) >= NearDistance && P_DAMAGED != CurrentAnimation) m_Player->ChangeState(STATE_DAMAGED, -1);
 
 	for (int i = 0; i < m_Flames.size(); ++i) m_Flames[i]->Animate(ElapsedTime);
 
-	// È­¿° È¿°ú Áø¾Ğ ½Ã¿¡ HP ¾ÆÀÌÅÛ µîÀå
+	// í™”ì—¼ íš¨ê³¼ ì§„ì•• ì‹œì— HP ì•„ì´í…œ ë“±ì¥
 	if (true == m_Flames[NearIndex * 4]->GetFlameOffSignal()) m_ItemHp->SetPosition(NearFlamePos), m_Flames[NearIndex * 4]->FalseFlameOffSignal();
 	if (m_ItemHp != nullptr) m_ItemHp->Animate(ElapsedTime, NearFlamePos);
 
@@ -669,11 +669,11 @@ void Scene::UpdateFireArea(float ElapsedTime)
 
 void Scene::UpdateMonsterArea(float ElapsedTime)
 {
-	// ÀÔÀå ¹®±¸ È£Ãâ
+	// ì…ì¥ ë¬¸êµ¬ í˜¸ì¶œ
 	if (m_EnterMonster != nullptr) m_EnterMonster->Animate(ElapsedTime, 1);
 	if (m_EnterFire != nullptr) m_EnterFire->Animate(0.f, 0);
 
-	// Monster Area¿¡ ÀÔÀå ½Ã¿¡ ¿ÀºêÁ§Æ®µéÀÇ ÅØ½ºÃ³ »ö»óÀ» ¾îµÓ°Ô º¯°æ
+	// Monster Areaì— ì…ì¥ ì‹œì— ì˜¤ë¸Œì íŠ¸ë“¤ì˜ í…ìŠ¤ì²˜ ìƒ‰ìƒì„ ì–´ë‘¡ê²Œ ë³€ê²½
 	if (0.25f >= m_ChangeColorTime) m_ChangeColorTime += ElapsedTime * 0.125f;
 
 	DirectX::XMFLOAT4 ChangeTexcoords = DirectX::XMFLOAT4(-1.f, -1.f, 0.f, m_ChangeColorTime);
@@ -702,24 +702,24 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 			float PlayerxPos = m_Player->GetPosition().x, PlayerzPos = m_Player->GetPosition().z;
 
 			if (nullptr != m_Player) {
-				// 1. TerrainÀÇ Height Map¿¡ µû¶ó ÇÃ·¹ÀÌ¾îÀÇ ¿ùµå ÁÂÇ¥ y ÁÂÇ¥ ¼³Á¤
+				// 1. Terrainì˜ Height Mapì— ë”°ë¼ í”Œë ˆì´ì–´ì˜ ì›”ë“œ ì¢Œí‘œ y ì¢Œí‘œ ì„¤ì •
 				int GetHeightMapX = int(PlayerxPos) / MAP_SCALE, GetHeightMapZ = int(PlayerzPos) / MAP_SCALE;
 				float GetHeightMapY = m_Terrain->GetHeightMapYPos(GetHeightMapX, GetHeightMapZ);
 
-				// 2. ÇÃ·¹ÀÌ¾îÀÇ È¸Àü, ÀÌµ¿, ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ¼öÇà - Ä«¸Ş¶ó ¶ÇÇÑ ÇÃ·¹ÀÌ¾î¿Í ÇÔ²² º¯°æ
+				// 2. í”Œë ˆì´ì–´ì˜ íšŒì „, ì´ë™, ì• ë‹ˆë©”ì´ì…˜ì„ ìˆ˜í–‰ - ì¹´ë©”ë¼ ë˜í•œ í”Œë ˆì´ì–´ì™€ í•¨ê»˜ ë³€ê²½
 				m_Player->Animate(ElapsedTime, Hwnd, m_PreviousPos, GetHeightMapY);
 				m_Player->UpdateTransform(nullptr);
 
-				// 3. Æ¯Á¤ ¾Ö´Ï¸ŞÀÌ¼ÇÀÇ ¼öÇàÀÌ ¿Ï·áµÇ¸é ÃÊ±âÈ­ ¹× ºñÈ°¼ºÈ­ (ex. ÀåÀü ¾Ö´Ï¸ŞÀÌ¼Ç ¼öÇà - ÃÑ¾Ë °³¼ö ÃÖ´ë, ¾Ö´Ï¸ŞÀÌ¼Ç ºñÈ°¼ºÈ­)
+				// 3. íŠ¹ì • ì• ë‹ˆë©”ì´ì…˜ì˜ ìˆ˜í–‰ì´ ì™„ë£Œë˜ë©´ ì´ˆê¸°í™” ë° ë¹„í™œì„±í™” (ex. ì¥ì „ ì• ë‹ˆë©”ì´ì…˜ ìˆ˜í–‰ - ì´ì•Œ ê°œìˆ˜ ìµœëŒ€, ì• ë‹ˆë©”ì´ì…˜ ë¹„í™œì„±í™”)
 				if (true == m_Player->GetCompletedReload()) m_BulletCount = 30, m_Player->SetCompletedReload(false);
 			}
 
-			// ÇöÀç ÇÃ·¹ÀÌ¾îÀÇ ¿ùµå ÁÂÇ¥¿¡ µû¶ó Áö¿ªÀ» È°¼ºÈ­
+			// í˜„ì¬ í”Œë ˆì´ì–´ì˜ ì›”ë“œ ì¢Œí‘œì— ë”°ë¼ ì§€ì—­ì„ í™œì„±í™”
 			if ((PlayerxPos < 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_FIRE;
 			else if ((PlayerxPos >= 2500.f) && (PlayerzPos > 2400.f)) m_ActiveGuidePosIndex = AREA_MONSTER;
 			else m_ActiveGuidePosIndex = AREA_NONE;
 
-			// È°¼ºÈ­µÈ Áö¿ªÀÇ ÇÔ¼ö ¼öÇà - Áö¿ª¿¡ µû¶ó ¿ÀºêÁ§Æ®ÀÇ È°¼ºÈ­ ¹× ÅØ½ºÃ³ »ö»ó º¯°æ
+			// í™œì„±í™”ëœ ì§€ì—­ì˜ í•¨ìˆ˜ ìˆ˜í–‰ - ì§€ì—­ì— ë”°ë¼ ì˜¤ë¸Œì íŠ¸ì˜ í™œì„±í™” ë° í…ìŠ¤ì²˜ ìƒ‰ìƒ ë³€ê²½
 			switch (m_ActiveGuidePosIndex) {
 			case AREA_NONE:
 			{
@@ -740,7 +740,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 			break;
 			}
 
-			// ºÒ²É È¿°ú¸¦ Ç¥ÇöÇÏ±â À§ÇØ Noise BufferÀÇ Frame TimeÀ» Áõ°¡
+			// ë¶ˆê½ƒ íš¨ê³¼ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•´ Noise Bufferì˜ Frame Timeì„ ì¦ê°€
 			m_Noise.m_FrameTime += ElapsedTime * 0.5f;
 			if (m_Noise.m_FrameTime > 1000.f) m_Noise.m_FrameTime = 0.f;
 
@@ -748,7 +748,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 			ShadowPos.y -= 20.f;
 			m_Lights[2].m_Position = ShadowPos;
 
-			// ¸ó½ºÅÍ ¿ÀºêÁ§Æ®µéÀÇ ¾Ö´Ï¸ŞÀÌ¼Ç ¼öÇà - ÇÃ·¹ÀÌ¾î Ãß°İ, °ø°İ, »ç¸Á µîÀÇ ¾Ö´Ï¸ŞÀÌ¼Ç°ú »óÈ£ÀÛ¿ë µî
+			// ëª¬ìŠ¤í„° ì˜¤ë¸Œì íŠ¸ë“¤ì˜ ì• ë‹ˆë©”ì´ì…˜ ìˆ˜í–‰ - í”Œë ˆì´ì–´ ì¶”ê²©, ê³µê²©, ì‚¬ë§ ë“±ì˜ ì• ë‹ˆë©”ì´ì…˜ê³¼ ìƒí˜¸ì‘ìš© ë“±
 			bool PlayerHit = false;
 			int HitMonsterKind = 0;
 
@@ -759,7 +759,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 					if (true == m_WeakOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WEAKORC, m_WeakOrcs[i]->SetSuccessAttack(false);
 
-					// ¸ó½ºÅÍ »ç¸Á ½Ã¿¡ ÇÃ·¹ÀÌ¾î °­È­
+					// ëª¬ìŠ¤í„° ì‚¬ë§ ì‹œì— í”Œë ˆì´ì–´ ê°•í™”
 					if (true == m_WeakOrcs[i]->GetDeath()) m_WeakOrcs.erase(m_WeakOrcs.begin() + i), m_Player->SetPower(m_Player->GetPower() + 2);
 				}
 
@@ -786,22 +786,22 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 
 					if (true == m_WolfRiderOrcs[i]->GetSuccessAttack()) PlayerHit = true, HitMonsterKind = M_WOLFRIDERORC, m_WolfRiderOrcs[i]->SetSuccessAttack(false);
 
-					// º¸½º ¸ó½ºÅÍÀÇ »ç¸Á ½Ã¿¡ °ÔÀÓ Å¬¸®¾î È­¸éÀ» È°¼ºÈ­
+					// ë³´ìŠ¤ ëª¬ìŠ¤í„°ì˜ ì‚¬ë§ ì‹œì— ê²Œì„ í´ë¦¬ì–´ í™”ë©´ì„ í™œì„±í™”
 					if (true == m_WolfRiderOrcs[i]->GetDeath()) if (m_GameEndScreen != nullptr) m_GameEndScreen->Animate(ElapsedTime, 0);
 				}
 
 			if (true == PlayerHit) m_Player->ChangeState(STATE_DAMAGED, HitMonsterKind);
 
-			// ÇÃ·¹ÀÌ¾î¿Í ±ÙÁ¢ÇÑ ºôº¸µå ÀÌ¹ÌÁö¸¦ ¿©·¯ °³ÀÇ ¸Ş½¬¸¦ °¡Áø ¿ÀºêÁ§Æ®·Î º¯°æ
+			// í”Œë ˆì´ì–´ì™€ ê·¼ì ‘í•œ ë¹Œë³´ë“œ ì´ë¯¸ì§€ë¥¼ ì—¬ëŸ¬ ê°œì˜ ë©”ì‰¬ë¥¼ ê°€ì§„ ì˜¤ë¸Œì íŠ¸ë¡œ ë³€ê²½
 			DirectX::XMFLOAT4X4* GetBillboardTreePos = m_BillboardTree->GetObjectsWorldPos();
 			int NearX = int(PlayerxPos / 200), NearZ = int(PlayerzPos / 200);
 
-			// °¡Àå ±ÙÁ¢ÇÑ ³ª¹«¸¦ ±âÁØÀ¸·Î 3x3°³ÀÇ ºôº¸µå ÀÌ¹ÌÁö¸¦ ¿ÀºêÁ§Æ®·Î º¯°æ
+			// ê°€ì¥ ê·¼ì ‘í•œ ë‚˜ë¬´ë¥¼ ê¸°ì¤€ìœ¼ë¡œ 3x3ê°œì˜ ë¹Œë³´ë“œ ì´ë¯¸ì§€ë¥¼ ì˜¤ë¸Œì íŠ¸ë¡œ ë³€ê²½
 			for (int i = 0, RangeX = -1; RangeX < 2; ++RangeX) {
 				for (int RangeZ = -1; RangeZ < 2; ++RangeZ, ++i) {
 					int TreeXIndex = NearX + RangeX, TreeZIndex = NearZ + RangeZ;
 
-					// ÃÖ¼Ò, ÃÖ´ë ¹üÀ§ ¹ÛÀÇ ¹è¿­ Á¢±Ù ¹æÁö
+					// ìµœì†Œ, ìµœëŒ€ ë²”ìœ„ ë°–ì˜ ë°°ì—´ ì ‘ê·¼ ë°©ì§€
 					if (TreeXIndex < 0 || TreeXIndex > 24 || TreeZIndex < 0 || TreeZIndex > 24) continue;
 
 					DirectX::XMFLOAT4X4 NearBillboardTree = GetBillboardTreePos[m_SaveBillboardTreeIndex[TreeXIndex][TreeZIndex]];
@@ -810,7 +810,7 @@ void Scene::Animate(float ElapsedTime, HWND Hwnd)
 				}
 			}
 
-			// Ä«¸Ş¶óÀÇ ¿ùµå ÁÂÇ¥ Right, Up, Look¿¡ µû¶ó ºÒ²É È¿°ú¿Í ¿¬±â È¿°úÀÇ ¿ùµå ÁÂÇ¥ ¼³Á¤
+			// ì¹´ë©”ë¼ì˜ ì›”ë“œ ì¢Œí‘œ Right, Up, Lookì— ë”°ë¼ ë¶ˆê½ƒ íš¨ê³¼ì™€ ì—°ê¸° íš¨ê³¼ì˜ ì›”ë“œ ì¢Œí‘œ ì„¤ì •
 			Camera* GetCamera = m_Player->GetCamera();
 			int PosCount = -4;
 
@@ -966,7 +966,33 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 	{
 		switch (MessageIndex)
 		{
+		case WM_CHAR:
+		case WM_IME_CHAR:
+		{
+			if (m_ActiveChat) {
+				TCHAR ch = (TCHAR)Wparam;
+
+				if (ch == VK_RETURN) {
+					if (!m_Chat.empty()) {
+						m_Chat.clear();
+						m_ActiveChat = false;
+						m_Pause = false;
+					}
+					return;
+				}
+				if (ch == VK_BACK) {
+					if (!m_Chat.empty()) m_Chat.pop_back();
+					return;
+				}
+				if (ch >= 0x20) {
+					if (m_Chat.size() < 30) m_Chat.push_back(ch);
+				}
+			}
+		}
+		break;
+
 		case WM_KEYDOWN:
+			if (m_ActiveChat) return;
 			switch (Wparam)
 			{
 			case 'w':
@@ -1031,10 +1057,18 @@ void Scene::KeyboardMessage(UINT MessageIndex, WPARAM Wparam)
 				if (m_Player->GetCurrentAnimationTrackIndex() == P_IDLE && m_Player->GetState() != STATE_JUMP) m_Player->ChangeState(STATE_JUMP);
 			}
 			break;
+
+			case VK_TAB:
+			{
+				m_Pause = !m_Pause;
+				m_ActiveChat = true;
+			}
+			break;
 			}
 			break;
 
 		case WM_KEYUP:
+			if (m_ActiveChat) return;
 			switch (Wparam)
 			{
 			case 'w':
@@ -1105,26 +1139,26 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 			SetCursor(NULL);
 			GetCursorPos(&m_PreviousPos);
 
-			// ÇÃ·¹ÀÌ¾î °ø°İ Ã³¸® (ex. ÃÑ ¹ß»ç ¾Ö´Ï¸ŞÀÌ¼Ç or ÃÑ ºÒ²É È°¼ºÈ­ or ¸ó½ºÅÍ ÇÇ°İ ¿©ºÎ µî)
+			// í”Œë ˆì´ì–´ ê³µê²© ì²˜ë¦¬ (ex. ì´ ë°œì‚¬ ì• ë‹ˆë©”ì´ì…˜ or ì´ ë¶ˆê½ƒ í™œì„±í™” or ëª¬ìŠ¤í„° í”¼ê²© ì—¬ë¶€ ë“±)
 			if (0 < m_BulletCount && m_Player->GetCurrentAnimationTrackIndex() < P_SHOOT && false == m_ActivePowder) {
 				PlaySound(L"Sound/Rifle_Shoot.wav", 0, SND_FILENAME | SND_ASYNC);
 				--m_BulletCount;
 				m_Player->ChangeState(STATE_SHOOT);
 
-				// ÃÑ±¸ ºÒ²É È°¼ºÈ­
+				// ì´êµ¬ ë¶ˆê½ƒ í™œì„±í™”
 				GameObject* PlayerWeapon = m_Player->GetFrame(25);
 
-				// WeaponÀÇ ¸ğµ¨ ÁÂÇ¥¸¦ ÀúÀå
+				// Weaponì˜ ëª¨ë¸ ì¢Œí‘œë¥¼ ì €ì¥
 				DirectX::XMFLOAT4X4 WeaponPos = PlayerWeapon->GetTransformPos();
 
-				// ÇÃ·¹ÀÌ¾îÀÇ ÇöÀç À§Ä¡ Á¤º¸¸¦ ÅëÇØ WeaponÀÇ ¿ùµå ÁÂÇ¥¸¦ ±¸ÇÔ
+				// í”Œë ˆì´ì–´ì˜ í˜„ì¬ ìœ„ì¹˜ ì •ë³´ë¥¼ í†µí•´ Weaponì˜ ì›”ë“œ ì¢Œí‘œë¥¼ êµ¬í•¨
 				DirectX::XMFLOAT4X4 WeaponWorldPos{};
 				DirectX::XMStoreFloat4x4(&WeaponWorldPos, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&WeaponPos), DirectX::XMLoadFloat4x4(&m_Player->GetWorldPos())));
 
-				// WeaponÀÇ ¿ùµå ÁÂÇ¥¸¦ ³Ñ°ÜÁÜ
+				// Weaponì˜ ì›”ë“œ ì¢Œí‘œë¥¼ ë„˜ê²¨ì¤Œ
 				if (m_Spark != nullptr) m_Spark->ActiveEffect(WeaponWorldPos);
 
-				// ÇÃ·¹ÀÌ¾îÀÇ Look, Position ÁÂÇ¥¸¦ ÀÌ¿ëÇÏ¿© ¸ó½ºÅÍ ¿ÀºêÁ§Æ®¿Í Ãæµ¹Ã³¸® ¼öÇà
+				// í”Œë ˆì´ì–´ì˜ Look, Position ì¢Œí‘œë¥¼ ì´ìš©í•˜ì—¬ ëª¬ìŠ¤í„° ì˜¤ë¸Œì íŠ¸ì™€ ì¶©ëŒì²˜ë¦¬ ìˆ˜í–‰
 				Camera* GetCamera = m_Player->GetCamera();
 				DirectX::XMFLOAT3 StartPosition = GetCamera->GetPosition();
 				DirectX::XMFLOAT3 EndPosition{};
@@ -1141,9 +1175,9 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 					CollisionMonster = m_WeakOrcs[i]->CheckCollision(StartPosition, EndPosition);
 
 					if (CollisionMonster != nullptr) {
-						// ¸ó½ºÅÍÀÇ Ãæµ¹ °Å¸®°¡ ÃÖ´ë »ç°Å¸®º¸´Ù ÀÛÀ¸¸é Ãæµ¹ Ã³¸®
+						// ëª¬ìŠ¤í„°ì˜ ì¶©ëŒ ê±°ë¦¬ê°€ ìµœëŒ€ ì‚¬ê±°ë¦¬ë³´ë‹¤ ì‘ìœ¼ë©´ ì¶©ëŒ ì²˜ë¦¬
 						if (CollisionMonster->GetCollisionMeshDistance() <= MaxDistance) {
-							// Ãæµ¹µÈ ¸ó½ºÅÍ Áß, °¡Àå °¡±î¿î °Å¸®ÀÇ ¸ó½ºÅÍ¸¸ Ãæµ¹ Ã³¸®¸¦ ¼öÇà
+							// ì¶©ëŒëœ ëª¬ìŠ¤í„° ì¤‘, ê°€ì¥ ê°€ê¹Œìš´ ê±°ë¦¬ì˜ ëª¬ìŠ¤í„°ë§Œ ì¶©ëŒ ì²˜ë¦¬ë¥¼ ìˆ˜í–‰
 							ResultMonster = CollisionMonster;
 							MaxDistance = CollisionMonster->GetCollisionMeshDistance();
 							CollisionMonsterIndex = i;
@@ -1189,7 +1223,7 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 				}
 
 				if (nullptr != ResultMonster) {
-					// Çìµå¼¦ ¿©ºÎ¿¡ µû¶ó µ¥¹ÌÁö º¯°æ ¹× È¿°ú Ç¥½Ã
+					// í—¤ë“œìƒ· ì—¬ë¶€ì— ë”°ë¼ ë°ë¯¸ì§€ ë³€ê²½ ë° íš¨ê³¼ í‘œì‹œ
 					float ActiveHeadshot = false;
 					int PlayerPower = m_Player->GetPower();
 					if (strstr(ResultMonster->GetFrameName(), "Head")) {
@@ -1229,10 +1263,10 @@ void Scene::MouseMessage(HWND Hwnd, UINT MessageIndex, LPARAM Lparam)
 				}
 			}
 
-			// È­¿° È¿°ú¸¦ Áø¾ĞÇÏ´Â ¼ÒÈ­±â Ã³¸®
+			// í™”ì—¼ íš¨ê³¼ë¥¼ ì§„ì••í•˜ëŠ” ì†Œí™”ê¸° ì²˜ë¦¬
 			if (true == m_ActivePowder && P_SHOOT > m_Player->GetCurrentAnimationTrackIndex()) {
 				m_Player->ChangeState(STATE_SHOOT);
-				// ¼ÒÈ­±â ºĞ¸»ÀÇ ¾Ö´Ï¸ŞÀÌ¼Ç È¿°ú È°¼ºÈ­
+				// ì†Œí™”ê¸° ë¶„ë§ì˜ ì• ë‹ˆë©”ì´ì…˜ íš¨ê³¼ í™œì„±í™”
 				for (int i = 0; i < m_Powders.size(); ++i)
 					m_Powders[i]->ActiveEffect(m_Player->GetTransformPos());
 			}

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "GameFramework.h"
 
 #include "Scene.h"
@@ -24,44 +24,75 @@ GameFramework::~GameFramework()
 	CloseHandle(m_FenceEvent);
 
 	if (m_RenderTargetViewDescriptorHeap != nullptr) m_RenderTargetViewDescriptorHeap->Release();
-	for (int i = 0; i < 2; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
+	for (int i = 0; i < SWAP_CHAIN_COUNT; ++i) if (m_RenderTargetBuffer[i] != nullptr) m_RenderTargetBuffer[i]->Release();
 	if (m_DepthStencilViewDescriptorHeap != nullptr) m_DepthStencilViewDescriptorHeap->Release();
 	if (m_DepthStencilBuffer != nullptr) m_DepthStencilBuffer->Release();
+
+	if (m_D3d11Device != nullptr) m_D3d11Device->Release();
+	if (m_D3d11DeviceContext != nullptr) m_D3d11DeviceContext->Release();
+	if (m_D3d11on12Device != nullptr) m_D3d11on12Device->Release();
+	if (m_D2dFactory != nullptr) m_D2dFactory->Release();
+	if (m_DwriteFactory != nullptr) m_DwriteFactory->Release();
+	if (m_D2dDevice != nullptr) m_D2dDevice->Release();
+	if (m_D2dContext != nullptr) m_D2dContext->Release();
+
+	for (int i = 0; i < SWAP_CHAIN_COUNT; ++i) if (m_WrappedBackBuffers[i] != nullptr) m_WrappedBackBuffers[i]->Release();
+	for (int i = 0; i < SWAP_CHAIN_COUNT; ++i) if (m_D2dRenderTargets[i] != nullptr) m_D2dRenderTargets[i]->Release();
+
+	if (m_TextFormat != nullptr) m_TextFormat->Release();
+	if (m_TextBrush != nullptr) m_TextBrush->Release();
 
 	if (m_Scene != nullptr) delete m_Scene;
 }
 
-// GameFramework¸¦ »ç¿ëÇÏ±â À§ÇØ ÇÊ¿äÇÑ (Device, CommandList, Object µî) °´Ã¼¸¦ »ı¼º
+// GameFrameworkë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ í•„ìš”í•œ (Device, CommandList, Object ë“±) ê°ì²´ë¥¼ ìƒì„±
 void GameFramework::CreateGameFramework(HWND &Hwnd)
 {
 	m_Hwnd = Hwnd;
 
-	// 1. DirectX 12¸¦ »ç¿ëÇÏ±â À§ÇØ Device¸¦ »ı¼º
+	// 1. DirectX 12ë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ Deviceë¥¼ ìƒì„±
 	CreateDirectDevice();
-	// 2. DirectX 12 ±×·¡ÇÈ ·»´õ¸µÀ» À§ÇØ CommandQueue¿Í CommandList¸¦ »ı¼º
+	// 2. DirectX 12 ê·¸ë˜í”½ ë Œë”ë§ì„ ìœ„í•´ CommandQueueì™€ CommandListë¥¼ ìƒì„±
 	CreateCommandQueueAndList();
-	// 3. Double BufferingÀ» À§ÇØ SwapChainÀ» »ı¼º
+	// 3. Double Bufferingì„ ìœ„í•´ SwapChainì„ ìƒì„±
 	CreateSwapChain();
-	// 4. CPU - GPU µ¿±âÈ­¸¦ À§ÇØ Fence¸¦ »ı¼º
+	// 4. CPU - GPU ë™ê¸°í™”ë¥¼ ìœ„í•´ Fenceë¥¼ ìƒì„±
 	CreateFence();
-	// 5. ¸®¼Ò½º(Texture, Buffer)¸¦ »ç¿ëÇÏ±â À§ÇØ Descriptor Heap, Resource View, Resource¸¦ »ı¼º
+	// 5. ë¦¬ì†ŒìŠ¤(Texture, Buffer)ë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ Descriptor Heap, Resource View, Resourceë¥¼ ìƒì„±
 	CreateResource();
-	// 6. ½ÇÁ¦ °ÔÀÓÀÌ ÁøÇàµÇ´Â (ex. Game Play or Rendering) ¿µ¿ªÀÎ SceneÀ» »ı¼º
+	// 6. Direct2D, DirectWrite, D3D11on12ë¥¼ ì‚¬ìš©í•œ í…ìŠ¤íŠ¸ ì¶œë ¥
+	CreateD3D11on12Device();
+	CreateD2DDevice();
+	CreateWrappedResource();
+	CreateTextResource();
+	// 6. ì‹¤ì œ ê²Œì„ì´ ì§„í–‰ë˜ëŠ” (ex. Game Play or Rendering) ì˜ì—­ì¸ Sceneì„ ìƒì„±
 	CreateScene();
 }
 
-// Direct3D¸¦ »ç¿ëÇÏ±â À§ÇØ ÀåÄ¡¸¦ »ı¼º - DXGI
+// Direct3Dë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ ì¥ì¹˜ë¥¼ ìƒì„± - DXGI
 void GameFramework::CreateDirectDevice()
 {
-	// DXGI ÆÑÅä¸® »ı¼º - Ãâ·Â ´ã´ç, ¾î´ğÅÍÀÇ »ı¼º or ¿­°Å µîÀ» ¼öÇàÇÏ´Â ¿ªÇÒ, COM °´Ã¼
+#if defined(_DEBUG)
+	// 1. ë””ë²„ê·¸ ì¸í„°í˜ì´ìŠ¤ë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤.
+	ID3D12Debug* debugController = nullptr;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	{
+		// 2. ë””ë²„ê·¸ ë ˆì´ì–´ë¥¼ í™œì„±í™”í•©ë‹ˆë‹¤.
+		debugController->EnableDebugLayer();
+	}
+	// 3. ì‚¬ìš©ì´ ëë‚œ COM ê°ì²´ëŠ” ë°˜ë“œì‹œ Release í•´ì•¼ í•©ë‹ˆë‹¤.
+	if (debugController) debugController->Release();
+
+#endif
+	// DXGI íŒ©í† ë¦¬ ìƒì„± - ì¶œë ¥ ë‹´ë‹¹, ì–´ëŒ‘í„°ì˜ ìƒì„± or ì—´ê±° ë“±ì„ ìˆ˜í–‰í•˜ëŠ” ì—­í• , COM ê°ì²´
 	CreateDXGIFactory2(0, __uuidof(IDXGIFactory4), (void**)&m_Factory);
 
-	// DXGI ÆÑÅä¸®¸¦ »ı¼ºÇßÀ¸´Ï ±×·¡ÇÈ ¾î´ğÅÍ¸¦ ¿­°Å
+	// DXGI íŒ©í† ë¦¬ë¥¼ ìƒì„±í–ˆìœ¼ë‹ˆ ê·¸ë˜í”½ ì–´ëŒ‘í„°ë¥¼ ì—´ê±°
 	IDXGIAdapter1 *Adapter = nullptr;
 	unsigned int GpuIndex = 0;
 	unsigned int HighPerformance = 0;
 
-	// ¼º´ÉÀÌ °¡Àå ³ôÀº ±×·¡ÇÈ Ä«µå¸¦ Ã£´Â °Ë»ç ¼öÇà
+	// ì„±ëŠ¥ì´ ê°€ì¥ ë†’ì€ ê·¸ë˜í”½ ì¹´ë“œë¥¼ ì°¾ëŠ” ê²€ì‚¬ ìˆ˜í–‰
 	for (unsigned int i = 0; DXGI_ERROR_NOT_FOUND != m_Factory->EnumAdapters1(i, &Adapter); ++i) {
 		DXGI_ADAPTER_DESC1 AdapterDesc;
 		ZeroMemory(&AdapterDesc, sizeof(DXGI_ADAPTER_DESC1));
@@ -71,7 +102,7 @@ void GameFramework::CreateDirectDevice()
 			HighPerformance = AdapterDesc.DedicatedVideoMemory;
 		}
 	}
-	// À§ÀÇ °Ë»ç¿¡¼­ Ã£Àº ±×·¡ÇÈ Ä«µå¸¦ ¿¬°á - DirectX 12¸¦ Áö¿øÇÏ¸é Æ¯¼º ·¹º§ 12.0À» ¿¬°áÇÏ°í ±×·¸Áö ¾ÊÀ¸¸é 11.0À» ¿¬°á
+	// ìœ„ì˜ ê²€ì‚¬ì—ì„œ ì°¾ì€ ê·¸ë˜í”½ ì¹´ë“œë¥¼ ì—°ê²° - DirectX 12ë¥¼ ì§€ì›í•˜ë©´ íŠ¹ì„± ë ˆë²¨ 12.0ì„ ì—°ê²°í•˜ê³  ê·¸ë ‡ì§€ ì•Šìœ¼ë©´ 11.0ì„ ì—°ê²°
 	m_Factory->EnumAdapters1(GpuIndex, &Adapter);
 	if (Adapter == nullptr) {
 		m_Factory->EnumWarpAdapter(__uuidof(IDXGIAdapter1), (void**)&Adapter);
@@ -80,102 +111,103 @@ void GameFramework::CreateDirectDevice()
 	else
 		D3D12CreateDevice(Adapter, D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), (void**)&m_Device);
 
-	// »ç¿ëÀÌ ³¡³­ COM °´Ã¼´Â Release¸¦ È£ÃâÇÏ¿© °¥ºñÁö Äİ·ºÅÍ°¡ »èÁ¦ÇÏµµ·Ï ÇÔ
+	// ì‚¬ìš©ì´ ëë‚œ COM ê°ì²´ëŠ” Releaseë¥¼ í˜¸ì¶œí•˜ì—¬ ê°ˆë¹„ì§€ ì½œë ‰í„°ê°€ ì‚­ì œí•˜ë„ë¡ í•¨
 	if (Adapter != nullptr) Adapter->Release();
 }
 
-// DirectX 12 ±×·¡ÇÈ ·»´õ¸µÀ» À§ÇØ CommandQueue¿Í CommandList¸¦ »ı¼ºÇØ¾ß ÇÔ - COM °´Ã¼
+// DirectX 12 ê·¸ë˜í”½ ë Œë”ë§ì„ ìœ„í•´ CommandQueueì™€ CommandListë¥¼ ìƒì„±í•´ì•¼ í•¨ - COM ê°ì²´
 void GameFramework::CreateCommandQueueAndList()
 {
 	D3D12_COMMAND_QUEUE_DESC CommandQueueDesc;
 	ZeroMemory(&CommandQueueDesc, sizeof(D3D12_COMMAND_QUEUE_DESC));
-	CommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // ±âº»ÀûÀÎ CommandQueue
-	CommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT; // GPU°¡ Á÷Á¢ ½ÇÇàÇÒ ¼ö ÀÖ´Â CommandList
+	CommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // ê¸°ë³¸ì ì¸ CommandQueue
+	CommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT; // GPUê°€ ì§ì ‘ ì‹¤í–‰í•  ìˆ˜ ìˆëŠ” CommandList
 
 	m_Device->CreateCommandQueue(&CommandQueueDesc, __uuidof(ID3D12CommandQueue), (void**)&m_CommandQueue);
 	m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&m_CommandAllocator);
 	m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator, nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)&m_CommandList);
-	//m_CommandList->Close();
+
+	m_CommandList->Close();
 }
 
-// Double BufferingÀ» ÇÏ±â À§ÇØ SwapChainÀ» »ı¼ºÇØ¾ß ÇÔ
+// Double Bufferingì„ í•˜ê¸° ìœ„í•´ SwapChainì„ ìƒì„±í•´ì•¼ í•¨
 void GameFramework::CreateSwapChain()
 {
-	// SwapChainÀ» ¸¸µé±â Àü¿¡ ´ÙÁß »ùÇÃ¸µÀ» ÇÏ±â À§ÇØ Ç°Áú Áö¿øÀ» °Ë»ç
+	// SwapChainì„ ë§Œë“¤ê¸° ì „ì— ë‹¤ì¤‘ ìƒ˜í”Œë§ì„ í•˜ê¸° ìœ„í•´ í’ˆì§ˆ ì§€ì›ì„ ê²€ì‚¬
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS MultiSampleQualityLevel;
 	MultiSampleQualityLevel.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	MultiSampleQualityLevel.SampleCount = 4; // MSAA (Multi-Sample Anti-Aliasing) 4x ´ÙÁß »ùÇÃ¸µ - 4°³ÀÇ ¼­ºê ÇÈ¼¿À» °¢°¢ »ùÇÃ¸µÇÏ¿© ÃÖÁ¾ »ö»ó °áÁ¤
+	MultiSampleQualityLevel.SampleCount = 4; // MSAA (Multi-Sample Anti-Aliasing) 4x ë‹¤ì¤‘ ìƒ˜í”Œë§ - 4ê°œì˜ ì„œë¸Œ í”½ì…€ì„ ê°ê° ìƒ˜í”Œë§í•˜ì—¬ ìµœì¢… ìƒ‰ìƒ ê²°ì •
 	MultiSampleQualityLevel.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	MultiSampleQualityLevel.NumQualityLevels = 0;
 
-	// Device°¡ Áö¿øÇÏ´Â ´ÙÁß »ùÇÃÀÇ Ç°Áú È®ÀÎ
+	// Deviceê°€ ì§€ì›í•˜ëŠ” ë‹¤ì¤‘ ìƒ˜í”Œì˜ í’ˆì§ˆ í™•ì¸
 	m_Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &MultiSampleQualityLevel, sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
 
-	// Ç°Áú ¼öÁØÀÌ 1º¸´Ù Å©¸é ´ÙÁß »ùÇÃ¸µÀ» È°¼ºÈ­
+	// í’ˆì§ˆ ìˆ˜ì¤€ì´ 1ë³´ë‹¤ í¬ë©´ ë‹¤ì¤‘ ìƒ˜í”Œë§ì„ í™œì„±í™”
 	m_MultiSampleQualityLevel = MultiSampleQualityLevel.NumQualityLevels;
 	m_ActiveMsaa = (m_MultiSampleQualityLevel > 1) ? true : false;
 
-	// SwapChain »ı¼º
+	// SwapChain ìƒì„±
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
 	ZeroMemory(&SwapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-	// BufferDesc - ½º¿Ò Ã¼ÀÎ ¹öÆÛÀÇ ¼ºÁúÀ» ¼³Á¤ÇÏ´Â ±¸Á¶Ã¼ (ex. width, height, RefreshRate ... etc.)
+	// BufferDesc - ìŠ¤ì™‘ ì²´ì¸ ë²„í¼ì˜ ì„±ì§ˆì„ ì„¤ì •í•˜ëŠ” êµ¬ì¡°ì²´ (ex. width, height, RefreshRate ... etc.)
 	SwapChainDesc.BufferDesc.Width = Window_Width;
 	SwapChainDesc.BufferDesc.Height = Window_Height;
 	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1; // RefreshRate - È­¸é °»½Å È½¼ö, 1ÃÊ¿¡ 60Hz
-	SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // ÈÄ¸é ¹öÆÛ(ÇÈ¼¿)ÀÇ Çü½Ä, ÇÏ³ªÀÇ ÇÈ¼¿Àº 32bit·Î ¼³Á¤
-	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // ½ºÄµ ¶óÀÎ ±×¸®±â ¸ğµå ÁöÁ¤, ½ºÄµ ¶óÀÎ ¼ø¼­¸¦ ÁöÁ¤ÇÏÁö ¾ÊÀ½
-	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // ¸ğ´ÏÅÍ ÇØ»óµµ¿¡ ¸Â°Ô È®´ëÇÏ´Â ¹æ¹ı, ½ºÄÉÀÏ¸µ ÁöÁ¤ x
-	// SampleDesc - ´ÙÁß »ùÇÃ¸µÀÇ Ç°ÁúÀ» ¼³Á¤ÇÒ ¼ö ÀÖ´Â ±¸Á¶Ã¼, Ç°Áú °Ë»ç¿¡¼­ ¾òÀº °ªÀ¸·Î ¼³Á¤ÇØ¾ß ÇÔ
+	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1; // RefreshRate - í™”ë©´ ê°±ì‹  íšŸìˆ˜, 1ì´ˆì— 60Hz
+	SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // í›„ë©´ ë²„í¼(í”½ì…€)ì˜ í˜•ì‹, í•˜ë‚˜ì˜ í”½ì…€ì€ 32bitë¡œ ì„¤ì •
+	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED; // ìŠ¤ìº” ë¼ì¸ ê·¸ë¦¬ê¸° ëª¨ë“œ ì§€ì •, ìŠ¤ìº” ë¼ì¸ ìˆœì„œë¥¼ ì§€ì •í•˜ì§€ ì•ŠìŒ
+	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED; // ëª¨ë‹ˆí„° í•´ìƒë„ì— ë§ê²Œ í™•ëŒ€í•˜ëŠ” ë°©ë²•, ìŠ¤ì¼€ì¼ë§ ì§€ì • x
+	// SampleDesc - ë‹¤ì¤‘ ìƒ˜í”Œë§ì˜ í’ˆì§ˆì„ ì„¤ì •í•  ìˆ˜ ìˆëŠ” êµ¬ì¡°ì²´, í’ˆì§ˆ ê²€ì‚¬ì—ì„œ ì–»ì€ ê°’ìœ¼ë¡œ ì„¤ì •í•´ì•¼ í•¨
 	SwapChainDesc.SampleDesc.Count = (m_ActiveMsaa) ? 4 : 1;
 	SwapChainDesc.SampleDesc.Quality = (m_ActiveMsaa) ? m_MultiSampleQualityLevel - 1 : 0;
-	SwapChainDesc.OutputWindow = m_Hwnd; // Ãâ·Â µÉ windows ¼³Á¤
-	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // ÈÄ¸é ¹öÆÛ¿¡ ´ëÇÑ Ç¥¸é »ç¿ë ¹æ½Ä°ú CPUÀÇ Á¢±Ù ¹æ¹ı ¼³Á¤, ·»´õ Å¸°Ù¿ëÀ¸·Î »ç¿ëÇÏµµ·Ï °áÁ¤
-	SwapChainDesc.BufferCount = 2; // ½º¿Ò Ã¼ÀÎÀÇ ¹öÆÛ °³¼ö, Àü¸é ¹öÆÛ¿Í ÈÄ¸é ¹öÆÛ¸¦ »ç¿ë
-	SwapChainDesc.Windowed = true; // Ã¢¸ğµå ¼³Á¤ - trueÀÌ¸é Ã¢ ¸ğµå, falseÀÌ¸é ÀüÃ¼ ¸ğµå
-	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // ½º¿ÍÇÎÀ» Ã³¸®ÇÏ´Â ¼±ÅÃ»çÇ× ÁöÁ¤, ¹öÆÛ¸¦ À¯ÁöÇÏ¸é ºñ¿ëÀÌ ¸¹ÀÌ ¹ß»ıÇÏ¹Ç·Î ¹öÆÛ ³»¿ëÀ» Æó±âÇÏµµ·Ï ¼³Á¤
-	SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // ½º¿Ò Ã¼ÀÎ µ¿ÀÛ¿¡ ´ëÇÑ ¼±ÅÃ»çÇ× ÁöÁ¤, ÀÀ¿ë ÇÁ·Î±×·¥ÀÌ µğ½ºÇÃ·¹ÀÌ ¸ğµå¸¦ º¯°æÇÒ ¼ö ÀÖµµ·Ï ¼³Á¤
+	SwapChainDesc.OutputWindow = m_Hwnd; // ì¶œë ¥ ë  windows ì„¤ì •
+	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // í›„ë©´ ë²„í¼ì— ëŒ€í•œ í‘œë©´ ì‚¬ìš© ë°©ì‹ê³¼ CPUì˜ ì ‘ê·¼ ë°©ë²• ì„¤ì •, ë Œë” íƒ€ê²Ÿìš©ìœ¼ë¡œ ì‚¬ìš©í•˜ë„ë¡ ê²°ì •
+	SwapChainDesc.BufferCount = SWAP_CHAIN_COUNT; // ìŠ¤ì™‘ ì²´ì¸ì˜ ë²„í¼ ê°œìˆ˜, ì „ë©´ ë²„í¼ì™€ í›„ë©´ ë²„í¼ë¥¼ ì‚¬ìš©
+	SwapChainDesc.Windowed = true; // ì°½ëª¨ë“œ ì„¤ì • - trueì´ë©´ ì°½ ëª¨ë“œ, falseì´ë©´ ì „ì²´ ëª¨ë“œ
+	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // ìŠ¤ì™€í•‘ì„ ì²˜ë¦¬í•˜ëŠ” ì„ íƒì‚¬í•­ ì§€ì •, ë²„í¼ë¥¼ ìœ ì§€í•˜ë©´ ë¹„ìš©ì´ ë§ì´ ë°œìƒí•˜ë¯€ë¡œ ë²„í¼ ë‚´ìš©ì„ íê¸°í•˜ë„ë¡ ì„¤ì •
+	SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // ìŠ¤ì™‘ ì²´ì¸ ë™ì‘ì— ëŒ€í•œ ì„ íƒì‚¬í•­ ì§€ì •, ì‘ìš© í”„ë¡œê·¸ë¨ì´ ë””ìŠ¤í”Œë ˆì´ ëª¨ë“œë¥¼ ë³€ê²½í•  ìˆ˜ ìˆë„ë¡ ì„¤ì •
 
 	m_Factory->CreateSwapChain(m_CommandQueue, &SwapChainDesc, (IDXGISwapChain**)&m_SwapChain);
 }
 
-// CPU°¡ ¸í·ÉÇÑ ÇÁ·¹ÀÓ ·»´õ¸µ µ¥ÀÌÅÍ ÀÛ¾÷ÀÌ GPU¿¡¼­ ³¡³ªÁö ¾Ê¾ÒÀ¸¸é CPU¿¡¼­ »õ·Î¿î ¸í·ÉÀ» ³ÖÁö ¸øÇÏ°Ô ¸·±â À§ÇØ Fence¸¦ »ı¼º
+// CPUê°€ ëª…ë ¹í•œ í”„ë ˆì„ ë Œë”ë§ ë°ì´í„° ì‘ì—…ì´ GPUì—ì„œ ëë‚˜ì§€ ì•Šì•˜ìœ¼ë©´ CPUì—ì„œ ìƒˆë¡œìš´ ëª…ë ¹ì„ ë„£ì§€ ëª»í•˜ê²Œ ë§‰ê¸° ìœ„í•´ Fenceë¥¼ ìƒì„±
 void GameFramework::CreateFence()
 {
-	m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&m_Fence); // 0¹ø - FenceValueÀÇ ÃÊ±â °ª, 0À¸·Î ¼³Á¤ÇÏ¿© 0¹ø ÇÁ·¹ÀÓºÎÅÍ ½ÃÀÛ
+	m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&m_Fence); // 0ë²ˆ - FenceValueì˜ ì´ˆê¸° ê°’, 0ìœ¼ë¡œ ì„¤ì •í•˜ì—¬ 0ë²ˆ í”„ë ˆì„ë¶€í„° ì‹œì‘
 
 	m_FenceEvent = CreateEvent(NULL, false, false, NULL);
 }
 
-// ¸®¼Ò½º(Texture, Buffer)¸¦ ¸¸µé±â À§ÇØ Resource View¸¦ »ı¼ºÇÏ°í °¡»ó ¸Ş¸ğ¸® ÁÖ¼ÒÀÇ ¸Å°³Ã¼·Î ¾µ Descriptor HeapÀ» »ı¼º
+// ë¦¬ì†ŒìŠ¤(Texture, Buffer)ë¥¼ ë§Œë“¤ê¸° ìœ„í•´ Resource Viewë¥¼ ìƒì„±í•˜ê³  ê°€ìƒ ë©”ëª¨ë¦¬ ì£¼ì†Œì˜ ë§¤ê°œì²´ë¡œ ì“¸ Descriptor Heapì„ ìƒì„±
 void GameFramework::CreateResource()
 {
-	// RenderTarget View¸¦ À§ÇÑ Descriptor HeapÀ» »ı¼º
+	// RenderTarget Viewë¥¼ ìœ„í•œ Descriptor Heapì„ ìƒì„±
 	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc;
 	ZeroMemory(&DescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	DescriptorHeapDesc.NumDescriptors = 2; // ¼­¼úÀÚÀÇ °³¼ö °áÁ¤ - Àü¸é°ú ÈÄ¸éÀ» »ç¿ëÇÒ °ÍÀÌ¹Ç·Î 2
+	DescriptorHeapDesc.NumDescriptors = SWAP_CHAIN_COUNT; // ì„œìˆ ìì˜ ê°œìˆ˜ ê²°ì • - ì „ë©´ê³¼ í›„ë©´ì„ ì‚¬ìš©í•  ê²ƒì´ë¯€ë¡œ 2
 	DescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	DescriptorHeapDesc.NodeMask = 0;
 	m_Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_RenderTargetViewDescriptorHeap);
 
-	// Depth-Stencil View¸¦ À§ÇÑ Descriptor HeapÀ» »ı¼º
+	// Depth-Stencil Viewë¥¼ ìœ„í•œ Descriptor Heapì„ ìƒì„±
 	DescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	DescriptorHeapDesc.NumDescriptors = 1; // 1°³ÀÇ Depth-Stencil Buffer¸¸ »ç¿ë
+	DescriptorHeapDesc.NumDescriptors = 1; // 1ê°œì˜ Depth-Stencil Bufferë§Œ ì‚¬ìš©
 	m_Device->CreateDescriptorHeap(&DescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&m_DepthStencilViewDescriptorHeap);
 
-	// RenderTarget View »ı¼º - ÀÌ¹Ì SwapChainÀ» ¸¸µé¾úÀ¸¹Ç·Î º°µµÀÇ ¸®¼Ò½º°¡ ÇÊ¿ä ¾øÀ½ (View¸¦ »ı¼ºÇÏ·Á¸é ¸®¼Ò½º°¡ ÇÊ¿ä)
+	// RenderTarget View ìƒì„± - ì´ë¯¸ SwapChainì„ ë§Œë“¤ì—ˆìœ¼ë¯€ë¡œ ë³„ë„ì˜ ë¦¬ì†ŒìŠ¤ê°€ í•„ìš” ì—†ìŒ (Viewë¥¼ ìƒì„±í•˜ë ¤ë©´ ë¦¬ì†ŒìŠ¤ê°€ í•„ìš”)
 	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	for (int i = 0; i < 2; ++i) { // 2°³ÀÇ Buffer
+	for (int i = 0; i < 2; ++i) { // 2ê°œì˜ Buffer
 		m_SwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_RenderTargetBuffer[i]);
-		m_Device->CreateRenderTargetView(m_RenderTargetBuffer[i], nullptr, RenderTargetDescriptorHandle); // nullptr - ¸®¼Ò½º Çü½Ä°ú °°Àº ºä¸¦ ¸¸µé¾îÁÜ
+		m_Device->CreateRenderTargetView(m_RenderTargetBuffer[i], nullptr, RenderTargetDescriptorHandle); // nullptr - ë¦¬ì†ŒìŠ¤ í˜•ì‹ê³¼ ê°™ì€ ë·°ë¥¼ ë§Œë“¤ì–´ì¤Œ
 		RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	}
 
-	// Depth-Stencil Buffer »ı¼º - RenderTarget View¿Í ´Ş¸® ¹Ì¸® ¸¸µé¾îµĞ ¸®¼Ò½º°¡ ¾øÀ¸¹Ç·Î ¸®¼Ò½º¸¦ »ı¼ºÇØ¾ß ÇÔ
-	// CreateCommittedResource()·Î ¸®¼Ò½º¸¦ ¸¸µå·Á¸é D3D12_HEAP_PROPERTIES, D3D12_RESOURCE_DESC, D3D12_CLEAR_VALUE ±¸Á¶Ã¼¸¦ ¼³Á¤ÇØ¾ß ÇÔ
+	// Depth-Stencil Buffer ìƒì„± - RenderTarget Viewì™€ ë‹¬ë¦¬ ë¯¸ë¦¬ ë§Œë“¤ì–´ë‘” ë¦¬ì†ŒìŠ¤ê°€ ì—†ìœ¼ë¯€ë¡œ ë¦¬ì†ŒìŠ¤ë¥¼ ìƒì„±í•´ì•¼ í•¨
+	// CreateCommittedResource()ë¡œ ë¦¬ì†ŒìŠ¤ë¥¼ ë§Œë“œë ¤ë©´ D3D12_HEAP_PROPERTIES, D3D12_RESOURCE_DESC, D3D12_CLEAR_VALUE êµ¬ì¡°ì²´ë¥¼ ì„¤ì •í•´ì•¼ í•¨
 	D3D12_HEAP_PROPERTIES HeapProperties;
-	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // Default - CPU´Â Á¢±Ù ºÒ°¡, GPU´Â ÀĞ°í ¾²±â°¡ °¡´É, °¡Àå ºü¸£°Ô µ¿ÀÛÇÏ´Â ¸Ş¸ğ¸® Èü¿¡ ¸¸µé¾îÁü
+	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // Default - CPUëŠ” ì ‘ê·¼ ë¶ˆê°€, GPUëŠ” ì½ê³  ì“°ê¸°ê°€ ê°€ëŠ¥, ê°€ì¥ ë¹ ë¥´ê²Œ ë™ì‘í•˜ëŠ” ë©”ëª¨ë¦¬ í™ì— ë§Œë“¤ì–´ì§
 	HeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 	HeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 	HeapProperties.CreationNodeMask = 1;
@@ -202,15 +234,74 @@ void GameFramework::CreateResource()
 
 	m_Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &ClearValue, __uuidof(ID3D12Resource), (void**)&m_DepthStencilBuffer);
 
-	// ¸®¼Ò½º¸¦ »ı¼ºÇßÀ¸¹Ç·Î Depth-Stencil View »ı¼º
+	// ë¦¬ì†ŒìŠ¤ë¥¼ ìƒì„±í–ˆìœ¼ë¯€ë¡œ Depth-Stencil View ìƒì„±
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_Device->CreateDepthStencilView(m_DepthStencilBuffer, nullptr, DepthStencilDescriptorHandle);
 }
 
-// ½ÇÁ¦ °ÔÀÓÀÌ ÁøÇàµÇ¸ç RenderTarget¿¡ RenderingÀ» ÇÒ ¿ÀºêÁ§Æ®¸¦ °¡Áö°í ÀÖ´Â SceneÀ» »ı¼º
+void GameFramework::CreateD3D11on12Device()
+{
+	IUnknown* CommandQueuePtr = m_CommandQueue;
+
+	D3D11On12CreateDevice(m_Device, D3D11_CREATE_DEVICE_BGRA_SUPPORT, nullptr, 0, &CommandQueuePtr, 1, 0,
+		&m_D3d11Device, &m_D3d11DeviceContext, nullptr);
+
+	m_D3d11Device->QueryInterface(__uuidof(ID3D11On12Device), (void**)&m_D3d11on12Device);
+}
+
+void GameFramework::CreateD2DDevice()
+{
+	D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory3), (void**)&m_D2dFactory);
+
+	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown**)&m_DwriteFactory);
+
+	IDXGIDevice* DxgiDevice = nullptr;
+	m_D3d11Device->QueryInterface(__uuidof(IDXGIDevice), (void**)&DxgiDevice);
+
+	m_D2dFactory->CreateDevice(DxgiDevice, &m_D2dDevice);
+
+	if (DxgiDevice != nullptr) DxgiDevice->Release();
+
+	m_D2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &m_D2dContext);
+}
+
+void GameFramework::CreateWrappedResource()
+{
+	D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET,
+		D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+
+	for (int i = 0; i < SWAP_CHAIN_COUNT; ++i) {
+		D3D11_RESOURCE_FLAGS D3d11Flags = { D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE };
+
+		m_D3d11on12Device->CreateWrappedResource(m_RenderTargetBuffer[i], &D3d11Flags,
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT, IID_PPV_ARGS(&m_WrappedBackBuffers[i]));
+
+		IDXGISurface* Surface = nullptr;
+		m_WrappedBackBuffers[i]->QueryInterface(IID_PPV_ARGS(&Surface));
+
+		// D2D ë¹„íŠ¸ë§µ ìƒì„±
+		m_D2dContext->CreateBitmapFromDxgiSurface(Surface, &BitmapProperties, &m_D2dRenderTargets[i]);
+
+		if (Surface != nullptr) Surface->Release();
+	}
+}
+
+void GameFramework::CreateTextResource()
+{
+	m_DwriteFactory->CreateTextFormat(L"Segoe UI", nullptr,
+		DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 20.f, L"ko-kr", &m_TextFormat);
+
+	m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+	m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+	D2D1_COLOR_F TextColor = D2D1::ColorF(D2D1::ColorF::Black);
+	m_D2dContext->CreateSolidColorBrush(TextColor, &m_TextBrush);
+}
+
+// ì‹¤ì œ ê²Œì„ì´ ì§„í–‰ë˜ë©° RenderTargetì— Renderingì„ í•  ì˜¤ë¸Œì íŠ¸ë¥¼ ê°€ì§€ê³  ìˆëŠ” Sceneì„ ìƒì„±
 void GameFramework::CreateScene()
 {
-	// CommandList¿¡¼­ ·»´õ¸µÀ» ÇÏ±â Àü¿¡ ResetÀ» È£ÃâÇÏ¿© CommandList¸¦ Open »óÅÂ·Î ¸¸µé¾î¾ß Commands¸¦ ´ãÀ» ¼ö ÀÖÀ½
+	// CommandListì—ì„œ ë Œë”ë§ì„ í•˜ê¸° ì „ì— Resetì„ í˜¸ì¶œí•˜ì—¬ CommandListë¥¼ Open ìƒíƒœë¡œ ë§Œë“¤ì–´ì•¼ Commandsë¥¼ ë‹´ì„ ìˆ˜ ìˆìŒ
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
@@ -218,7 +309,7 @@ void GameFramework::CreateScene()
 	m_Scene->CreateScene(m_Device, m_CommandList);
 
 	m_CommandList->Close();
-	ID3D12CommandList *CommandLists[] = { m_CommandList };
+	ID3D12CommandList* CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
@@ -248,71 +339,86 @@ void GameFramework::MoveNextFrame()
 	}
 }
 
-// DirectX 12 °ÔÀÓÀ» ÇÃ·¹ÀÌ ÇÒ ¼ö ÀÖµµ·Ï ¸Å ÇÁ·¹ÀÓ¸¶´Ù ¹İº¹ (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
+// DirectX 12 ê²Œì„ì„ í”Œë ˆì´ í•  ìˆ˜ ìˆë„ë¡ ë§¤ í”„ë ˆì„ë§ˆë‹¤ ë°˜ë³µ (ex. CommandList Reset, Rendering, Timer Reset ... etc.)
 void GameFramework::GameFrameworkLoop()
 {
 	std::chrono::system_clock::time_point LoopStartTime = std::chrono::system_clock::now();
 
-	if (m_Scene) m_Scene->Animate(m_ElapsedTime, m_Hwnd);
-
-	// CPU¿Í GPU ÀÛ¾÷À» µ¿±âÈ­ÇÏ±â À§ÇØ GPUÀÇ ÀÛ¾÷ÀÌ ³¡³¯ ¶§±îÁö ´ë±â
 	WaitToCompleteGpu();
 
+	m_SwapChainIndex = m_SwapChain->GetCurrentBackBufferIndex();
+
+	if (m_Scene) m_Scene->Animate(m_ElapsedTime, m_Hwnd);
+
+	// CPUì™€ GPU ì‘ì—…ì„ ë™ê¸°í™”í•˜ê¸° ìœ„í•´ GPUì˜ ì‘ì—…ì´ ëë‚  ë•Œê¹Œì§€ ëŒ€ê¸°
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator, nullptr);
 
-	// RenderTarget Buffer¿¡ ´ëÇÑ Resource Barrier¸¦ ¼³Á¤
-	D3D12_RESOURCE_BARRIER ResourceBarrier;
-	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // ¸®¼Ò½º »ç¿ë º¯È­¸¦ ³ªÅ¸³»´Â ÀüÀÌ Àåº®
+	// RenderTarget Bufferì— ëŒ€í•œ Resource Barrierë¥¼ ì„¤ì •
+	D3D12_RESOURCE_BARRIER ResourceBarrier{};
+	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // ë¦¬ì†ŒìŠ¤ ì‚¬ìš© ë³€í™”ë¥¼ ë‚˜íƒ€ë‚´ëŠ” ì „ì´ ì¥ë²½
 	ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	ResourceBarrier.Transition.pResource = m_RenderTargetBuffer[m_SwapChainIndex];
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // ÈÄ¸é ¹öÆÛ¿¡ write ÇÒ ¼ö ÀÖ´Â »óÅÂ·Î º¯°æ
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // í›„ë©´ ë²„í¼ì— write í•  ìˆ˜ ìˆëŠ” ìƒíƒœë¡œ ë³€ê²½
 	ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_CommandList->ResourceBarrier(1, &ResourceBarrier);
 
-	// RenderTarget & Depth-Stencil ViewÀÇ CPU ÁÖ¼Ò¸¦ Descriptor¸¦ ÅëÇØ °¡Á®¿È
+	// RenderTarget & Depth-Stencil Viewì˜ CPU ì£¼ì†Œë¥¼ Descriptorë¥¼ í†µí•´ ê°€ì ¸ì˜´
 	D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetDescriptorHandle = m_RenderTargetViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	RenderTargetDescriptorHandle.ptr += m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * m_SwapChainIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilDescriptorHandle = m_DepthStencilViewDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	// RenderTarget & Depth-Stencil¸¦ ¿øÇÏ´Â °ªÀ¸·Î ÃÊ±âÈ­
+	// RenderTarget & Depth-Stencilë¥¼ ì›í•˜ëŠ” ê°’ìœ¼ë¡œ ì´ˆê¸°í™”
 	float BackgroundColor[4] = { 0.2f, 0.2f, 0.2f, 1.f };
 	m_CommandList->ClearRenderTargetView(RenderTargetDescriptorHandle, BackgroundColor, 0, nullptr);
 	m_CommandList->ClearDepthStencilView(DepthStencilDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 
-	// RenderTarget View¿Í Depth-Stencil View¸¦ Descriptor¸¦ ÅëÇØ Ãâ·Â-º´ÇÕ(OM) ´Ü°è¿¡ ¿¬°á
+	// RenderTarget Viewì™€ Depth-Stencil Viewë¥¼ Descriptorë¥¼ í†µí•´ ì¶œë ¥-ë³‘í•©(OM) ë‹¨ê³„ì— ì—°ê²°
 	m_CommandList->OMSetRenderTargets(1, &RenderTargetDescriptorHandle, true, &DepthStencilDescriptorHandle);
 
 	// Animation & Rendering
 	if (m_Scene) m_Scene->Render(m_CommandList);
 
-	// Rendering¿¡ ÇÊ¿äÇÑ ¸í·ÉÀ» CommandList¿¡ ÀüºÎ »ğÀÔÇßÀ¸´Ï Resource BarrierÀÇ »óÅÂ º¯°æ
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // Present¸¦ ÇÏ¿© read »óÅÂ·Î º¯°æ
-	ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	m_CommandList->ResourceBarrier(1, &ResourceBarrier);
 
-	// Å¥¿¡ ¸í·ÉÀ» ´ã±â À§ÇØ CommandList¸¦ Close
 	m_CommandList->Close();
-
-	ID3D12CommandList *CommandLists[] = { m_CommandList };
+	ID3D12CommandList* CommandLists[] = { m_CommandList };
 	m_CommandQueue->ExecuteCommandLists(1, CommandLists);
 
-	// RenderingÀÌ ³¡³­ RenderTargetÀÌ È­¸é¿¡ º¸ÀÌµµ·Ï Present È£Ãâ
+	m_D3d11on12Device->AcquireWrappedResources(&m_WrappedBackBuffers[m_SwapChainIndex], 1);
+
+	m_D2dContext->SetTarget(m_D2dRenderTargets[m_SwapChainIndex]);
+	m_D2dContext->BeginDraw();
+
+	std::wstring GetChat = m_Scene->GetChat();
+	const WCHAR* OutputChat = GetChat.c_str();
+	UINT32 length = (UINT32)GetChat.length();
+	D2D1_RECT_F textLayoutRect = D2D1::RectF(10.0f, 600.0f, 400.f, 200.f);
+	m_D2dContext->DrawText(OutputChat, length, m_TextFormat, &textLayoutRect, m_TextBrush);
+
+	m_D2dContext->EndDraw();
+
+	m_D3d11on12Device->ReleaseWrappedResources(&m_WrappedBackBuffers[m_SwapChainIndex], 1);
+
+	m_D3d11DeviceContext->Flush();
+
+	// 3D ëª¨ë¸ ê°ì²´ì™€ 2D í…ìŠ¤íŠ¸ ê°ì²´ì˜ ì• ë‹ˆë©”ì´ì…˜ ë° ë Œë”ë§ ì‘ì—…ì´ ëë‚¬ìœ¼ë¯€ë¡œ í”„ë¦¬ì  íŠ¸ ìˆ˜í–‰
 	m_SwapChain->Present(0, 0);
 
-	// CPU-GPU µ¿±âÈ­¸¦ È®ÀÎÇÏ°í ´ÙÀ½ ÇÁ·¹ÀÓ È­¸éÀ¸·Î ÀÌµ¿
+	// CPU-GPU ë™ê¸°í™”ë¥¼ í™•ì¸í•˜ê³  ë‹¤ìŒ í”„ë ˆì„ í™”ë©´ìœ¼ë¡œ ì´ë™
 	MoveNextFrame();
 
-	// ÇÁ·¹ÀÓ ´ç °æ°ú ½Ã°£(Elapsed Time)°ú 1ÃÊ¿¡ ¸î ¹øÀÇ ÇÁ·¹ÀÓÀ» ÁøÇà(Frame Rate) ÇÏ´ÂÁö °è»ê
+	// í”„ë ˆì„ ë‹¹ ê²½ê³¼ ì‹œê°„(Elapsed Time)ê³¼ 1ì´ˆì— ëª‡ ë²ˆì˜ í”„ë ˆì„ì„ ì§„í–‰(Frame Rate) í•˜ëŠ”ì§€ ê³„ì‚°
 	std::chrono::duration<float> ElapsedTime = std::chrono::system_clock::now() - LoopStartTime;
 	m_ElapsedTime = ElapsedTime.count();
 	m_SecondsCounter += m_ElapsedTime;
 
 	++m_FrameRate;
 
-	// 1ÃÊ °æ°ú ½Ã¿¡ ÇÁ·¹ÀÓ ·¹ÀÌÆ®¸¦ ÃÊ±âÈ­
+	// 1ì´ˆ ê²½ê³¼ ì‹œì— í”„ë ˆì„ ë ˆì´íŠ¸ë¥¼ ì´ˆê¸°í™”
 	if (m_SecondsCounter >= 1.f) { m_SecondsCounter = 0.f, m_FrameRate = 0; }
 }
 

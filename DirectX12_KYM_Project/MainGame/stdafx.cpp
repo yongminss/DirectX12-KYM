@@ -36,7 +36,7 @@ ID3D12Resource* CreateBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* Co
 		case D3D12_HEAP_TYPE_DEFAULT:
 		{
 			HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-			Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)&UploadBuffer);
+			Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, __uuidof(ID3D12Resource), (void**)&UploadBuffer);
 
 			D3D12_RANGE Range = { 0 };
 			void* BufferDataBegin = nullptr;

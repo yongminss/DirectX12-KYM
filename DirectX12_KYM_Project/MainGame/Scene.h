@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #define LIGHT_MAX 16
 
@@ -6,7 +6,7 @@
 #define SPOT_LIGHT 1
 #define POINT_LIGHT 2
 
-// Scene¿¡¼­ »ç¿ëÇÒ °¢ Á¶¸íÀÇ Á¤º¸ (ex. »ö»ó, ¹æÇâ, Á¾·ù µî)
+// Sceneì—ì„œ ì‚¬ìš©í•  ê° ì¡°ëª…ì˜ ì •ë³´ (ex. ìƒ‰ìƒ, ë°©í–¥, ì¢…ë¥˜ ë“±)
 struct LIGHT
 {
 	DirectX::XMFLOAT4 m_Ambient;
@@ -21,14 +21,14 @@ struct LIGHT
 	DirectX::XMFLOAT3 m_Attenuation;
 };
 
-// Á¶¸í ¹öÆÛ¿¡¼­ »ç¿ëÇÒ Á¶¸íµé
+// ì¡°ëª… ë²„í¼ì—ì„œ ì‚¬ìš©í•  ì¡°ëª…ë“¤
 struct MAPPING_LIGHT
 {
 	LIGHT m_Lights[LIGHT_MAX];
 	int m_LightCount;
 };
 
-// ºÒ²É È¿°ú¿¡ »ç¿ëÇÏ´Â Constant Buffer »ı¼º (ex. Noise Buffer, Distortion Buffer)
+// ë¶ˆê½ƒ íš¨ê³¼ì— ì‚¬ìš©í•˜ëŠ” Constant Buffer ìƒì„± (ex. Noise Buffer, Distortion Buffer)
 struct NOISE
 {
 	float m_FrameTime;
@@ -68,7 +68,7 @@ class Monster;
 #define STATE_TITLE 0
 #define STATE_MAIN 1
 
-// ·»´õ Å¸°Ù¿¡ ¿ÀºêÁ§Æ®°¡ ·»´õ¸µ µÇ¸ç ½ÇÁ¦ °ÔÀÓÀÌ ÁøÇàµÊ
+// ë Œë” íƒ€ê²Ÿì— ì˜¤ë¸Œì íŠ¸ê°€ ë Œë”ë§ ë˜ë©° ì‹¤ì œ ê²Œì„ì´ ì§„í–‰ë¨
 class Scene
 {
 private:
@@ -99,12 +99,12 @@ private:
 	MAPPING_DISTORTION *m_MappingDistortion = nullptr;
 	ID3D12Resource *m_DistortionBuffer = nullptr;
 
-	// Title State¿¡¼­ »ç¿ëÇÏ´Â ¿ÀºêÁ§Æ®
+	// Title Stateì—ì„œ ì‚¬ìš©í•˜ëŠ” ì˜¤ë¸Œì íŠ¸
 	UserInterface *m_TitleScreen = nullptr;
 	UserInterface *m_Selection = nullptr;
 	UserInterface *m_GameManual = nullptr;
 
-	// Main State¿¡¼­ »ç¿ëÇÏ´Â ¿ÀºêÁ§Æ®
+	// Main Stateì—ì„œ ì‚¬ìš©í•˜ëŠ” ì˜¤ë¸Œì íŠ¸
 	Player *m_Player = nullptr;
 
 	Terrain *m_Terrain = nullptr;
@@ -152,6 +152,9 @@ private:
 
 	bool m_Pause = false;
 
+	bool m_ActiveChat = false;
+	std::wstring m_Chat{};
+
 public:
 	Scene();
 	~Scene();
@@ -163,6 +166,8 @@ public:
 
 	void CreateConstantBuffer(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
 	void CreateScene(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList);
+
+	std::wstring GetChat() { return m_Chat; }
 
 	void UpdateConstantBuffer(ID3D12GraphicsCommandList* CommandList);
 	void UpdateNoneArea(float ElapsedTime);

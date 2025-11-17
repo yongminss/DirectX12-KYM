@@ -109,6 +109,7 @@ void Player::Move(float ElapsedTime, float MapY)
 	// 2-1. 이전 프레임에서 애니메이션 수행 완료 시에, 새로운 애니메이션 수행을 위해 초기화 진행
 	if (true == GetChangeState()) {
 		if (STATE_RELOAD == m_State) m_CompletedReload = true;
+		else if (STATE_DEATH == m_State) m_death = true;
 		m_State = STATE_NONE, SetChangeState(false), m_CheckDamagedTime = 0.f;
 		// 피격 효과에서 변경된 카메라의 오프셋을 복귀
 		SetOffset(DirectX::XMFLOAT3(0.f, 25.f, -75.f));
@@ -433,4 +434,9 @@ void Player::UpdateCamera(ID3D12GraphicsCommandList* CommandList)
 		m_Camera->SetViewportAndScissorRect(CommandList);
 		m_Camera->UpdateShaderCode(CommandList);
 	}
+}
+
+void Player::Render(ID3D12GraphicsCommandList* CommandList)
+{
+	if (!m_death) GameObject::Render(CommandList);
 }

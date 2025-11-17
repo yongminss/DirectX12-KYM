@@ -22,6 +22,10 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXCollision.h>
+#include <d3d11.h>
+#include <d3d11on12.h>
+#include <d2d1_3.h>
+#include <dwrite.h>
 
 #include <iostream>
 #include <vector>
@@ -34,6 +38,9 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dwrite.lib")
 
 #pragma comment(lib,"winmm.lib")
 

@@ -22,6 +22,8 @@ private:
 	bool m_CompletedReload = false;
 	bool m_GetItem = false;
 
+	bool m_death = false;
+
 	float m_Speed = 0.f;
 
 	float m_AnimateTime = 0.f;
@@ -70,4 +72,6 @@ public:
 
 	void Animate(float ElapsedTime, HWND Hwnd, POINT PreviousPos, float MapY);
 	void UpdateCamera(ID3D12GraphicsCommandList* CommandList);
+
+	void Render(ID3D12GraphicsCommandList* CommandList);
 };

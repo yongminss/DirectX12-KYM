@@ -167,6 +167,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_KEYDOWN:
 	case WM_KEYUP:
+	case WM_CHAR:
+	case WM_IME_CHAR:
 	{
 		g_GameFramework->KeyboardMessage(message, wParam);
 	}
